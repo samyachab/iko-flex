@@ -3,10 +3,38 @@ import { phraseId } from './phrases.js'
 
 let ctx
 
+// Élément audio unique pour la voix enregistrée. Sur iOS, un <audio> joue même en mode silencieux,
+// contrairement à Web Audio (coupé par le bouton silencieux) ; il doit être "débloqué" par un geste.
+let clipEl = null
+
+// Mini WAV silencieux (0,05 s) généré à la volée, pour débloquer l'élément audio pendant le geste
+function silentWav() {
+  const n = 1200
+  const b = new DataView(new ArrayBuffer(44 + n * 2))
+  const w = (o, str) => [...str].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)))
+  w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt ')
+  b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true)
+  b.setUint32(24, 24000, true); b.setUint32(28, 48000, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true)
+  w(36, 'data'); b.setUint32(40, n * 2, true)
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))
+}
+
 // À appeler sur un geste utilisateur (iOS/Chrome bloquent l'audio sinon).
 export function unlockAudio() {
+  // iOS 16.4+ : catégorie "lecture" = le son passe même avec le bouton silencieux (bips compris)
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback'
+  } catch {
+    // non supporté
+  }
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)()
   if (ctx.state === 'suspended') ctx.resume()
+  if (!clipEl) {
+    clipEl = new Audio()
+    clipEl.preload = 'auto'
+    clipEl.src = silentWav()
+    clipEl.play().catch(() => {})
+  }
 }
 
 function tone(freq, duration, delay = 0, volume = 0.25) {
@@ -99,41 +127,21 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice)
 }
 
-// Voix pré-enregistrée (Vivienne) : fichiers public/voice/<id>.mp3, joués via Web Audio
-// (déjà déverrouillé au lancement de la séance). Voix du système en secours si une phrase manque.
+// Voix pré-enregistrée (Vivienne) : fichiers public/voice/<id>.mp3 (mis en cache hors ligne),
+// joués par l'élément audio débloqué au lancement. Voix du système en secours si une phrase manque.
 const RECORDED = new Set(VOICE_IDS)
-const buffers = new Map() // id -> Promise<AudioBuffer>
-let source = null
-let token = 0
+const clipUrl = (id) => `/voice/${id}.mp3`
 
-function loadClip(id) {
-  if (!buffers.has(id)) {
-    const p = fetch(`/voice/${id}.mp3`)
-      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
-      .then((b) => ctx.decodeAudioData(b))
-    p.catch(() => buffers.delete(id))
-    buffers.set(id, p)
-  }
-  return buffers.get(id)
-}
-
-// Précharge les phrases d'une séance pour qu'elles partent sans délai
+// Précharge les phrases d'une séance (cache navigateur) pour qu'elles partent sans délai
 export function preloadSpeech(texts) {
-  if (!ctx) return
   for (const t of texts) {
     const id = phraseId(t)
-    if (RECORDED.has(id)) loadClip(id).catch(() => {})
+    if (RECORDED.has(id)) fetch(clipUrl(id)).catch(() => {})
   }
 }
 
 export function stopSpeech() {
-  token++
-  try {
-    source?.stop()
-  } catch {
-    // déjà terminé
-  }
-  source = null
+  clipEl?.pause()
   window.speechSynthesis?.cancel()
 }
 
@@ -150,17 +158,9 @@ function speakSystem(text) {
 export function speak(text) {
   stopSpeech()
   const id = phraseId(text)
-  if (!ctx || !RECORDED.has(id)) return speakSystem(text)
-  const mine = token
-  loadClip(id)
-    .then((buffer) => {
-      if (mine !== token) return // une autre phrase a été demandée entre-temps
-      source = ctx.createBufferSource()
-      source.buffer = buffer
-      const gain = ctx.createGain()
-      gain.gain.value = 1
-      source.connect(gain).connect(ctx.destination)
-      source.start()
-    })
-    .catch(() => mine === token && speakSystem(text))
+  if (!clipEl || !RECORDED.has(id)) return speakSystem(text)
+  if (ctx?.state === 'suspended') ctx.resume()
+  clipEl.src = clipUrl(id)
+  clipEl.currentTime = 0
+  clipEl.play().catch(() => speakSystem(text))
 }
