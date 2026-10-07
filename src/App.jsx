@@ -5,6 +5,7 @@ import Hub from './screens/Hub.jsx'
 import Player from './screens/Player.jsx'
 import Reward from './screens/Reward.jsx'
 import Lab from './screens/Lab.jsx'
+import Settings from './screens/Settings.jsx'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
 import { unlockAudio } from './lib/audio.js'
@@ -50,7 +51,8 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
-            {screen === 'hub' && <Hub onLaunch={launch} onOpenLab={() => setScreen('lab')} />}
+            {screen === 'hub' && <Hub onLaunch={launch} onOpenLab={() => setScreen('lab')} onOpenSettings={() => setScreen('settings')} />}
+            {screen === 'settings' && <Settings onBack={() => setScreen('hub')} />}
             {screen === 'lab' && (
               <Lab
                 onBack={() => {

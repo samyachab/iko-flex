@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import { getCalendar, getStreaks } from '../lib/streaks.js'
-import { ROUTINES, routineSeconds } from '../lib/routine.js'
+import { routineInfo } from '../lib/routine.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 
 const CARDS = {
@@ -105,10 +105,8 @@ function Calendar({ days }) {
 }
 
 function RoutineCard({ routineKey, delay, onLaunch }) {
-  const r = ROUTINES[routineKey]
   const t = TONES[routineKey]
-  const minutes = Math.round(routineSeconds(routineKey) / 60)
-  const count = Object.values(r.plan).reduce((s, v) => s + v, 0) * r.rounds
+  const { minutes, count } = routineInfo(routineKey)
 
   const launch = (e) => {
     const orb = e.currentTarget.querySelector('[data-orb]').getBoundingClientRect()
@@ -163,16 +161,31 @@ function useLongPress(callback, ms = 800) {
   return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onPointerCancel: cancel, onContextMenu: (e) => e.preventDefault() }
 }
 
-export default function Hub({ onLaunch, onOpenLab }) {
+export default function Hub({ onLaunch, onOpenLab, onOpenSettings }) {
   const longPress = useLongPress(onOpenLab)
   const { streaks, calendar, greeting } = useHubData()
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-10">
       {/* Conteneur qui capte l'appui long ; l'image ne reçoit aucun geste (sinon iOS propose d'enregistrer le PNG) */}
-      <motion.div {...rise(0)} {...longPress} className="self-start select-none p-1 -m-1" style={{ WebkitTouchCallout: 'none' }}>
-        <img src="/logo-wordmark.png" alt="Iko Flex" className="pointer-events-none h-9 w-auto" draggable={false} />
-      </motion.div>
+      <div className="flex items-center justify-between">
+        <motion.div {...rise(0)} {...longPress} className="select-none p-1 -m-1" style={{ WebkitTouchCallout: 'none' }}>
+          <img src="/logo-wordmark.png" alt="Iko Flex" className="pointer-events-none h-9 w-auto" draggable={false} />
+        </motion.div>
+        <motion.button
+          {...rise(0.05)}
+          whileTap={{ scale: 0.9, rotate: 30 }}
+          onClick={onOpenSettings}
+          aria-label="Réglages"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05]"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white/70">
+            <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+            <circle cx="16" cy="7" r="2" />
+            <circle cx="10" cy="17" r="2" />
+          </svg>
+        </motion.button>
+      </div>
       <motion.h1 {...rise(0.08)} className="font-display mt-3 text-[2.2rem] font-light leading-[1.08] tracking-tight">
         {greeting}
         <br />

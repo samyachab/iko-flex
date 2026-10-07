@@ -1,4 +1,5 @@
 import { EXERCISES } from '../data/exercises.js'
+import { getSettings } from './settings.js'
 
 export const ROUTINES = {
   souplesse: {
@@ -7,7 +8,7 @@ export const ROUTINES = {
     emoji: '🔥',
     work: 45,
     rest: 10,
-    // 9 exos × 45s + 9 transitions × 10s ≈ 8 min — priorité psoas/hanches
+    // Poids de chaque zone dans la séance : priorité psoas/hanches
     plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2 },
     rounds: 1,
   },
@@ -17,7 +18,7 @@ export const ROUTINES = {
     emoji: '⚡',
     work: 50,
     rest: 10,
-    // Circuit de 6 exos × 2 tours = 12 × 50s + 12 × 10s = 12 min
+    // Circuit fait 2 fois
     plan: { tronc: 2, haut: 2, jambes: 2 },
     rounds: 2,
   },
@@ -32,28 +33,58 @@ const shuffle = (arr) => {
   return a
 }
 
-// Pioche aléatoire équilibrée par sous-groupe, puis alterne les groupes
-// pour éviter d'enchaîner deux fois la même zone.
-export function buildRoutine(key) {
-  const config = ROUTINES[key]
-  const picks = Object.entries(config.plan).map(([group, count]) =>
-    shuffle(EXERCISES.filter((e) => e.theme === key && e.group === group)).slice(0, count),
-  )
+export const enabledPool = (key, settings = getSettings()) =>
+  EXERCISES.filter((e) => e.theme === key && !settings[key].disabled.includes(e.id))
 
-  const circuit = []
-  const maxLen = Math.max(...picks.map((p) => p.length))
-  for (let i = 0; i < maxLen; i++) {
-    for (const p of shuffle(picks)) if (p[i]) circuit.push(p[i])
+// Nombre d'exercices différents (taille du circuit) pour la durée choisie
+export function routineInfo(key, settings = getSettings()) {
+  const c = ROUTINES[key]
+  const pool = enabledPool(key, settings).length
+  const perExercise = (c.work + c.rest) * c.rounds
+  const size = Math.max(1, Math.min(pool, Math.round((settings[key].minutes * 60) / perExercise)))
+  return { size, count: size * c.rounds, minutes: Math.round((size * perExercise) / 60) }
+}
+
+// Ordre de remplissage des zones, proportionnel au plan :
+// { hanche: 3, posterieure: 2, ... } -> hanche, posterieure, epaules, cheville, hanche, posterieure, ...
+function slotOrder(plan) {
+  const order = []
+  const max = Math.max(...Object.values(plan))
+  for (let i = 0; i < max; i++) for (const [g, n] of Object.entries(plan)) if (i < n) order.push(g)
+  return order
+}
+
+// Pioche aléatoire équilibrée par zone, exercice favori toujours inclus (en premier),
+// puis alternance des zones pour éviter d'enchaîner deux fois la même.
+export function buildRoutine(key, settings = getSettings()) {
+  const config = ROUTINES[key]
+  const { size } = routineInfo(key, settings)
+  const pool = enabledPool(key, settings)
+  const favorite = pool.find((e) => e.id === settings[key].favorite)
+
+  const byGroup = {}
+  for (const e of shuffle(pool)) if (e !== favorite) (byGroup[e.group] ??= []).push(e)
+
+  const picked = favorite ? [favorite] : []
+  const slots = slotOrder(config.plan)
+  if (favorite) slots.splice(slots.indexOf(favorite.group), 1)
+  // Zones absentes du plan (exercices ajoutés plus tard) : en fin de rotation
+  for (const g of Object.keys(byGroup)) if (!slots.includes(g)) slots.push(g)
+  for (let i = 0; picked.length < size && i < slots.length * size; i++) {
+    const next = byGroup[slots[i % slots.length]]?.shift()
+    if (next) picked.push(next)
+  }
+
+  const rest = picked.slice(favorite ? 1 : 0)
+  const groups = {}
+  for (const e of rest) (groups[e.group] ??= []).push(e)
+  const circuit = favorite ? [favorite] : []
+  const lists = Object.values(groups)
+  for (let i = 0; i < Math.max(0, ...lists.map((l) => l.length)); i++) {
+    for (const l of shuffle(lists)) if (l[i]) circuit.push(l[i])
   }
 
   const exercises = []
   for (let r = 0; r < config.rounds; r++) exercises.push(...circuit)
-
   return { ...config, exercises }
-}
-
-export const routineSeconds = (key) => {
-  const c = ROUTINES[key]
-  const n = Object.values(c.plan).reduce((s, v) => s + v, 0) * c.rounds
-  return n * (c.work + c.rest)
 }
