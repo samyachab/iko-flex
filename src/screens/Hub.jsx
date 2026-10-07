@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import { getCalendar, getStreaks } from '../lib/streaks.js'
@@ -152,12 +152,24 @@ function RoutineCard({ routineKey, delay, onLaunch }) {
   )
 }
 
-export default function Hub({ onLaunch }) {
+// Appui long (0,8 s) sur le logo : ouvre le labo (animations + choix de la voix),
+// seul accès possible depuis l'app installée qui n'a pas de barre d'adresse.
+function useLongPress(callback, ms = 800) {
+  const timer = useRef(null)
+  const start = () => {
+    timer.current = setTimeout(callback, ms)
+  }
+  const cancel = () => clearTimeout(timer.current)
+  return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onContextMenu: (e) => e.preventDefault() }
+}
+
+export default function Hub({ onLaunch, onOpenLab }) {
+  const longPress = useLongPress(onOpenLab)
   const { streaks, calendar, greeting } = useHubData()
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-10">
-      <motion.img {...rise(0)} src="/logo-wordmark.png" alt="Iko Flex" className="h-9 w-auto self-start" draggable={false} />
+      <motion.img {...rise(0)} {...longPress} src="/logo-wordmark.png" alt="Iko Flex" className="h-9 w-auto touch-none select-none self-start" draggable={false} />
       <motion.h1 {...rise(0.08)} className="font-display mt-3 text-[2.2rem] font-light leading-[1.08] tracking-tight">
         {greeting}
         <br />

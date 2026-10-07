@@ -40,31 +40,65 @@ export const beep = {
 
 // Choix de la voix française la plus naturelle disponible sur l'appareil.
 // Sans choix explicite, le navigateur prend souvent une voix robotique par défaut.
+// Sur iOS, la qualité n'apparaît que dans voiceURI (ex. com.apple.voice.premium.fr-FR.Aurelie),
+// et les voix Siri ne sont jamais exposées aux pages web.
+const VOICE_KEY = 'iko-flex:voice'
 let voice = null
 
-function scoreVoice(v) {
+export function scoreVoice(v) {
   if (!v.lang?.toLowerCase().startsWith('fr')) return -1
+  const id = `${v.name} ${v.voiceURI}`
   let s = 0
-  if (/premium|enhanced|améliorée|natural|neural|online/i.test(v.name)) s += 10
-  if (/google|microsoft|siri/i.test(v.name)) s += 4
-  if (/amélie|amelie|thomas|audrey|aurélie|aurelie|denise|henri|vivienne|remy|rémy/i.test(v.name)) s += 3
-  if (v.lang.toLowerCase() === 'fr-fr') s += 2
+  if (/premium/i.test(id)) s += 12
+  if (/enhanced|améliorée|natural|neural|online/i.test(id)) s += 8
+  if (/google|microsoft/i.test(id)) s += 4
+  if (/amélie|amelie|thomas|audrey|aurélie|aurelie|denise|henri|vivienne|remy|rémy/i.test(id)) s += 3
+  if (v.lang.toLowerCase().replace('_', '-') === 'fr-fr') s += 2
   return s
 }
 
+export function frenchVoices() {
+  if (!('speechSynthesis' in window)) return []
+  return window.speechSynthesis
+    .getVoices()
+    .filter((v) => scoreVoice(v) >= 0)
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a))
+}
+
 function pickVoice() {
-  const voices = window.speechSynthesis.getVoices()
-  voice = voices.filter((v) => scoreVoice(v) >= 0).sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null
+  const voices = frenchVoices()
+  let saved = null
+  try {
+    saved = localStorage.getItem(VOICE_KEY)
+  } catch {
+    // stockage indisponible : choix automatique
+  }
+  voice = voices.find((v) => v.voiceURI === saved) ?? voices[0] ?? null
+}
+
+export function currentVoice() {
+  return voice
+}
+
+// Choix manuel (page labo) : mémorisé sur l'appareil
+export function setVoice(voiceURI) {
+  try {
+    localStorage.setItem(VOICE_KEY, voiceURI)
+  } catch {
+    // ignoré
+  }
+  pickVoice()
 }
 
 if ('speechSynthesis' in window) {
   pickVoice()
-  // La liste des voix arrive souvent en différé (Chrome, Android)
+  // La liste des voix arrive souvent en différé (Chrome, Android, iOS)
   window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice)
 }
 
 export function speak(text) {
   if (!('speechSynthesis' in window)) return
+  if (!voice) pickVoice()
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
   if (voice) u.voice = voice

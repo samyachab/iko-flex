@@ -50,8 +50,15 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
-            {screen === 'hub' && <Hub onLaunch={launch} />}
-            {screen === 'lab' && <Lab />}
+            {screen === 'hub' && <Hub onLaunch={launch} onOpenLab={() => setScreen('lab')} />}
+            {screen === 'lab' && (
+              <Lab
+                onBack={() => {
+                  history.replaceState(null, '', window.location.pathname)
+                  setScreen('hub')
+                }}
+              />
+            )}
             {screen === 'player' && <Player routine={routine} onFinish={finish} onQuit={() => setScreen('hub')} />}
             {screen === 'reward' && <Reward routine={routine} result={result} minRatio={MIN_RATIO} onDone={() => setScreen('hub')} />}
           </motion.div>
