@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import Blob from '../components/Blob.jsx'
 import { buildDebrief } from '../lib/debrief.js'
 import { beep, speak } from '../lib/audio.js'
+import { PHRASES } from '../lib/phrases.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 
 export default function Reward({ routine, result, minRatio, onDone }) {
@@ -15,11 +16,11 @@ export default function Reward({ routine, result, minRatio, onDone }) {
 
   useEffect(() => {
     if (!valid) {
-      speak('Séance écourtée. La série attend la prochaine.')
+      speak(PHRASES.short)
       return
     }
     beep.victory()
-    speak('Séance terminée. Bien joué.')
+    speak(PHRASES.done)
     const colors = [t.a, t.b, t.c, '#F3EFE8']
     const burst = (opts) => confetti({ colors, shapes: ['circle'], scalar: 1.1, ticks: 260, disableForReducedMotion: true, ...opts })
     burst({ particleCount: 120, spread: 100, startVelocity: 38, origin: { y: 0.32 } })

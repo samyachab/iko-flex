@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion'
 import { GROUPS } from '../data/exercises.js'
-import { beep, speak } from '../lib/audio.js'
+import { beep, preloadSpeech, speak, stopSpeech } from '../lib/audio.js'
+import { PHRASES } from '../lib/phrases.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
 import Figure, { hasAnimation } from '../components/Figure.jsx'
 
@@ -200,6 +201,15 @@ export default function Player({ routine, onFinish, onQuit }) {
 
   useWakeLock()
 
+  useEffect(() => {
+    preloadSpeech([
+      PHRASES.switchSide,
+      PHRASES.done,
+      PHRASES.short,
+      ...routine.exercises.flatMap((ex, n) => [PHRASES.intro(ex, n === 0), PHRASES.cue(ex)]),
+    ])
+  }, [routine])
+
   const leftMs = () => Math.max(0, paused ? pausedLeft.current : endAt.current - Date.now())
   const getLeftMs = useRef(leftMs)
   getLeftMs.current = leftMs
@@ -227,10 +237,10 @@ export default function Player({ routine, onFinish, onQuit }) {
   useEffect(() => {
     const s = steps[i]
     if (s.phase === 'rest') {
-      speak(i === 0 ? `C'est parti. Premier mouvement : ${s.ex.name}` : `Respire. Ensuite : ${s.ex.name}`)
+      speak(PHRASES.intro(s.ex, i === 0))
     } else {
       beep.go()
-      speak(s.ex.cue)
+      speak(PHRASES.cue(s.ex))
     }
   }, [i, steps])
 
@@ -245,7 +255,7 @@ export default function Player({ routine, onFinish, onQuit }) {
       if (left > 0 && left <= 3) beep.tick()
       if (step.phase === 'work' && step.ex.unilateral && left === Math.floor(step.duration / 2)) {
         beep.switchSide()
-        speak('Change de côté')
+        speak(PHRASES.switchSide)
         setFlips((f) => f + 1)
         setSwitching(true)
         setTimeout(() => setSwitching(false), 2200)
@@ -266,14 +276,14 @@ export default function Player({ routine, onFinish, onQuit }) {
       endAt.current = Date.now() + pausedLeft.current
     } else {
       pausedLeft.current = Math.max(0, endAt.current - Date.now())
-      window.speechSynthesis?.cancel()
+      stopSpeech()
     }
     setPaused(!paused)
   }
 
   const quit = () => {
     if (!confirmQuit) return setConfirmQuit(true)
-    window.speechSynthesis?.cancel()
+    stopSpeech()
     onQuit()
   }
 
@@ -383,7 +393,14 @@ export default function Player({ routine, onFinish, onQuit }) {
           </p>
           <h2 className="font-display mt-2 text-[2.1rem] font-normal leading-[1.1] tracking-tight">{step.ex.name}</h2>
           {isRest ? (
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-white/55">{step.ex.execution}</p>
+            <>
+              <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-white/55">{step.ex.execution}</p>
+              {step.ex.warning && (
+                <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed" style={{ color: '#FFC29A' }}>
+                  ⚠ {step.ex.warning}
+                </p>
+              )}
+            </>
           ) : (
             <>
               <p
@@ -392,7 +409,11 @@ export default function Player({ routine, onFinish, onQuit }) {
               >
                 {step.ex.cue}
               </p>
-              <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-white/40">{step.ex.execution}</p>
+              {step.ex.warning ? (
+                <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-white/55">⚠ {step.ex.warning}</p>
+              ) : (
+                <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-white/40">{step.ex.execution}</p>
+              )}
             </>
           )}
         </motion.div>

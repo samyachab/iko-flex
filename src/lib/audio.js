@@ -1,3 +1,6 @@
+import VOICE_IDS from '../data/voice-manifest.json'
+import { phraseId } from './phrases.js'
+
 let ctx
 
 // À appeler sur un geste utilisateur (iOS/Chrome bloquent l'audio sinon).
@@ -96,13 +99,68 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice)
 }
 
-export function speak(text) {
+// Voix pré-enregistrée (Vivienne) : fichiers public/voice/<id>.mp3, joués via Web Audio
+// (déjà déverrouillé au lancement de la séance). Voix du système en secours si une phrase manque.
+const RECORDED = new Set(VOICE_IDS)
+const buffers = new Map() // id -> Promise<AudioBuffer>
+let source = null
+let token = 0
+
+function loadClip(id) {
+  if (!buffers.has(id)) {
+    const p = fetch(`/voice/${id}.mp3`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
+      .then((b) => ctx.decodeAudioData(b))
+    p.catch(() => buffers.delete(id))
+    buffers.set(id, p)
+  }
+  return buffers.get(id)
+}
+
+// Précharge les phrases d'une séance pour qu'elles partent sans délai
+export function preloadSpeech(texts) {
+  if (!ctx) return
+  for (const t of texts) {
+    const id = phraseId(t)
+    if (RECORDED.has(id)) loadClip(id).catch(() => {})
+  }
+}
+
+export function stopSpeech() {
+  token++
+  try {
+    source?.stop()
+  } catch {
+    // déjà terminé
+  }
+  source = null
+  window.speechSynthesis?.cancel()
+}
+
+function speakSystem(text) {
   if (!('speechSynthesis' in window)) return
   if (!voice) pickVoice()
-  window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
   if (voice) u.voice = voice
   u.lang = voice?.lang ?? 'fr-FR'
   u.rate = 1
   window.speechSynthesis.speak(u)
+}
+
+export function speak(text) {
+  stopSpeech()
+  const id = phraseId(text)
+  if (!ctx || !RECORDED.has(id)) return speakSystem(text)
+  const mine = token
+  loadClip(id)
+    .then((buffer) => {
+      if (mine !== token) return // une autre phrase a été demandée entre-temps
+      source = ctx.createBufferSource()
+      source.buffer = buffer
+      const gain = ctx.createGain()
+      gain.gain.value = 1
+      source.connect(gain).connect(ctx.destination)
+      source.start()
+    })
+    .catch(() => mine === token && speakSystem(text))
 }

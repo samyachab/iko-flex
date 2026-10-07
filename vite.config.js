@@ -28,7 +28,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         // Polices Google mises en cache : l'app reste belle hors ligne
         runtimeCaching: [
           {

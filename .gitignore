@@ -3,3 +3,5 @@ dist
 .vercel
 .env*
 .claude/settings.local.json
+voice-samples
+scripts/.voice-phrases.json
