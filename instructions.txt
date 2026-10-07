@@ -1,0 +1,37 @@
+Lis le fichier banque_exercices.md et utilise-le comme base de données pour exécuter la demande suivante :
+
+Agis en tant que développeur Front-end Senior et expert en UX/UI, spécialisé dans les interfaces accessibles et optimisées pour les profils TDAH (zéro friction, récompense immédiate, design épuré).
+
+Je crée une Web App (React + Vite + Tailwind CSS + Framer Motion) nommée "Iko Flex". C'est un générateur de routines d'entraînement pour m'aider à vaincre ma procrastination. Je suis un athlète de 800m avec une posture spécifique à corriger : hyperlordose, psoas raide, épaules enroulées, faible dorsiflexion.
+
+L'application doit comporter 3 écrans (zéro menu complexe, navigation linéaire).
+
+1. Écran d'accueil (Le Hub) :
+
+Un mode sombre élégant (fond #121212).
+
+Affichage de DEUX compteurs de "Streaks" (jours consécutifs) sauvegardés dans le LocalStorage :
+
+🔥 Mobilité/Souplesse (ex: 3 jours)
+
+⚡ Renforcement (ex: 1 jour)
+
+Deux énormes boutons centraux : "Routine Souplesse (8 min)" et "Routine Renfo (12 min)".
+
+Au clic, l'algorithme pioche dans la BDD pour créer une séance aléatoire selon le thème choisi.
+
+2. Mode "Player" (Focus) :
+
+L'exercice actuel affiché en grand avec une image/GIF (utilise des placeholders d'images de sport claires pour l'instant via Unsplash ou autre).
+
+Le nom de l'exercice et une consigne d'un mot (ex: "Relâche la mâchoire", "Serre les fessiers").
+
+Un gros chronomètre visuel (ex: 45s) qui descend.
+
+Une transition automatique de 10s entre les exercices, avec des bips sonores pour marquer la fin du chrono sans regarder l'écran.
+
+3. Écran de Récompense (Dopamine & Debrief) :
+
+Animation de confettis (canvas-confetti).
+
+"Le Debrief 800m" : L'application analyse les tags des exercices réalisés et affiche un résumé physiologique motivant. Ex: "✅ Tu as travaillé le psoas et les omoplates. 🏃‍♂️ Transfert 800m : Ton bassin est libéré, ta foulée sera plus ample et ta cage thoracique ouverte pour le sprint final."
