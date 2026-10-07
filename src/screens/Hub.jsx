@@ -160,7 +160,7 @@ function useLongPress(callback, ms = 800) {
     timer.current = setTimeout(callback, ms)
   }
   const cancel = () => clearTimeout(timer.current)
-  return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onContextMenu: (e) => e.preventDefault() }
+  return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onPointerCancel: cancel, onContextMenu: (e) => e.preventDefault() }
 }
 
 export default function Hub({ onLaunch, onOpenLab }) {
@@ -169,7 +169,10 @@ export default function Hub({ onLaunch, onOpenLab }) {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-10">
-      <motion.img {...rise(0)} {...longPress} src="/logo-wordmark.png" alt="Iko Flex" className="h-9 w-auto touch-none select-none self-start" draggable={false} />
+      {/* Conteneur qui capte l'appui long ; l'image ne reçoit aucun geste (sinon iOS propose d'enregistrer le PNG) */}
+      <motion.div {...rise(0)} {...longPress} className="self-start select-none p-1 -m-1" style={{ WebkitTouchCallout: 'none' }}>
+        <img src="/logo-wordmark.png" alt="Iko Flex" className="pointer-events-none h-9 w-auto" draggable={false} />
+      </motion.div>
       <motion.h1 {...rise(0.08)} className="font-display mt-3 text-[2.2rem] font-light leading-[1.08] tracking-tight">
         {greeting}
         <br />
