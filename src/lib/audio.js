@@ -38,11 +38,37 @@ export const beep = {
   victory: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, i * 0.12, 0.2)),
 }
 
+// Choix de la voix française la plus naturelle disponible sur l'appareil.
+// Sans choix explicite, le navigateur prend souvent une voix robotique par défaut.
+let voice = null
+
+function scoreVoice(v) {
+  if (!v.lang?.toLowerCase().startsWith('fr')) return -1
+  let s = 0
+  if (/premium|enhanced|améliorée|natural|neural|online/i.test(v.name)) s += 10
+  if (/google|microsoft|siri/i.test(v.name)) s += 4
+  if (/amélie|amelie|thomas|audrey|aurélie|aurelie|denise|henri|vivienne|remy|rémy/i.test(v.name)) s += 3
+  if (v.lang.toLowerCase() === 'fr-fr') s += 2
+  return s
+}
+
+function pickVoice() {
+  const voices = window.speechSynthesis.getVoices()
+  voice = voices.filter((v) => scoreVoice(v) >= 0).sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null
+}
+
+if ('speechSynthesis' in window) {
+  pickVoice()
+  // La liste des voix arrive souvent en différé (Chrome, Android)
+  window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice)
+}
+
 export function speak(text) {
   if (!('speechSynthesis' in window)) return
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'fr-FR'
-  u.rate = 1.05
+  if (voice) u.voice = voice
+  u.lang = voice?.lang ?? 'fr-FR'
+  u.rate = 1
   window.speechSynthesis.speak(u)
 }
