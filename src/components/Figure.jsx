@@ -8,28 +8,57 @@ import { LEN, WID, frame, sampler, segments, solve } from '../lib/rig.js'
 const SPEED = 1.15 // > 1 = plus rapide que les durées écrites dans animations.js
 export const INK = '#121212'
 
-// Style "v2" (prototype, option 1) : membres galbés (capsules effilées), torse en V, cou, mains,
-// ombre portée au sol. Demi-épaisseurs [début, fin] de chaque segment.
-const TAPER = {
-  thigh: [8, 5.6],
-  shin: [5.6, 3.6],
-  foot: [3.6, 2.6],
-  upper: [5.4, 4.2],
-  fore: [4.2, 3.2],
-  torso: [9.6, 11.4],
-  bar: [5.5, 5.5],
+// Style "v2" (prototype, option 1) : silhouette athlétique dessinée à partir du même squelette.
+// Chaque partie du corps suit un profil [position le long du segment (0 -> 1), demi-épaisseur] :
+// cuisses et mollets galbés, torse avec poitrine, taille et bassin, pieds avec talon, mains en moufle.
+const PROFILE = {
+  thigh: [[0, 8.4], [0.22, 8.9], [0.62, 6.8], [1, 5.3]],
+  shin: [[0, 5.3], [0.22, 5.9], [0.62, 4.1], [1, 3.2]],
+  foot: [[0, 3.7], [0.3, 3.4], [0.75, 2.8], [1, 2.2]],
+  upper: [[0, 5.9], [0.35, 5.5], [1, 4.1]],
+  fore: [[0, 4.1], [0.28, 4.5], [1, 2.9]],
+  // du bassin (0) à la base du cou (1)
+  torso: [[0, 10], [0.2, 10.4], [0.45, 8.7], [0.72, 11.6], [0.9, 12.2], [1, 9.5]],
+  neck: [[0, 4.6], [1, 3.9]],
 }
 
-// Capsule effilée de a (rayon ra) à b (rayon rb), extrémités arrondies
-function capsule(a, b, ra, rb) {
-  const dx = b[0] - a[0]
-  const dy = b[1] - a[1]
+const f2 = (v) => v.toFixed(2)
+
+// Forme lisse autour du segment a -> b selon un profil, bouts arrondis.
+// ext : prolonge le segment avant a (ex. talon derrière la cheville)
+function limb(a, b, profile, ext = 0) {
+  let dx = b[0] - a[0]
+  let dy = b[1] - a[1]
   const len = Math.hypot(dx, dy) || 0.001
-  const nx = -dy / len
-  const ny = dx / len
-  const p = (q, r, k) => `${(q[0] + nx * r * k).toFixed(2)} ${(q[1] + ny * r * k).toFixed(2)}`
-  return `M${p(a, ra, 1)}L${p(b, rb, 1)}A${rb} ${rb} 0 0 0 ${p(b, rb, -1)}L${p(a, ra, -1)}A${ra} ${ra} 0 0 0 ${p(a, ra, 1)}Z`
+  const ux = dx / len
+  const uy = dy / len
+  const nx = -uy
+  const ny = ux
+  const start = [a[0] - ux * ext, a[1] - uy * ext]
+  dx = b[0] - start[0]
+  dy = b[1] - start[1]
+  const side = (k) =>
+    profile.map(([t, r]) => [start[0] + dx * t + nx * r * k, start[1] + dy * t + ny * r * k])
+  // Courbe lisse (Catmull-Rom -> Bézier) passant par les points d'un bord
+  const curve = (pts) => {
+    let d = ''
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)]
+      const p1 = pts[i]
+      const p2 = pts[i + 1]
+      const p3 = pts[Math.min(pts.length - 1, i + 2)]
+      d += `C${f2(p1[0] + (p2[0] - p0[0]) / 6)} ${f2(p1[1] + (p2[1] - p0[1]) / 6)} ${f2(p2[0] - (p3[0] - p1[0]) / 6)} ${f2(p2[1] - (p3[1] - p1[1]) / 6)} ${f2(p2[0])} ${f2(p2[1])}`
+    }
+    return d
+  }
+  const left = side(1)
+  const right = side(-1).reverse()
+  const r0 = profile[0][1]
+  const r1 = profile[profile.length - 1][1]
+  return `M${f2(left[0][0])} ${f2(left[0][1])}${curve(left)}A${r1} ${r1} 0 0 0 ${f2(right[0][0])} ${f2(right[0][1])}${curve(right)}A${r0} ${r0} 0 0 0 ${f2(left[0][0])} ${f2(left[0][1])}Z`
 }
+
+const angleOf = (a, b) => (Math.atan2(b[0] - a[0], b[1] - a[1]) * 180) / Math.PI
 
 export function hasAnimation(id) {
   return Boolean(ANIMATIONS[id])
@@ -56,8 +85,8 @@ export default function Figure({ id, paused = false, color = INK, className = ''
         const el = els.current[k]
         if (!el) return
         if (v2) {
-          const [ra, rb] = w === 'bar' && anim.barWidth ? [anim.barWidth / 2, anim.barWidth / 2] : TAPER[w]
-          el.setAttribute('d', capsule(j[a], j[b], ra, rb))
+          const prof = w === 'bar' ? [[0, (anim.barWidth ?? 11) / 2], [1, (anim.barWidth ?? 11) / 2]] : PROFILE[w]
+          el.setAttribute('d', limb(j[a], j[b], prof, w === 'foot' ? 3 : 0))
           return
         }
         el.setAttribute('x1', j[a][0])
@@ -68,10 +97,20 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       els.current.head?.setAttribute('cx', j.head[0])
       els.current.head?.setAttribute('cy', j.head[1])
       if (v2) {
-        els.current.neck?.setAttribute('d', capsule(j.neck, j.head, 4.4, 3.8))
-        for (const h of ['handN', 'handF']) {
-          els.current[h]?.setAttribute('cx', j[h][0])
-          els.current[h]?.setAttribute('cy', j[h][1])
+        // Tête ovale orientée comme le cou, cou dessiné, mains en moufle dans l'axe de l'avant-bras
+        const ha = angleOf(j.neck, j.head)
+        els.current.head?.setAttribute('transform', `rotate(${f2(-ha)} ${f2(j.head[0])} ${f2(j.head[1])})`)
+        els.current.neck?.setAttribute('d', limb(j.neck, [(j.neck[0] + j.head[0]) / 2, (j.neck[1] + j.head[1]) / 2], PROFILE.neck))
+        for (const [h, e] of [['handN', 'elbowN'], ['handF', 'elbowF']]) {
+          const el = els.current[h]
+          if (!el) continue
+          const fa = angleOf(j[e], j[h])
+          const r = (fa * Math.PI) / 180
+          const cx = j[h][0] + Math.sin(r) * 2.2
+          const cy = j[h][1] + Math.cos(r) * 2.2
+          el.setAttribute('cx', f2(cx))
+          el.setAttribute('cy', f2(cy))
+          el.setAttribute('transform', `rotate(${f2(-fa)} ${f2(cx)} ${f2(cy)})`)
         }
         // Ombre portée : sous les points d'appui (articulations proches du sol)
         const sh = els.current.shadow
@@ -120,7 +159,9 @@ export default function Figure({ id, paused = false, color = INK, className = ''
   if (!anim) return null
   // Trois niveaux de sombre pour que les superpositions restent lisibles :
   // membres éloignés très clairs, tronc + tête intermédiaires, membres proches presque pleins.
-  const layers = { F: anim.view === 'side' ? 0.3 : 0.92, B: 0.6, N: 0.95, L: anim.legOpacity ?? 1 }
+  const layers = v2
+    ? { F: anim.view === 'side' ? 0.38 : 0.95, B: 0.9, N: 1, L: anim.legOpacity ?? 1 }
+    : { F: anim.view === 'side' ? 0.3 : 0.92, B: 0.6, N: 0.95, L: anim.legOpacity ?? 1 }
   const layerOf = (w, l) => (anim.legOpacity != null && ['thigh', 'shin', 'foot'].includes(w) ? 'L' : l)
   const wall = anim.props?.find((p) => p.type === 'wall')
   const table = anim.props?.find((p) => p.type === 'table')
@@ -138,9 +179,9 @@ export default function Figure({ id, paused = false, color = INK, className = ''
             <stop offset="1" stopColor={color} stopOpacity="0" />
           </radialGradient>
           {/* Volume : lumière douce venant du haut-gauche sur chaque partie du corps */}
-          <linearGradient id={`body-${id}`} x1="0" y1="0" x2="0.6" y2="1">
-            <stop offset="0" stopColor="#4a4340" />
-            <stop offset="0.55" stopColor={color} />
+          <linearGradient id={`body-${id}`} x1="0.15" y1="0" x2="0.85" y2="1">
+            <stop offset="0" stopColor="#5a4a44" />
+            <stop offset="0.45" stopColor="#241f1d" />
             <stop offset="1" stopColor={color} />
           </linearGradient>
         </defs>
@@ -205,18 +246,30 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       ))}
       {/* legOpacity (option d'animation) : jambes en retrait, dessinées derrière tout le reste */}
       {['L', 'F', 'B', 'N'].map((layer) => (
-        <g key={layer} stroke={color} strokeLinecap="round" fill={v2 ? `url(#body-${id})` : 'none'} opacity={layers[layer]}>
+        <g
+          key={layer}
+          stroke={v2 ? '#ffffff' : color}
+          strokeOpacity={v2 ? 0.14 : 1}
+          strokeLinecap="round"
+          fill={v2 ? `url(#body-${id})` : 'none'}
+          opacity={layers[layer]}
+        >
           {segs.map(([, , w, l], k) =>
             layerOf(w, l) !== layer ? null : v2 ? (
-              <path key={k} ref={(el) => (els.current[k] = el)} stroke="none" />
+              <path key={k} ref={(el) => (els.current[k] = el)} strokeWidth="0.8" />
             ) : (
               <line key={k} ref={(el) => (els.current[k] = el)} strokeWidth={w === 'bar' && anim.barWidth ? anim.barWidth : WID[w]} />
             ),
           )}
-          {v2 && layer === 'F' && <circle ref={(el) => (els.current.handF = el)} r={3.8} stroke="none" />}
-          {v2 && layer === 'N' && <circle ref={(el) => (els.current.handN = el)} r={3.8} stroke="none" />}
+          {v2 && layer === 'F' && <ellipse ref={(el) => (els.current.handF = el)} rx={3.4} ry={4.6} stroke="none" />}
+          {v2 && layer === 'N' && <ellipse ref={(el) => (els.current.handN = el)} rx={3.4} ry={4.6} stroke="none" />}
           {v2 && layer === 'B' && <path ref={(el) => (els.current.neck = el)} stroke="none" />}
-          {layer === 'B' && <circle ref={(el) => (els.current.head = el)} r={v2 ? 9.6 : LEN.head} fill={v2 ? `url(#body-${id})` : color} stroke="none" />}
+          {layer === 'B' &&
+            (v2 ? (
+              <ellipse ref={(el) => (els.current.head = el)} rx={8.4} ry={10} fill={`url(#body-${id})`} strokeWidth="0.8" />
+            ) : (
+              <circle ref={(el) => (els.current.head = el)} r={LEN.head} fill={color} stroke="none" />
+            ))}
         </g>
       ))}
       {/* Élastiques : trait fin par-dessus le corps */}
