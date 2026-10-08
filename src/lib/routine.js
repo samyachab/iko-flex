@@ -12,6 +12,8 @@ export const ROUTINES = {
     rest: 10,
     // Poids de chaque zone dans la séance : priorité psoas/hanches
     plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2, dos: 1, roller: 1 },
+    // Chaque séance touche au moins un exercice par zone ; si le temps manque, zones prises dans cet ordre
+    coverage: ['posterieure', 'epaules', 'hanche', 'cheville', 'dos', 'roller'],
     rounds: 1,
   },
   renfo: {
@@ -23,6 +25,7 @@ export const ROUTINES = {
     rest: 10,
     // Séries par exercice (voir prog dans exercises.js), un exercice après l'autre
     plan: { tronc: 2, haut: 2, jambes: 2, cheville: 1, plio: 1 },
+    coverage: ['tronc', 'jambes', 'haut', 'cheville', 'plio'],
     rounds: 1,
   },
 }
@@ -71,27 +74,19 @@ function slotOrder(plan) {
   return order
 }
 
-// Tous les exercices actifs, dans l'ordre où on les ajoute à la séance :
-// favori d'abord, puis tirage aléatoire équilibré entre les zones
+// Exercices actifs mélangés et rangés par zone, + favori à part
 function candidates(key, settings) {
-  const config = ROUTINES[key]
   const pool = enabledPool(key, settings)
   const favorite = pool.find((e) => e.id === settings[key].favorite)
   const byGroup = {}
   for (const e of shuffle(pool)) if (e !== favorite) (byGroup[e.group] ??= []).push(e)
-  const slots = slotOrder(config.plan)
-  for (const g of Object.keys(byGroup)) if (!slots.includes(g)) slots.push(g)
-  const out = favorite ? [favorite] : []
-  for (let i = 0; out.length < pool.length && i < slots.length * pool.length; i++) {
-    const next = byGroup[slots[i % slots.length]]?.shift()
-    if (next) out.push(next)
-  }
-  return { list: out, favorite }
+  return { byGroup, favorite }
 }
 
 // Construit la séance pour la durée choisie :
 // 1. les exercices clés (priority) sont déjà allongés selon la longueur de la séance (45 s à 12 min -> max à 30 min) ;
-// 2. on ajoute des exercices tant que la durée le permet ;
+// 2. favori, puis un exercice par zone dans l'ordre de couverture (le plus court qui rentre si besoin),
+//    puis on complète en alternant les zones tant que la durée le permet ;
 // 3. le temps restant allonge les exercices qui gagnent à durer (clés d'abord), jusqu'à leur maximum ;
 // 4. renfo : si tous les exercices sont pris et qu'il reste du temps, on fait un 3e tour.
 export function buildRoutine(key, settings = getSettings()) {
@@ -99,7 +94,7 @@ export function buildRoutine(key, settings = getSettings()) {
   const target = settings[key].minutes * 60
   const chosen = settings[key].level
   const level = chosen && chosen !== 'auto' ? chosen : getLevel(key)
-  const { list, favorite } = candidates(key, settings)
+  const { byGroup, favorite } = candidates(key, settings)
   const k = Math.min(1, Math.max(0, (settings[key].minutes - SHORT) / (LONG - SHORT)))
   const plans = new Map()
   const start = (ex) => {
@@ -113,13 +108,35 @@ export function buildRoutine(key, settings = getSettings()) {
 
   const picked = []
   let total = 0
-  for (const ex of list) {
+  const tryAdd = (ex) => {
     const plan = start(ex)
     const t = exerciseSeconds(ex, config, plan)
-    if (picked.length && total + t > target + 20) continue
+    if (picked.length && total + t > target + 20) return false
     picked.push(ex)
     plans.set(ex.id, plan)
     total += t
+    return true
+  }
+  const take = (group, ex) => byGroup[group].splice(byGroup[group].indexOf(ex), 1)
+
+  if (favorite) tryAdd(favorite)
+  // Couverture : au moins une zone de chaque, les plus importantes d'abord si la séance est courte
+  for (const g of config.coverage) {
+    if (favorite?.group === g || !byGroup[g]?.length) continue
+    const ex = byGroup[g].find(tryAdd)
+    if (ex) take(g, ex)
+  }
+  // Complément : alternance des zones selon leur poids dans le plan
+  const slots = slotOrder(config.plan)
+  for (const g of Object.keys(byGroup)) if (!slots.includes(g)) slots.push(g)
+  const left = () => Object.values(byGroup).reduce((n, l) => n + l.length, 0)
+  for (let i = 0, misses = 0; left() && misses < slots.length; i++) {
+    const g = slots[i % slots.length]
+    const ex = byGroup[g]?.find(tryAdd)
+    if (ex) {
+      take(g, ex)
+      misses = 0
+    } else misses++
   }
 
   // Temps restant : étirements clés puis maintiens allongés par paliers ; exercices programmés : +1 série max
