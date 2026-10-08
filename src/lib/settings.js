@@ -2,11 +2,11 @@
 // Par routine : durée, exercice toujours inclus (un seul), exercices désactivés.
 const KEY = 'iko-flex:settings'
 
-export const DURATIONS = { souplesse: [5, 8, 10, 12, 15], renfo: [6, 8, 12, 16, 20] }
+export const DURATIONS = { souplesse: [8, 12, 15, 20, 30], renfo: [8, 12, 16, 20, 30] }
 export const MIN_ENABLED = 3 // une routine garde toujours au moins 3 exercices actifs
 
 const DEFAULTS = {
-  souplesse: { minutes: 8, favorite: null, disabled: [] },
+  souplesse: { minutes: 12, favorite: null, disabled: [] },
   renfo: { minutes: 12, favorite: null, disabled: [] },
 }
 

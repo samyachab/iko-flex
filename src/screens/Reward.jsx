@@ -11,7 +11,7 @@ export default function Reward({ routine, result, minRatio, onDone }) {
   const { valid, ratio, streak } = result
   const debrief = useMemo(() => buildDebrief(routine.exercises), [routine])
   const t = TONES[valid ? routine.key : 'rest']
-  const minutes = Math.round((routine.exercises.length * (routine.work + routine.rest)) / 60)
+  const minutes = Math.round(routine.totalSeconds / 60)
   const [shown, setShown] = useState(valid ? Math.max(0, streak - 1) : streak)
 
   useEffect(() => {

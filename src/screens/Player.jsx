@@ -14,14 +14,15 @@ function buildSteps(routine) {
   const steps = []
   let w = 0
   for (const ex of routine.exercises) {
+    const work = routine.doses?.[ex.id] ?? (ex.unilateral ? routine.sideWork : routine.work)
     if (ex.unilateral) {
       steps.push({ phase: 'rest', ex, w, side: 1, duration: routine.rest })
-      steps.push({ phase: 'work', ex, w: w++, side: 1, duration: routine.sideWork })
+      steps.push({ phase: 'work', ex, w: w++, side: 1, duration: work })
       steps.push({ phase: 'rest', ex, w, side: 2, switch: true, duration: routine.rest })
-      steps.push({ phase: 'work', ex, w: w++, side: 2, duration: routine.sideWork })
+      steps.push({ phase: 'work', ex, w: w++, side: 2, duration: work })
     } else {
       steps.push({ phase: 'rest', ex, w, duration: routine.rest })
-      steps.push({ phase: 'work', ex, w: w++, duration: routine.work })
+      steps.push({ phase: 'work', ex, w: w++, duration: work })
     }
   }
   return steps
