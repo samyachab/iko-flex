@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion'
 import { GROUPS } from '../data/exercises.js'
 import { beep, preloadSpeech, speak, stopSpeech } from '../lib/audio.js'
-import { PHRASES } from '../lib/phrases.js'
+import { PHRASES, spokenName } from '../lib/phrases.js'
 import { setSeconds } from '../lib/routine.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
 import Figure, { hasAnimation } from '../components/Figure.jsx'
@@ -48,6 +48,7 @@ function buildSteps(routine) {
 }
 
 const SIDE_LABEL = { 1: 'Côté droit', 2: 'Côté gauche' }
+const nameDetail = (ex) => ex.name.match(/\((.*?)\)/)?.[1]?.toLowerCase()
 
 // Phrase dite au début d'une étape (null = rien à dire, le bip suffit)
 function stepPhrase(s, k) {
@@ -111,7 +112,7 @@ function useBreath(paused) {
 }
 
 function Orb({ tone, isRest, stepId, getLeftMs, remaining, breath, paused, flipKey, onTap, exerciseId, selfPaced }) {
-  const size = Math.min(window.innerWidth * 0.68, window.innerHeight * 0.34, 290)
+  const size = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.3, 260)
   const ring = size + 44
   const r = ring / 2 - 3
   const c = 2 * Math.PI * r
@@ -332,12 +333,32 @@ export default function Player({ routine, onFinish, onQuit }) {
     onQuit()
   }
 
+  // Glisser franchement à l'horizontale (> 70 px, peu de vertical) = passer à l'étape suivante
+  const swipeFrom = useRef(null)
+  const swipe = {
+    start: (e) => (swipeFrom.current = { x: e.clientX, y: e.clientY }),
+    cancel: () => (swipeFrom.current = null),
+    end: (e) => {
+      const from = swipeFrom.current
+      swipeFrom.current = null
+      if (!from) return
+      const dx = e.clientX - from.x
+      const dy = e.clientY - from.y
+      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) advance(false)
+    },
+  }
+
   const repMode = Boolean(step.phase === 'work' && step.reps)
   const animated = hasAnimation(step.ex.id)
   const showBreath = !paused && !repMode && (isRest || routine.key === 'souplesse')
 
   return (
-    <div className="safe-top safe-bottom flex h-full flex-col px-6 [--sb:1.25rem] [--st:1rem]">
+    <div
+      className="safe-top safe-bottom flex h-full touch-pan-y flex-col px-6 [--sb:1.25rem] [--st:1rem]"
+      onPointerDown={swipe.start}
+      onPointerUp={swipe.end}
+      onPointerCancel={swipe.cancel}
+    >
       {/* Barre du haut : quitter · progression · compteur */}
       <div className="flex items-center gap-4">
         <motion.button
@@ -384,31 +405,48 @@ export default function Player({ routine, onFinish, onQuit }) {
           selfPaced={repMode}
           onTap={repMode ? () => advance() : togglePause}
         />
-        {animated && repMode && (
-          <motion.span
-            key={`reps-${i}`}
-            initial={{ scale: 1.2, opacity: 0.5 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="font-display -mt-1 text-5xl font-light leading-none tabular-nums text-[#F3EFE8]"
-          >
-            {step.reps}
-            <span className="ml-2 text-lg text-white/45">rép.</span>
-          </motion.span>
+        {/* Chrono (ou répétitions) avec le côté en pastille à droite : D / G */}
+        {animated && (
+          <div className="relative mt-1 flex items-center justify-center">
+            {repMode ? (
+              <motion.span
+                key={`reps-${i}`}
+                initial={{ scale: 1.2, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                className="font-display text-5xl font-light leading-none tabular-nums text-[#F3EFE8]"
+              >
+                {step.reps}
+                <span className="ml-2 text-lg text-white/45">rép.</span>
+              </motion.span>
+            ) : (
+              <motion.span
+                key={remaining}
+                initial={{ scale: remaining <= 3 ? 1.3 : 1.06, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                className="font-display text-5xl font-light leading-none tabular-nums"
+                style={{ color: remaining <= 3 ? (isRest ? '#fff' : tone.a) : '#F3EFE8' }}
+              >
+                {remaining}
+              </motion.span>
+            )}
+            {step.side && (
+              <motion.span
+                key={`side-${step.side}`}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                aria-label={SIDE_LABEL[step.side]}
+                className="absolute left-full ml-3 flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold"
+                style={isRest ? { background: 'rgba(255,255,255,0.14)', color: '#F3EFE8' } : { background: gradient(tone, 90), color: '#121212' }}
+              >
+                {step.side === 1 ? 'D' : 'G'}
+              </motion.span>
+            )}
+          </div>
         )}
-        {animated && !repMode && (
-          <motion.span
-            key={remaining}
-            initial={{ scale: remaining <= 3 ? 1.3 : 1.06, opacity: 0.5 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="font-display -mt-1 text-5xl font-light leading-none tabular-nums"
-            style={{ color: remaining <= 3 ? (isRest ? '#fff' : tone.a) : '#F3EFE8' }}
-          >
-            {remaining}
-          </motion.span>
-        )}
-        <div className="mt-3 h-6">
+        <div className="mt-2 h-6">
           <AnimatePresence mode="wait">
             {repMode ? (
               <motion.p
@@ -436,7 +474,7 @@ export default function Player({ routine, onFinish, onQuit }) {
         </div>
       </div>
 
-      {/* Texte de l'exercice */}
+      {/* Texte de l'exercice : une seule pile, même espacement entre chaque ligne */}
       <AnimatePresence mode="wait">
         <motion.div
           key={i}
@@ -444,7 +482,7 @@ export default function Player({ routine, onFinish, onQuit }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.6, ease: EASE }}
-          className="min-h-44 text-center"
+          className="flex shrink-0 flex-col items-center gap-2 text-center"
         >
           <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em]" style={{ color: isRest ? 'rgba(255,255,255,0.45)' : tone.a }}>
             {isRest
@@ -457,50 +495,27 @@ export default function Player({ routine, onFinish, onQuit }) {
                     : 'Ensuite'
               : GROUPS[step.ex.group].label}
           </p>
-          <h2 className="font-display mt-2 text-[2.1rem] font-normal leading-[1.1] tracking-tight">{step.ex.name}</h2>
+          <h2 className="font-display text-[1.85rem] font-normal leading-[1.1] tracking-tight">
+            {spokenName(step.ex)}
+            {nameDetail(step.ex) && <span className="ml-2 text-[0.55em] text-white/40">{nameDetail(step.ex)}</span>}
+          </h2>
           {step.sets && (
-            <span className="mr-2 mt-2 inline-block rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white/80">
+            <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white/80">
               Série {step.set}/{step.sets}
               {step.phase === 'work' && (step.reps ? ` · ${step.reps} rép.` : ` · ${step.duration} s`)}
             </span>
           )}
-          {step.side && (
-            <motion.span
-              key={`side-${step.side}`}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-              className="mt-2 inline-block rounded-full px-4 py-1 text-sm font-bold"
-              style={isRest ? { background: 'rgba(255,255,255,0.12)', color: '#F3EFE8' } : { background: gradient(tone, 90), color: '#121212' }}
-            >
-              {step.side === 2 ? '◀ ' : ''}
-              {SIDE_LABEL[step.side]}
-              {step.side === 1 ? ' ▶' : ''}
-            </motion.span>
-          )}
           {isRest ? (
-            <>
-              <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-white/55">{step.ex.execution}</p>
-              {step.ex.warning && (
-                <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed" style={{ color: '#FFC29A' }}>
-                  ⚠ {step.ex.warning}
-                </p>
-              )}
-            </>
+            <p className="max-w-xs text-sm leading-relaxed text-white/55">{step.ex.execution}</p>
           ) : (
-            <>
-              <p
-                className="font-display text-gradient mt-2 text-xl italic"
-                style={{ backgroundImage: gradient(tone, 90) }}
-              >
-                {step.ex.cue}
-              </p>
-              {step.ex.warning ? (
-                <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-white/55">⚠ {step.ex.warning}</p>
-              ) : (
-                <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-white/40">{step.ex.execution}</p>
-              )}
-            </>
+            <p className="font-display text-gradient text-xl italic" style={{ backgroundImage: gradient(tone, 90) }}>
+              {step.ex.cue}
+            </p>
+          )}
+          {step.ex.warning && (
+            <p className={`max-w-xs leading-relaxed ${isRest ? 'text-sm' : 'text-xs text-white/55'}`} style={isRest ? { color: '#FFC29A' } : undefined}>
+              ⚠ {step.ex.warning}
+            </p>
           )}
         </motion.div>
       </AnimatePresence>
@@ -512,36 +527,25 @@ export default function Player({ routine, onFinish, onQuit }) {
           animate={{ opacity: 1, y: 0 }}
           whileTap={{ scale: 0.96 }}
           onClick={() => advance()}
-          className="mt-4 w-full rounded-full py-4 text-base font-bold text-ink"
+          className="mt-4 w-full shrink-0 rounded-full py-4 text-base font-bold text-ink"
           style={{ background: gradient(tone, 90), boxShadow: `0 10px 40px ${tone.glow}` }}
         >
           {step.set === step.sets && step.side !== 1 ? 'Exercice terminé ✓' : 'Série terminée ✓'}
         </motion.button>
       )}
 
-      {/* Contrôles discrets */}
-      <div className={`mt-4 flex items-center justify-center gap-4 ${repMode ? 'hidden' : ''}`}>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={togglePause}
-          className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/5"
-          aria-label={paused ? 'Reprendre' : 'Pause'}
-        >
-          {paused ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" className="ml-0.5 fill-white/85"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" /></svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" className="fill-white/85"><rect x="6" y="4" width="4" height="16" rx="1.5" /><rect x="14" y="4" width="4" height="16" rx="1.5" /></svg>
-          )}
-        </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => advance(false)}
-          className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/5"
-          aria-label="Passer"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" className="fill-white/85"><path d="M5 5.5v13a1 1 0 0 0 1.55.83L15 13.2V18a1 1 0 0 0 2 0V6a1 1 0 0 0-2 0v4.8L6.55 4.67A1 1 0 0 0 5 5.5Z" /></svg>
-        </motion.button>
-      </div>
+      {/* Contrôles discrets : l'essentiel se fait au geste (toucher l'orbe = pause, glisser = passer) */}
+      {!repMode && (
+        <div className="mt-3 flex shrink-0 items-center justify-center gap-5 text-xs text-white/35">
+          <button onClick={togglePause} className="px-2 py-1.5">
+            {paused ? '▶ Reprendre' : 'Toucher l’orbe : pause'}
+          </button>
+          <span className="h-3 w-px bg-white/15" />
+          <button onClick={() => advance(false)} className="px-2 py-1.5">
+            Glisser : passer ›
+          </button>
+        </div>
+      )}
     </div>
   )
 }
