@@ -25,8 +25,9 @@ export const EXTRA_ANIMATIONS = {
 
   // ───────── Souplesse : hanches & bassin (2e extension) ─────────
 
-  // Depuis la planche : pied proche à l'extérieur de la main, le bras du même côté monte vers le plafond,
-  // retour en planche, puis même chose de l'autre côté (en alternance).
+  // Depuis la planche (mains fixes au sol) : le genou remonte sous le ventre, le pied proche vient à l'extérieur
+  // de la main, le bras du même côté monte vers le plafond, retour en planche, puis l'autre côté (en alternance).
+  // Hauteur du bassin fixée (y) pour que les mains ne décollent jamais.
   'spiderman-rotation': {
     view: 'side',
     base: {
@@ -38,14 +39,22 @@ export const EXTRA_ANIMATIONS = {
       legF: [-66, -66, 60],
     },
     keys: [
-      { pose: {}, hold: 0.2, move: 0.9 },
-      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
-      { pose: { x: 19, torso: 120, head: 165, armN: [180, 180], armF: [-24, -24], legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.8, move: 0.9 },
-      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
-      { pose: {}, hold: 0.2, move: 0.9 },
-      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
-      { pose: { x: 19, torso: 120, head: 165, armF: [180, 180], armN: [-20, -20], legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.8, move: 0.9 },
-      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
+      { pose: { y: 39, legN: [-66, -66, 60], legF: [-66, -66, 60], armN: [0, 0], armF: [0, 0] }, hold: 0.2, move: 0.35 },
+      { pose: { x: 4, y: 45, torso: 106, head: 102, armN: [-5, -5], armF: [-5, -5], legN: [-15, -115, -60], legF: [-64, -64, 50] }, hold: 0, move: 0.35 },
+      { pose: { x: 10, y: 46, torso: 103, head: 100, armN: [-12, -12], armF: [-12, -12], legN: [75, -100, 0], legF: [-64, -64, 40] }, hold: 0, move: 0.4 },
+      { pose: { x: 19, y: 36, armN: [-20, -20], armF: [-22, -22], head: 110, legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
+      { pose: { x: 19, y: 36, armN: [180, 180], armF: [-21, -21], torso: 117, head: 165, legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.8, move: 0.9 },
+      { pose: { x: 19, y: 36, armN: [-20, -20], armF: [-22, -22], head: 110, legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.1, move: 0.4 },
+      { pose: { x: 10, y: 46, torso: 103, head: 100, armN: [-12, -12], armF: [-12, -12], legN: [75, -100, 0], legF: [-64, -64, 40] }, hold: 0, move: 0.35 },
+      { pose: { x: 4, y: 45, torso: 106, head: 102, armN: [-5, -5], armF: [-5, -5], legN: [-15, -115, -60], legF: [-64, -64, 50] }, hold: 0, move: 0.35 },
+      { pose: { y: 39, legN: [-66, -66, 60], legF: [-66, -66, 60], armN: [0, 0], armF: [0, 0] }, hold: 0.2, move: 0.35 },
+      { pose: { x: 4, y: 45, torso: 106, head: 102, armF: [-5, -5], armN: [-5, -5], legF: [-15, -115, -60], legN: [-64, -64, 50] }, hold: 0, move: 0.35 },
+      { pose: { x: 10, y: 46, torso: 103, head: 100, armF: [-12, -12], armN: [-12, -12], legF: [75, -100, 0], legN: [-64, -64, 40] }, hold: 0, move: 0.4 },
+      { pose: { x: 19, y: 36, armF: [-20, -20], armN: [-22, -22], head: 110, legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
+      { pose: { x: 19, y: 36, armF: [180, 180], armN: [-21, -21], torso: 117, head: 165, legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.8, move: 0.9 },
+      { pose: { x: 19, y: 36, armF: [-20, -20], armN: [-22, -22], head: 110, legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.1, move: 0.4 },
+      { pose: { x: 10, y: 46, torso: 103, head: 100, armF: [-12, -12], armN: [-12, -12], legF: [75, -100, 0], legN: [-64, -64, 40] }, hold: 0, move: 0.35 },
+      { pose: { x: 4, y: 45, torso: 106, head: 102, armF: [-5, -5], armN: [-5, -5], legF: [-15, -115, -60], legN: [-64, -64, 50] }, hold: 0, move: 0.35 },
     ],
   },
 
