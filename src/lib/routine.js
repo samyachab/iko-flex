@@ -1,6 +1,7 @@
 import { EXERCISES } from '../data/exercises.js'
 import { getSettings } from './settings.js'
 import { getLevel } from './progress.js'
+import { daysSince, getRotation } from './rotation.js'
 
 export const ROUTINES = {
   souplesse: {
@@ -13,6 +14,7 @@ export const ROUTINES = {
     // Poids de chaque zone dans la séance : priorité psoas/hanches
     plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2, dos: 1, roller: 1 },
     // Chaque séance touche au moins un exercice par zone ; si le temps manque, zones prises dans cet ordre
+    // (ordre de base, ensuite ajusté par la rotation : une zone pas travaillée depuis longtemps remonte)
     coverage: ['posterieure', 'epaules', 'hanche', 'cheville', 'dos', 'roller'],
     rounds: 1,
   },
@@ -74,13 +76,25 @@ function slotOrder(plan) {
   return order
 }
 
-// Exercices actifs mélangés et rangés par zone, + favori à part
+// Exercices actifs rangés par zone, + favori à part. Dans chaque zone : les exercices faits il y a
+// le plus longtemps (ou jamais) d'abord, ordre aléatoire entre exercices à égalité.
 function candidates(key, settings) {
   const pool = enabledPool(key, settings)
   const favorite = pool.find((e) => e.id === settings[key].favorite)
+  const { exercises: done } = getRotation(key)
   const byGroup = {}
-  for (const e of shuffle(pool)) if (e !== favorite) (byGroup[e.group] ??= []).push(e)
+  const ordered = shuffle(pool).sort((a, b) => daysSince(done[b.id]) - daysSince(done[a.id]))
+  for (const e of ordered) if (e !== favorite) (byGroup[e.group] ??= []).push(e)
   return { byGroup, favorite }
+}
+
+// Ordre de couverture du jour : jours depuis la dernière fois (0 à 14) + bonus de priorité de la zone.
+// Ex. séances de 5 min tous les jours : ischios/épaules/psoas un jour, mollets/dos/rouleau le suivant, etc.
+function coverageOrder(key) {
+  const order = ROUTINES[key].coverage
+  const { zones } = getRotation(key)
+  const score = (g) => daysSince(zones[g]) + (order.length - order.indexOf(g)) * 0.5
+  return [...order].sort((a, b) => score(b) - score(a))
 }
 
 // Construit la séance pour la durée choisie :
@@ -121,7 +135,7 @@ export function buildRoutine(key, settings = getSettings()) {
 
   if (favorite) tryAdd(favorite)
   // Couverture : au moins une zone de chaque, les plus importantes d'abord si la séance est courte
-  for (const g of config.coverage) {
+  for (const g of coverageOrder(key)) {
     if (favorite?.group === g || !byGroup[g]?.length) continue
     const ex = byGroup[g].find(tryAdd)
     if (ex) take(g, ex)

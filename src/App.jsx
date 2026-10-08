@@ -8,6 +8,7 @@ import Lab from './screens/Lab.jsx'
 import Settings from './screens/Settings.jsx'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
+import { recordSession } from './lib/rotation.js'
 import { unlockAudio } from './lib/audio.js'
 import { TONES, gradient } from './lib/theme.js'
 
@@ -31,6 +32,7 @@ export default function App() {
     const ratio = plannedMs ? workedMs / plannedMs : 0
     const valid = ratio >= MIN_RATIO
     const streak = valid ? completeSession(routine.key) : getStreaks()[routine.key].count
+    if (valid) recordSession(routine.key, routine.exercises)
     setResult({ valid, ratio, streak })
     setScreen('reward')
   }
