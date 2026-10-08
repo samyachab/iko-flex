@@ -55,6 +55,10 @@ async def generate(key, phrases):
     for f in out.glob('*.mp3'):
         if f.stem not in wanted:
             f.unlink()
+    # Un fichier vide (coupure du service) compte comme manquant
+    for f in out.glob('*.mp3'):
+        if f.stat().st_size == 0:
+            f.unlink()
     todo = [p for p in phrases if not (out / f"{p['id']}.mp3").exists()]
     sem = asyncio.Semaphore(6)  # quelques requêtes en parallèle : bien plus rapide qu'une par une
 
