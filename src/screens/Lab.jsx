@@ -62,6 +62,7 @@ export default function Lab({ onBack }) {
           ['lunge-psoas', 'souplesse', 'Lunge Psoas (profil)'],
           ['goblet-squat', 'renfo', 'Goblet Squat (profil)'],
           ['cossack', 'souplesse', 'Cossack (face)'],
+          ['trapezes', 'souplesse', 'Trapèzes (de dos)'],
         ].map(([exId, tone, label]) => (
           <div key={exId} className="mt-5">
             <p className="text-sm text-white/60">{label}</p>

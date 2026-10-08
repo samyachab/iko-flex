@@ -18,8 +18,8 @@ const PROFILE = {
   upper: [[0, 5.9], [0.35, 5.5], [1, 4.1]],
   fore: [[0, 4.1], [0.28, 4.5], [1, 2.9]],
   // du bassin (0) à la base du cou (1)
-  torso: [[0, 9.6], [1, 11.4]],
-  neck: [[0, 4.4], [1, 3.8]],
+  torso: [[0, 9.6], [0.85, 11.4], [1, 10]],
+  neck: [[0, 3.9], [1, 3.4]],
 }
 
 const f2 = (v) => v.toFixed(2)
@@ -57,6 +57,9 @@ function limb(a, b, profile, ext = 0) {
   const r1 = profile[profile.length - 1][1]
   return `M${f2(left[0][0])} ${f2(left[0][1])}${curve(left)}A${r1} ${r1} 0 0 0 ${f2(right[0][0])} ${f2(right[0][1])}${curve(right)}A${r0} ${r0} 0 0 0 ${f2(left[0][0])} ${f2(left[0][1])}Z`
 }
+
+const NECK_GAP = 23 // distance base du cou -> centre de la tête (squelette : 16,5)
+const HEAD_R = 9.2
 
 const angleOf = (a, b) => (Math.atan2(b[0] - a[0], b[1] - a[1]) * 180) / Math.PI
 
@@ -98,7 +101,15 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       els.current.head?.setAttribute('cy', j.head[1])
       if (v2) {
         // Tête ovale orientée comme le cou, cou dessiné, mains en moufle dans l'axe de l'avant-bras
-        els.current.neck?.setAttribute('d', limb(j.neck, j.head, PROFILE.neck))
+        // Cou fin et visible : la tête est un peu plus éloignée des épaules que sur le squelette
+        const hx = j.head[0] - j.neck[0]
+        const hy = j.head[1] - j.neck[1]
+        const hl = Math.hypot(hx, hy) || 1
+        const k = NECK_GAP / hl
+        const head = [j.neck[0] + hx * k, j.neck[1] + hy * k]
+        els.current.head?.setAttribute('cx', f2(head[0]))
+        els.current.head?.setAttribute('cy', f2(head[1]))
+        els.current.neck?.setAttribute('d', limb(j.neck, head, PROFILE.neck))
         for (const [h, e] of [['handN', 'elbowN'], ['handF', 'elbowF']]) {
           const el = els.current[h]
           if (!el) continue
@@ -269,7 +280,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
           {v2 && layer === 'B' && <path ref={(el) => (els.current.neck = el)} stroke="none" />}
           {layer === 'B' &&
             (v2 ? (
-              <circle ref={(el) => (els.current.head = el)} r={9.6} fill={`url(#trunk-${id})`} stroke="none" />
+              <circle ref={(el) => (els.current.head = el)} r={HEAD_R} fill={`url(#trunk-${id})`} stroke="none" />
             ) : (
               <circle ref={(el) => (els.current.head = el)} r={LEN.head} fill={color} stroke="none" />
             ))}
