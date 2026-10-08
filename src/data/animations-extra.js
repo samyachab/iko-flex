@@ -558,6 +558,34 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
+  // Debout, haltères en main, coudes bloqués à 90° : balancier des bras de course, de plus en plus vite,
+  // buste et bassin immobiles.
+  'arm-drive': {
+    view: 'side',
+    props: [
+      { type: 'weight', at: 'handN', r: 5 },
+      { type: 'weight', at: 'handF', r: 5 },
+    ],
+    base: {
+      torso: 176,
+      head: 178,
+      armN: [50, 140],
+      armF: [-40, 50],
+      legN: [10, -6, 90],
+      legF: [-6, -12, 90],
+    },
+    keys: [
+      { pose: {}, hold: 0.05, move: 0.45 },
+      { pose: { armN: [-40, 50], armF: [50, 140] }, hold: 0.05, move: 0.45 },
+      { pose: {}, hold: 0.05, move: 0.32 },
+      { pose: { armN: [-40, 50], armF: [50, 140] }, hold: 0.05, move: 0.32 },
+      { pose: {}, hold: 0.05, move: 0.22 },
+      { pose: { armN: [-40, 50], armF: [50, 140] }, hold: 0.05, move: 0.22 },
+      { pose: {}, hold: 0.05, move: 0.22 },
+      { pose: { armN: [-40, 50], armF: [50, 140] }, hold: 0.4, move: 0.45 },
+    ],
+  },
+
   // ───────── Renfo : jambes & fessiers ─────────
 
   // Vue de face, couché sur le côté, genoux pliés, élastique aux genoux : le genou du dessus s'ouvre.
