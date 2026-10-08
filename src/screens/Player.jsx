@@ -337,7 +337,7 @@ export default function Player({ routine, onFinish, onQuit }) {
   const showBreath = !paused && !repMode && (isRest || routine.key === 'souplesse')
 
   return (
-    <div className="flex h-full flex-col px-6 pb-6 pt-5">
+    <div className="safe-top safe-bottom flex h-full flex-col px-6 [--sb:1.25rem] [--st:1rem]">
       {/* Barre du haut : quitter · progression · compteur */}
       <div className="flex items-center gap-4">
         <motion.button

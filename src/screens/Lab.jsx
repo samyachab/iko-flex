@@ -59,7 +59,7 @@ export default function Lab({ onBack }) {
   const todo = EXERCISES.filter((e) => !ANIMATIONS[e.id] && e.theme !== 'salle')
 
   return (
-    <div className="h-full overflow-y-auto px-6 pb-16 pt-10">
+    <div className="safe-top safe-bottom h-full overflow-y-auto px-6 [--sb:4rem] [--st:1.5rem]">
       <button onClick={onBack} className="mb-6 rounded-full border border-white/15 px-4 py-2 text-sm">
         ← Retour
       </button>

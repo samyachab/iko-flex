@@ -24,11 +24,13 @@ body {
   -webkit-touch-callout: none;
 }
 
-/* Mode standalone iOS (barre de statut translucide) : respecter l'encoche */
-#root {
-  box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+/* Mode standalone iOS (barre de statut translucide) : chaque écran gère l'encoche et la barre d'accueil
+   lui-même, pour que le fond et le contenu défilant passent dessous (pas de bande vide en bas). */
+.safe-top {
+  padding-top: calc(env(safe-area-inset-top, 0px) + var(--st, 1rem));
+}
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--sb, 1rem));
 }
 
 .font-display {

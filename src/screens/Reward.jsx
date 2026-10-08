@@ -41,7 +41,7 @@ export default function Reward({ routine, result, minRatio, onDone }) {
   }, [routine, streak, t, valid])
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-10">
+    <div className="safe-top safe-bottom flex h-full flex-col overflow-y-auto px-6 [--sb:1.5rem] [--st:2rem]">
       <div className="flex flex-col items-center text-center">
         <motion.div
           initial={{ scale: 0, rotate: -40 }}

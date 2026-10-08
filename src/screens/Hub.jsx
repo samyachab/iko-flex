@@ -69,14 +69,14 @@ function dotStyle(types) {
 function Calendar({ days }) {
   const active = days.filter((d) => d.types.length).length
   return (
-    <div className="rounded-3xl border border-white/[0.07] bg-white/[0.03] px-5 py-4">
+    <div className="rounded-3xl border border-white/[0.07] bg-white/[0.03] px-5 py-3.5">
       <div className="flex items-baseline justify-between">
         <p className="text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40">4 dernières semaines</p>
         <p className="text-[0.65rem] text-white/30">
           {active} {active > 1 ? 'jours actifs' : 'jour actif'}
         </p>
       </div>
-      <div className="mt-3 grid grid-cols-7 gap-y-2">
+      <div className="mt-2.5 grid grid-cols-7 gap-y-1.5">
         {WEEKDAYS.map((w, k) => (
           <span key={k} className="text-center text-[0.6rem] font-semibold text-white/25">
             {w}
@@ -118,7 +118,7 @@ function RoutineCard({ routineKey, delay, onLaunch }) {
       {...rise(delay)}
       whileTap={{ scale: 0.97, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
       onClick={launch}
-      className="relative flex w-full items-center justify-between overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.05] p-6 text-left"
+      className="relative flex w-full items-center justify-between overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.05] px-6 py-5 text-left"
     >
       <motion.div
         className="pointer-events-none absolute -right-24 -top-24 h-72 w-72"
@@ -127,7 +127,7 @@ function RoutineCard({ routineKey, delay, onLaunch }) {
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       />
       <div className="relative">
-        <div className="font-display text-[2.4rem] font-medium leading-none tracking-tight">{CARDS[routineKey].title}</div>
+        <div className="font-display text-[2.2rem] font-medium leading-none tracking-tight">{CARDS[routineKey].title}</div>
         <div className="mt-3 text-sm font-semibold" style={{ color: t.a }}>
           {minutes} min · {count} mouvements
         </div>
@@ -139,7 +139,7 @@ function RoutineCard({ routineKey, delay, onLaunch }) {
           animate={{ scale: [0.92, 1.04, 0.92] }}
           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <Blob tone={routineKey} size={78}>
+          <Blob tone={routineKey} size={72}>
             <svg width="22" height="22" viewBox="0 0 24 24" className="ml-1 fill-ink">
               <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
             </svg>
@@ -166,11 +166,11 @@ export default function Hub({ onLaunch, onOpenLab, onOpenSettings }) {
   const { streaks, calendar, greeting } = useHubData()
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-10">
+    <div className="safe-top safe-bottom flex h-full flex-col overflow-y-auto px-6 [--sb:1rem] [--st:0.75rem]">
       {/* Conteneur qui capte l'appui long ; l'image ne reçoit aucun geste (sinon iOS propose d'enregistrer le PNG) */}
       <div className="flex items-center justify-between">
         <motion.div {...rise(0)} {...longPress} className="select-none p-1 -m-1" style={{ WebkitTouchCallout: 'none' }}>
-          <img src="/logo-wordmark.png" alt="Iko Flex" className="pointer-events-none h-9 w-auto" draggable={false} />
+          <img src="/logo-wordmark.png" alt="Iko Flex" className="pointer-events-none h-8 w-auto" draggable={false} />
         </motion.div>
         <motion.button
           {...rise(0.05)}
@@ -186,7 +186,7 @@ export default function Hub({ onLaunch, onOpenLab, onOpenSettings }) {
           </svg>
         </motion.button>
       </div>
-      <motion.h1 {...rise(0.08)} className="font-display mt-3 text-[2.2rem] font-light leading-[1.08] tracking-tight">
+      <motion.h1 {...rise(0.08)} className="font-display mt-4 text-[2rem] font-light leading-[1.06] tracking-tight">
         {greeting}
         <br />
         <span className="italic text-white/50">Pas besoin d’être motivé,</span>
@@ -194,16 +194,16 @@ export default function Hub({ onLaunch, onOpenLab, onOpenSettings }) {
         juste de commencer.
       </motion.h1>
 
-      <motion.div {...rise(0.18)} className="mt-7 flex gap-6">
+      <motion.div {...rise(0.18)} className="mt-5 flex gap-6">
         <Streak tone="souplesse" label="souplesse" {...streaks.souplesse} />
         <Streak tone="renfo" label="renfo" {...streaks.renfo} />
       </motion.div>
 
-      <motion.div {...rise(0.26)} className="mt-5">
+      <motion.div {...rise(0.26)} className="mt-4">
         <Calendar days={calendar} />
       </motion.div>
 
-      <div className="mt-auto flex flex-col gap-4 pt-8">
+      <div className="mt-auto flex flex-col gap-3 pt-5">
         <RoutineCard routineKey="souplesse" delay={0.36} onLaunch={onLaunch} />
         <RoutineCard routineKey="renfo" delay={0.44} onLaunch={onLaunch} />
       </div>

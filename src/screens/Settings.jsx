@@ -152,7 +152,7 @@ export default function Settings({ onBack }) {
   }
 
   return (
-    <div className="h-full overflow-y-auto px-6 pb-12 pt-8">
+    <div className="safe-top safe-bottom h-full overflow-y-auto px-6 [--sb:3rem] [--st:1rem]">
       <motion.button {...rise(0)} onClick={onBack} className="rounded-full border border-white/15 px-4 py-2 text-sm">
         ← Retour
       </motion.button>
