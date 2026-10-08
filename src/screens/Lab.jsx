@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Figure, { FIGURE_COLORS } from '../components/Figure.jsx'
+import Figure from '../components/Figure.jsx'
 import { EXERCISES, GROUPS } from '../data/exercises.js'
 import { ANIMATIONS } from '../data/animations.js'
 import { EXTRA_ANIMATIONS } from '../data/animations-extra.js'
@@ -54,37 +54,6 @@ export default function Lab({ onBack }) {
       <p className="mt-4 text-xs text-white/40">
         Niveau auto · souplesse {getLevel('souplesse')} ({experience('souplesse')} séances) · renfo {getLevel('renfo')} ({experience('renfo')} séances)
       </p>
-
-      {/* Test du style "v2" (option 1), à comparer avec le style actuel : profil et face */}
-      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-        <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Test nouveau style</p>
-        {[
-          ['lunge-psoas', 'souplesse', 'Lunge Psoas (profil)'],
-          ['goblet-squat', 'renfo', 'Goblet Squat (profil)'],
-          ['cossack', 'souplesse', 'Cossack (face)'],
-          ['trapezes', 'souplesse', 'Trapèzes (de dos)'],
-        ].map(([exId, tone, label]) => (
-          <div key={exId} className="mt-5">
-            <p className="text-sm text-white/60">{label}</p>
-            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {['v1', 'v2'].map((variant) => (
-                <div key={variant} className="flex flex-col items-center">
-                  <div className="relative aspect-square w-full max-w-80">
-                    <motion.div
-                      className="absolute inset-0"
-                      style={{ background: gradient(TONES[tone]) }}
-                      animate={{ borderRadius: SHAPES }}
-                      transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                    <Figure id={exId} variant={variant} color={variant === 'v2' ? FIGURE_COLORS[tone] : undefined} paused={paused} className="absolute inset-[12%]" />
-                  </div>
-                  <p className="mt-2 text-xs text-white/50">{variant === 'v1' ? 'Actuel' : 'Nouveau'}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </section>
 
       <VoicePicker className="mt-8" />
 

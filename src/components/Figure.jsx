@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef } from 'react'
 import { ANIMATIONS } from '../data/animations.js'
+import { EXERCISES } from '../data/exercises.js'
 import { LEN, WID, frame, sampler, segments, solve } from '../lib/rig.js'
 
 // Personnage "Souffle" : membres en capsules arrondies, animé par cinématique directe (voir lib/rig.js).
@@ -79,8 +80,10 @@ export function hasAnimation(id) {
   return Boolean(ANIMATIONS[id])
 }
 
-export default function Figure({ id, paused = false, color = INK, className = '', variant = 'v1' }) {
+export default function Figure({ id, paused = false, color: colorProp, className = '', variant = 'v2' }) {
   const v2 = variant === 'v2'
+  const theme = EXERCISES.find((e) => e.id === id)?.theme
+  const color = colorProp ?? (v2 ? FIGURE_COLORS[theme] ?? NIGHT : INK)
   const uid = useId().replace(/:/g, '')
   const anim = ANIMATIONS[id]
   const s = useMemo(() => anim && sampler(anim), [anim])
@@ -118,8 +121,12 @@ export default function Figure({ id, paused = false, color = INK, className = ''
         const hx = j.head[0] - j.neck[0]
         const hy = j.head[1] - j.neck[1]
         const hl = Math.hypot(hx, hy) || 1
-        const k = NECK_GAP / hl
+        // Allongement proportionnel : une tête en raccourci (vue de dessus, depuis la tête) le reste
+        const k = NECK_GAP / (LEN.neck + LEN.head)
         const head = [j.neck[0] + hx * k, j.neck[1] + hy * k]
+        // Ovale dans l'axe du cou ; tête vue de face (raccourcie) : ronde
+        const oval = Math.min(1, hl / (LEN.neck + LEN.head))
+        els.current.head?.setAttribute('ry', f2(HEAD_RX + (HEAD_RY - HEAD_RX) * oval))
         els.current.head?.setAttribute('cx', f2(head[0]))
         els.current.head?.setAttribute('transform', `rotate(${f2(-angleOf(j.neck, head))} ${f2(head[0])} ${f2(head[1])})`)
         els.current.head?.setAttribute('cy', f2(head[1]))
