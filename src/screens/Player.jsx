@@ -3,6 +3,7 @@ import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion'
 import { GROUPS } from '../data/exercises.js'
 import { beep, preloadSpeech, speak, stopSpeech } from '../lib/audio.js'
 import { PHRASES } from '../lib/phrases.js'
+import { setSeconds } from '../lib/routine.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
 import Figure, { hasAnimation } from '../components/Figure.jsx'
 
@@ -10,11 +11,29 @@ import Figure, { hasAnimation } from '../components/Figure.jsx'
 // La première transition sert de "mise en place". Un exercice unilatéral devient deux exercices :
 // côté droit, transition "change de côté", côté gauche (avec la durée par côté de la routine).
 // w = index de l'effort (une pastille de progression par effort, donc par côté).
+// Exercice programmé (renfo, prog) : séries guidées (répétitions au tempo ou secondes),
+// récupération entre séries ; une seule pastille pour toutes ses séries.
 function buildSteps(routine) {
   const steps = []
   let w = 0
   for (const ex of routine.exercises) {
-    const work = routine.doses?.[ex.id] ?? (ex.unilateral ? routine.sideWork : routine.work)
+    const plan = routine.plans?.[ex.id]
+    if (ex.prog && plan) {
+      const { sets, amount } = plan
+      const base = { ex, w, sets, duration: setSeconds(ex, amount), reps: ex.prog.measure === 'reps' ? amount : null }
+      const sides = ex.unilateral ? [1, 2] : [undefined]
+      steps.push({ phase: 'rest', ex, w, sets, set: 1, side: sides[0], duration: routine.rest })
+      for (let set = 1; set <= sets; set++) {
+        if (set > 1) steps.push({ phase: 'rest', ex, w, sets, set, side: sides[0], recover: true, duration: ex.prog.rest })
+        sides.forEach((side, k) => {
+          if (k > 0) steps.push({ phase: 'rest', ex, w, sets, set, side, switch: true, duration: routine.rest })
+          steps.push({ ...base, phase: 'work', set, side })
+        })
+      }
+      w++
+      continue
+    }
+    const work = plan?.work ?? (ex.unilateral ? routine.sideWork : routine.work)
     if (ex.unilateral) {
       steps.push({ phase: 'rest', ex, w, side: 1, duration: routine.rest })
       steps.push({ phase: 'work', ex, w: w++, side: 1, duration: work })
@@ -29,6 +48,45 @@ function buildSteps(routine) {
 }
 
 const SIDE_LABEL = { 1: 'Côté droit', 2: 'Côté gauche' }
+
+// Phrase dite au début d'une étape (null = rien à dire, le bip suffit)
+function stepPhrase(s, k) {
+  if (s.phase === 'rest') {
+    if (s.switch) return PHRASES.switchSide
+    if (s.recover) return PHRASES.recover
+    return PHRASES.intro(s.ex, k === 0)
+  }
+  if (s.set > 1 && s.side !== 2) return PHRASES.setStart(s.set, s.sets, s.side)
+  if (s.set > 1) return null
+  return s.side ? PHRASES.cueSide(s.ex, s.side) : PHRASES.cue(s.ex)
+}
+
+// Répétitions guidées : numéro de répétition et phase du tempo en cours, avec un bip par phase
+function useTempo(step, readLeftMs, paused) {
+  const [state, setState] = useState({ rep: 1, phase: 0 })
+  const last = useRef('')
+  useEffect(() => {
+    last.current = ''
+    setState({ rep: 1, phase: 0 })
+    if (step.phase !== 'work' || !step.reps || paused) return
+    const tempo = step.ex.prog.tempo
+    const repMs = tempo.reduce((s, [, sec]) => s + sec, 0) * 1000
+    const id = setInterval(() => {
+      const elapsed = Math.max(0, step.duration * 1000 - readLeftMs())
+      const rep = Math.min(step.reps, Math.floor(elapsed / repMs) + 1)
+      let t = elapsed - (rep - 1) * repMs
+      let phase = 0
+      while (phase < tempo.length - 1 && t >= tempo[phase][1] * 1000) t -= tempo[phase++][1] * 1000
+      const key = `${rep}-${phase}`
+      if (key === last.current) return
+      last.current = key
+      beep.tempo(phase, tempo.length)
+      setState({ rep, phase })
+    }, 50)
+    return () => clearInterval(id)
+  }, [step, readLeftMs, paused])
+  return state
+}
 
 function useWakeLock() {
   useEffect(() => {
@@ -208,7 +266,7 @@ export default function Player({ routine, onFinish, onQuit }) {
   const workedMs = useRef(0) // temps d'effort réellement fait (pour la règle des 70 %)
   const step = steps[i]
   const tone = TONES[routine.key]
-  const total = steps.filter((s) => s.phase === 'work').length
+  const total = steps[steps.length - 1].w + 1 // une pastille par effort (séries d'un même exercice regroupées)
   const plannedMs = steps.reduce((sum, s) => sum + (s.phase === 'work' ? s.duration * 1000 : 0), 0)
   const isRest = step.phase === 'rest'
   const breath = useBreath(paused)
@@ -220,9 +278,8 @@ export default function Player({ routine, onFinish, onQuit }) {
       PHRASES.switchSide,
       PHRASES.done,
       PHRASES.short,
-      ...steps.map((s, k) =>
-        s.phase === 'rest' ? (s.switch ? PHRASES.switchSide : PHRASES.intro(s.ex, k === 0)) : s.side ? PHRASES.cueSide(s.ex, s.side) : PHRASES.cue(s.ex),
-      ),
+      PHRASES.recover,
+      ...steps.map((s, k) => stepPhrase(s, k)).filter(Boolean),
     ])
   }, [steps])
 
@@ -251,13 +308,10 @@ export default function Player({ routine, onFinish, onQuit }) {
   // Début de chaque étape : annonce vocale + signal sonore
   useEffect(() => {
     const s = steps[i]
-    if (s.phase === 'rest') {
-      if (s.switch) beep.switchSide()
-      speak(s.switch ? PHRASES.switchSide : PHRASES.intro(s.ex, i === 0))
-    } else {
-      beep.go()
-      speak(s.side ? PHRASES.cueSide(s.ex, s.side) : PHRASES.cue(s.ex))
-    }
+    if (s.phase === 'rest' && s.switch) beep.switchSide()
+    if (s.phase === 'work') beep.go()
+    const text = stepPhrase(s, i)
+    if (text) speak(text)
   }, [i, steps])
 
   // Boucle du chrono, basée sur l'horloge réelle (pas de dérive)
@@ -268,7 +322,7 @@ export default function Player({ routine, onFinish, onQuit }) {
       if (left === lastSec.current) return
       lastSec.current = left
       setRemaining(left)
-      if (left > 0 && left <= 3) beep.tick()
+      if (left > 0 && left <= 3 && !(step.phase === 'work' && step.reps)) beep.tick()
       if (left === 0) advance()
     }, 100)
     return () => clearInterval(id)
@@ -296,8 +350,10 @@ export default function Player({ routine, onFinish, onQuit }) {
     onQuit()
   }
 
+  const tempo = useTempo(step, readLeftMs, paused)
+  const repMode = step.phase === 'work' && step.reps
   const animated = hasAnimation(step.ex.id)
-  const showBreath = !paused && (isRest || routine.key === 'souplesse')
+  const showBreath = !paused && !repMode && (isRest || routine.key === 'souplesse')
 
   return (
     <div className="flex h-full flex-col px-6 pb-6 pt-5">
@@ -346,7 +402,19 @@ export default function Player({ routine, onFinish, onQuit }) {
           flipKey={step.side === 2 ? 1 : 0}
           onTap={togglePause}
         />
-        {animated && (
+        {animated && repMode && (
+          <motion.span
+            key={`rep-${tempo.rep}`}
+            initial={{ scale: 1.25, opacity: 0.5 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            className="font-display -mt-1 text-5xl font-light leading-none tabular-nums text-[#F3EFE8]"
+          >
+            {tempo.rep}
+            <span className="text-2xl text-white/40">/{step.reps}</span>
+          </motion.span>
+        )}
+        {animated && !repMode && (
           <motion.span
             key={remaining}
             initial={{ scale: remaining <= 3 ? 1.3 : 1.06, opacity: 0.5 }}
@@ -360,7 +428,19 @@ export default function Player({ routine, onFinish, onQuit }) {
         )}
         <div className="mt-3 h-6">
           <AnimatePresence mode="wait">
-            {showBreath ? (
+            {repMode && !paused ? (
+              <motion.p
+                key={`phase-${tempo.rep}-${tempo.phase}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="font-display text-gradient text-2xl italic"
+                style={{ backgroundImage: gradient(tone, 90) }}
+              >
+                {step.ex.prog.tempo[tempo.phase][0]}
+              </motion.p>
+            ) : showBreath ? (
               <motion.p
                 key={breath}
                 initial={{ opacity: 0, y: 4 }}
@@ -387,9 +467,23 @@ export default function Player({ routine, onFinish, onQuit }) {
           className="min-h-44 text-center"
         >
           <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em]" style={{ color: isRest ? 'rgba(255,255,255,0.45)' : tone.a }}>
-            {isRest ? (step.switch ? '⇄ Change de côté' : i === 0 ? 'Mets-toi en place' : 'Ensuite') : GROUPS[step.ex.group].label}
+            {isRest
+              ? step.switch
+                ? '⇄ Change de côté'
+                : step.recover
+                  ? 'Récupère'
+                  : i === 0
+                    ? 'Mets-toi en place'
+                    : 'Ensuite'
+              : GROUPS[step.ex.group].label}
           </p>
           <h2 className="font-display mt-2 text-[2.1rem] font-normal leading-[1.1] tracking-tight">{step.ex.name}</h2>
+          {step.sets && (
+            <span className="mr-2 mt-2 inline-block rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white/80">
+              Série {step.set}/{step.sets}
+              {step.phase === 'work' && (step.reps ? ` · ${step.reps} rép.` : ` · ${step.duration} s`)}
+            </span>
+          )}
           {step.side && (
             <motion.span
               key={`side-${step.side}`}

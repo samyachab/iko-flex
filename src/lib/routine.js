@@ -1,5 +1,6 @@
 import { EXERCISES } from '../data/exercises.js'
 import { getSettings } from './settings.js'
+import { getLevel } from './progress.js'
 
 export const ROUTINES = {
   souplesse: {
@@ -18,11 +19,11 @@ export const ROUTINES = {
     label: 'Routine Renfo',
     emoji: '⚡',
     work: 50,
-    sideWork: 30, // exercices unilatéraux : 30 s par côté
+    sideWork: 30, // secours pour un exercice renfo sans programmation (prog)
     rest: 10,
-    // Circuit fait 2 fois
+    // Séries par exercice (voir prog dans exercises.js), un exercice après l'autre
     plan: { tronc: 2, haut: 2, jambes: 2 },
-    rounds: 2,
+    rounds: 1,
   },
 }
 
@@ -42,12 +43,24 @@ const STEP = 15 // allongement par palier de 15 s
 const SHORT = 12 // durée (min) à partir de laquelle on commence à allonger les exercices clés
 const LONG = 30 // durée (min) où les exercices clés atteignent leur maximum
 
-// Effort minimal / maximal d'un exercice (par côté si unilatéral)
-// Sans dose définie (renfo) : durée de base, +10 s possibles quand la séance est longue
+// Effort minimal / maximal d'un exercice au temps (par côté si unilatéral)
 const doseOf = (ex, c) => ex.dose ?? (ex.unilateral ? [c.sideWork, c.sideWork + 10] : [c.work, c.work + 10])
 
-// Durée totale d'un exercice dans la séance pour un effort donné : un côté = transition + effort
-export const exerciseSeconds = (ex, c, work = doseOf(ex, c)[0]) => (ex.unilateral ? 2 * (c.rest + work) : c.rest + work)
+// Durée d'une série d'un exercice programmé (prog) : répétitions x tempo, ou secondes
+export const setSeconds = (ex, amount) =>
+  ex.prog.measure === 'time' ? amount : amount * ex.prog.tempo.reduce((s, [, sec]) => s + sec, 0)
+
+// Durée totale d'un exercice dans la séance. plan = { work } (au temps) ou { sets, amount } (programmé).
+// Un côté = transition + effort ; entre deux séries : récupération de l'exercice.
+export function exerciseSeconds(ex, c, plan) {
+  if (ex.prog) {
+    const sides = ex.unilateral ? 2 : 1
+    const set = setSeconds(ex, plan.amount)
+    return c.rest + plan.sets * sides * set + plan.sets * (sides - 1) * c.rest + (plan.sets - 1) * ex.prog.rest
+  }
+  const work = plan?.work ?? doseOf(ex, c)[0]
+  return ex.unilateral ? 2 * (c.rest + work) : c.rest + work
+}
 
 // Ordre de remplissage des zones, proportionnel au plan :
 // { hanche: 3, posterieure: 2, ... } -> hanche, posterieure, epaules, cheville, hanche, posterieure, ...
@@ -84,40 +97,51 @@ function candidates(key, settings) {
 export function buildRoutine(key, settings = getSettings()) {
   const config = ROUTINES[key]
   const target = settings[key].minutes * 60
+  const level = getLevel(key)
   const { list, favorite } = candidates(key, settings)
   const k = Math.min(1, Math.max(0, (settings[key].minutes - SHORT) / (LONG - SHORT)))
-  const work = new Map()
+  const plans = new Map()
   const start = (ex) => {
+    if (ex.prog) {
+      const [sets, amount] = ex.prog.levels[level - 1]
+      return { sets, amount, baseSets: sets }
+    }
     const [min, max] = doseOf(ex, config)
-    return ex.priority ? Math.round((min + (max - min) * k) / STEP) * STEP : min
+    return { work: ex.priority ? Math.round((min + (max - min) * k) / STEP) * STEP : min }
   }
 
-  let rounds = config.rounds
   const picked = []
   let total = 0
   for (const ex of list) {
-    const t = exerciseSeconds(ex, config, start(ex)) * rounds
+    const plan = start(ex)
+    const t = exerciseSeconds(ex, config, plan)
     if (picked.length && total + t > target + 20) continue
     picked.push(ex)
-    work.set(ex.id, start(ex))
+    plans.set(ex.id, plan)
     total += t
   }
-  if (key === 'renfo' && picked.length === list.length && target - total >= total * 0.4) {
-    total = (total / rounds) * 3
-    rounds = 3
-  }
 
-  // Allongement par paliers, exercices clés puis maintiens statiques, tant qu'il reste du temps
-  const extendable = [...picked].sort((a, b) => (b.priority ? 2 : 0) + (b.kind === 'static') - ((a.priority ? 2 : 0) + (a.kind === 'static')))
+  // Temps restant : étirements clés puis maintiens allongés par paliers ; exercices programmés : +1 série max
+  const weight = (e) => (e.priority ? 2 : 0) + (e.kind === 'static' ? 1 : 0)
+  const extendable = [...picked].sort((a, b) => weight(b) - weight(a))
   let slack = target - total
   let grew = true
   while (grew) {
     grew = false
     for (const ex of extendable) {
-      const inc = Math.min(STEP, doseOf(ex, config)[1] - work.get(ex.id))
-      const cost = inc * (ex.unilateral ? 2 : 1) * rounds
-      if (inc <= 0 || cost > slack + 10) continue
-      work.set(ex.id, work.get(ex.id) + inc)
+      const plan = plans.get(ex.id)
+      let next
+      if (ex.prog) {
+        if (plan.sets > plan.baseSets) continue
+        next = { ...plan, sets: plan.sets + 1 }
+      } else {
+        const inc = Math.min(STEP, doseOf(ex, config)[1] - plan.work)
+        if (inc <= 0) continue
+        next = { work: plan.work + inc }
+      }
+      const cost = exerciseSeconds(ex, config, next) - exerciseSeconds(ex, config, plan)
+      if (cost > slack + 10) continue
+      plans.set(ex.id, next)
       slack -= cost
       grew = true
     }
@@ -133,9 +157,9 @@ export function buildRoutine(key, settings = getSettings()) {
   }
 
   const exercises = []
-  for (let r = 0; r < rounds; r++) exercises.push(...circuit)
-  const totalSeconds = exercises.reduce((sum, ex) => sum + exerciseSeconds(ex, config, work.get(ex.id)), 0)
-  return { ...config, rounds, exercises, doses: Object.fromEntries(work), totalSeconds }
+  for (let r = 0; r < config.rounds; r++) exercises.push(...circuit)
+  const totalSeconds = exercises.reduce((sum, ex) => sum + exerciseSeconds(ex, config, plans.get(ex.id)), 0)
+  return { ...config, level, exercises, plans: Object.fromEntries(plans), totalSeconds }
 }
 
 // Aperçu (accueil, réglages) : moyenne de quelques tirages, la séance réelle varie légèrement

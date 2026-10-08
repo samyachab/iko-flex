@@ -11,12 +11,18 @@ export const PHRASES = {
   // Exercices unilatéraux : chaque côté est annoncé comme un exercice à part
   cueSide: (ex, side) => `Côté ${side === 1 ? 'droit' : 'gauche'}. ${ex.cue}.`,
   switchSide: 'Change de côté. Côté gauche.',
+  // Renfo programmé : début de série (à partir de la 2e) et récupération
+  setStart: (set, sets, side) => `Série ${set} sur ${sets}.${side ? ` Côté ${side === 1 ? 'droit' : 'gauche'}.` : ''}`,
+  recover: 'Récupère.',
   done: 'Séance terminée. Bien joué.',
   short: 'Séance écourtée. La série attend la prochaine.',
 }
 
 export function allPhrases(exercises) {
-  const list = [PHRASES.switchSide, PHRASES.done, PHRASES.short]
+  const list = [PHRASES.switchSide, PHRASES.done, PHRASES.short, PHRASES.recover]
+  for (let sets = 2; sets <= 6; sets++) {
+    for (let set = 2; set <= sets; set++) list.push(PHRASES.setStart(set, sets), PHRASES.setStart(set, sets, 1))
+  }
   for (const ex of exercises) {
     list.push(PHRASES.intro(ex, true), PHRASES.intro(ex, false))
     if (ex.unilateral) list.push(PHRASES.cueSide(ex, 1), PHRASES.cueSide(ex, 2))

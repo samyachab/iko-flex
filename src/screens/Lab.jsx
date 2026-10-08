@@ -5,6 +5,7 @@ import { EXERCISES, GROUPS } from '../data/exercises.js'
 import { ANIMATIONS } from '../data/animations.js'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
 import { currentVoice, frenchVoices, setVoice, speak } from '../lib/audio.js'
+import { experience, getLevel } from '../lib/progress.js'
 
 // Liste des voix françaises vues par le navigateur, avec test et choix manuel.
 function VoicePicker() {
@@ -69,6 +70,11 @@ export default function Lab({ onBack }) {
       <button onClick={() => setPaused(!paused)} className="mt-4 rounded-full border border-white/15 px-4 py-2 text-sm">
         {paused ? '▶ Lecture' : '⏸ Pause'}
       </button>
+
+      {/* Progression automatique (invisible ailleurs dans l'app) */}
+      <p className="mt-4 text-xs text-white/40">
+        Niveau auto · souplesse {getLevel('souplesse')} ({experience('souplesse')} séances) · renfo {getLevel('renfo')} ({experience('renfo')} séances)
+      </p>
 
       <VoicePicker />
 

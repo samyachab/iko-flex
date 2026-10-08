@@ -105,3 +105,8 @@ export function completeSession(type) {
 export function requestPersistence() {
   navigator.storage?.persist?.().catch(() => {})
 }
+
+// Historique brut (jours -> types de séances validées), pour la progression automatique
+export function getHistory() {
+  return load().days
+}
