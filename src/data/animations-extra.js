@@ -682,7 +682,7 @@ export const EXTRA_ANIMATIONS = {
       armN: [72, 88],
       armF: [8, 10],
       legN: [0, 0, 90],
-      legF: [-4, -80, -110],
+      legF: [-6, -70, -15],
     },
     keys: [
       { pose: { y: 89.4, x: -3, legN: [0, 0, 125] }, hold: 0.5, move: 1 },
