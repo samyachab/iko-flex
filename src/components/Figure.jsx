@@ -8,11 +8,35 @@ import { LEN, WID, frame, sampler, segments, solve } from '../lib/rig.js'
 const SPEED = 1.15 // > 1 = plus rapide que les durées écrites dans animations.js
 export const INK = '#121212'
 
+// Style "v2" (prototype, option 1) : membres galbés (capsules effilées), torse en V, cou, mains,
+// ombre portée au sol. Demi-épaisseurs [début, fin] de chaque segment.
+const TAPER = {
+  thigh: [8, 5.6],
+  shin: [5.6, 3.6],
+  foot: [3.6, 2.6],
+  upper: [5.4, 4.2],
+  fore: [4.2, 3.2],
+  torso: [9.6, 11.4],
+  bar: [5.5, 5.5],
+}
+
+// Capsule effilée de a (rayon ra) à b (rayon rb), extrémités arrondies
+function capsule(a, b, ra, rb) {
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const len = Math.hypot(dx, dy) || 0.001
+  const nx = -dy / len
+  const ny = dx / len
+  const p = (q, r, k) => `${(q[0] + nx * r * k).toFixed(2)} ${(q[1] + ny * r * k).toFixed(2)}`
+  return `M${p(a, ra, 1)}L${p(b, rb, 1)}A${rb} ${rb} 0 0 0 ${p(b, rb, -1)}L${p(a, ra, -1)}A${ra} ${ra} 0 0 0 ${p(a, ra, 1)}Z`
+}
+
 export function hasAnimation(id) {
   return Boolean(ANIMATIONS[id])
 }
 
-export default function Figure({ id, paused = false, color = INK, className = '' }) {
+export default function Figure({ id, paused = false, color = INK, className = '', variant = 'v1' }) {
+  const v2 = variant === 'v2'
   const anim = ANIMATIONS[id]
   const s = useMemo(() => anim && sampler(anim), [anim])
   const vb = useMemo(() => anim && frame(anim, s), [anim, s])
@@ -28,9 +52,14 @@ export default function Figure({ id, paused = false, color = INK, className = ''
     if (!anim) return
     const draw = () => {
       const j = solve(s.at(time.current), anim)
-      segs.forEach(([a, b], k) => {
+      segs.forEach(([a, b, w], k) => {
         const el = els.current[k]
         if (!el) return
+        if (v2) {
+          const [ra, rb] = w === 'bar' && anim.barWidth ? [anim.barWidth / 2, anim.barWidth / 2] : TAPER[w]
+          el.setAttribute('d', capsule(j[a], j[b], ra, rb))
+          return
+        }
         el.setAttribute('x1', j[a][0])
         el.setAttribute('y1', j[a][1])
         el.setAttribute('x2', j[b][0])
@@ -38,6 +67,22 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       })
       els.current.head?.setAttribute('cx', j.head[0])
       els.current.head?.setAttribute('cy', j.head[1])
+      if (v2) {
+        els.current.neck?.setAttribute('d', capsule(j.neck, j.head, 4.4, 3.8))
+        for (const h of ['handN', 'handF']) {
+          els.current[h]?.setAttribute('cx', j[h][0])
+          els.current[h]?.setAttribute('cy', j[h][1])
+        }
+        // Ombre portée : sous les points d'appui (articulations proches du sol)
+        const sh = els.current.shadow
+        if (sh) {
+          const xs = Object.values(j).filter((q) => q[1] > -14).map((q) => q[0])
+          const lo = xs.length ? Math.min(...xs) : j.hip[0]
+          const hi = xs.length ? Math.max(...xs) : j.hip[0]
+          sh.setAttribute('cx', (lo + hi) / 2)
+          sh.setAttribute('rx', (hi - lo) / 2 + 14)
+        }
+      }
       bands.forEach((b, k) => {
         const el = els.current[`band${k}`]
         if (!el) return
@@ -70,7 +115,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       raf = requestAnimationFrame(tick)
     })
     return () => cancelAnimationFrame(raf)
-  }, [anim, s, segs, bands, weights, heldRollers, paused])
+  }, [anim, s, segs, bands, weights, heldRollers, paused, v2])
 
   if (!anim) return null
   // Trois niveaux de sombre pour que les superpositions restent lisibles :
@@ -86,6 +131,21 @@ export default function Figure({ id, paused = false, color = INK, className = ''
 
   return (
     <svg viewBox={`${vb.x} ${vb.y} ${vb.size} ${vb.size}`} className={className} aria-hidden="true">
+      {v2 && (
+        <defs>
+          <radialGradient id={`shadow-${id}`}>
+            <stop offset="0" stopColor={color} stopOpacity="0.28" />
+            <stop offset="1" stopColor={color} stopOpacity="0" />
+          </radialGradient>
+          {/* Volume : lumière douce venant du haut-gauche sur chaque partie du corps */}
+          <linearGradient id={`body-${id}`} x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0" stopColor="#4a4340" />
+            <stop offset="0.55" stopColor={color} />
+            <stop offset="1" stopColor={color} />
+          </linearGradient>
+        </defs>
+      )}
+      {v2 && anim.ground !== false && <ellipse ref={(el) => (els.current.shadow = el)} cy={1} ry={4.5} fill={`url(#shadow-${id})`} />}
       {anim.ground !== false && (
         <line x1={vb.x + 8} x2={vb.x + vb.size - 8} y1={0.5} y2={0.5} stroke={color} strokeOpacity="0.22" strokeWidth="1.5" strokeLinecap="round" />
       )}
@@ -145,13 +205,18 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       ))}
       {/* legOpacity (option d'animation) : jambes en retrait, dessinées derrière tout le reste */}
       {['L', 'F', 'B', 'N'].map((layer) => (
-        <g key={layer} stroke={color} strokeLinecap="round" fill="none" opacity={layers[layer]}>
+        <g key={layer} stroke={color} strokeLinecap="round" fill={v2 ? `url(#body-${id})` : 'none'} opacity={layers[layer]}>
           {segs.map(([, , w, l], k) =>
-            layerOf(w, l) === layer ? (
+            layerOf(w, l) !== layer ? null : v2 ? (
+              <path key={k} ref={(el) => (els.current[k] = el)} stroke="none" />
+            ) : (
               <line key={k} ref={(el) => (els.current[k] = el)} strokeWidth={w === 'bar' && anim.barWidth ? anim.barWidth : WID[w]} />
-            ) : null,
+            ),
           )}
-          {layer === 'B' && <circle ref={(el) => (els.current.head = el)} r={LEN.head} fill={color} stroke="none" />}
+          {v2 && layer === 'F' && <circle ref={(el) => (els.current.handF = el)} r={3.8} stroke="none" />}
+          {v2 && layer === 'N' && <circle ref={(el) => (els.current.handN = el)} r={3.8} stroke="none" />}
+          {v2 && layer === 'B' && <path ref={(el) => (els.current.neck = el)} stroke="none" />}
+          {layer === 'B' && <circle ref={(el) => (els.current.head = el)} r={v2 ? 9.6 : LEN.head} fill={v2 ? `url(#body-${id})` : color} stroke="none" />}
         </g>
       ))}
       {/* Élastiques : trait fin par-dessus le corps */}

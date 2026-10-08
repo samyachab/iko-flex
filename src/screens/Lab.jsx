@@ -55,6 +55,27 @@ export default function Lab({ onBack }) {
         Niveau auto · souplesse {getLevel('souplesse')} ({experience('souplesse')} séances) · renfo {getLevel('renfo')} ({experience('renfo')} séances)
       </p>
 
+      {/* Test du style "v2" (option 1) sur un seul exercice, à comparer avec le style actuel */}
+      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+        <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Test nouveau style · Lunge Psoas</p>
+        <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {['v1', 'v2'].map((variant) => (
+            <div key={variant} className="flex flex-col items-center">
+              <div className="relative aspect-square w-full max-w-80">
+                <motion.div
+                  className="absolute inset-0"
+                  style={{ background: gradient(TONES.souplesse) }}
+                  animate={{ borderRadius: SHAPES }}
+                  transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <Figure id="lunge-psoas" variant={variant} paused={paused} className="absolute inset-[12%]" />
+              </div>
+              <p className="mt-2 text-sm text-white/60">{variant === 'v1' ? 'Actuel' : 'Nouveau'}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <VoicePicker className="mt-8" />
 
       <div className="mt-8 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
