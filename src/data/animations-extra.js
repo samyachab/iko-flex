@@ -84,13 +84,13 @@ export const EXTRA_ANIMATIONS = {
     base: {
       torso: 180,
       armN: [-20, -14],
-      armF: [55, 120],
+      armF: [55, 30],
       legN: [139.2, 11.5, 90],
       legF: [90, 90, 175],
     },
     keys: [
       { pose: {}, hold: 0.8, move: 2.2 },
-      { pose: { torso: 182, head: 181, armF: [62, 160], legN: [140.9, 0.1, 90] }, hold: 3.2, move: 2 },
+      { pose: { torso: 182, head: 181, armF: [64, 18], legN: [140.9, 0.1, 90] }, hold: 3.2, move: 2 },
     ],
   },
 
