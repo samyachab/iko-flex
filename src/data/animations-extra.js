@@ -261,6 +261,24 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
+  // Chien tête en bas (V inversé), mains et pieds au sol : on pédale, un talon se plaque au sol
+  // pendant que l'autre genou plie, en alternance.
+  'chien-tete-en-bas': {
+    view: 'side',
+    base: {
+      torso: 50,
+      head: 32,
+      armN: [50, 50],
+      armF: [50, 50],
+      legN: [2, -50.1, 50],
+      legF: [-23, -23, 90],
+    },
+    keys: [
+      { pose: {}, hold: 0.5, move: 1.2 },
+      { pose: { legN: [-23, -23, 90], legF: [2, -50.1, 50] }, hold: 0.5, move: 1.2 },
+    ],
+  },
+
   // À genoux assis sur les talons, dessus des pieds au sol : on se penche en arrière sur les mains.
   'tibial-anterieur': {
     view: 'side',
