@@ -1,12 +1,13 @@
-"""Génère la voix pré-enregistrée (Vivienne, Microsoft neural) pour chaque phrase de séance.
+"""Génère les voix pré-enregistrées (Microsoft neural) pour chaque phrase de séance.
 
 Usage (depuis la racine du projet) :
     node scripts/voice-phrases.mjs > scripts/.voice-phrases.json
-    python scripts/generate_voice.py
+    python scripts/generate_voice.py              # toutes les voix
+    python scripts/generate_voice.py vivienne     # une seule voix
 
-- Ne régénère que les phrases manquantes (public/voice/<id>.mp3) ; --all pour tout régénérer.
+- Ne régénère que les phrases manquantes (public/voice/<voix>/<id>.mp3) ; --all pour tout régénérer.
 - Supprime les fichiers des phrases qui n'existent plus.
-- Écrit src/data/voice-manifest.json (liste des ids disponibles) lu par l'app.
+- Écrit src/data/voice-manifest.json ({ voix: [ids disponibles] }) lu par l'app.
 Requiert : pip install edge-tts
 """
 import asyncio
@@ -31,30 +32,58 @@ def _mkssml_fr(tc, escaped_text):
 
 communicate.mkssml = _mkssml_fr
 
-VOICE = 'fr-FR-VivienneMultilingualNeural'
+# Voix proposées dans l'app (clé = dossier public/voice/<clé>, doit correspondre à src/lib/audio.js)
+VOICES = {
+    'vivienne': 'fr-FR-VivienneMultilingualNeural',
+    'remy': 'fr-FR-RemyMultilingualNeural',
+    'denise': 'fr-FR-DeniseNeural',
+    'henri': 'fr-FR-HenriNeural',
+}
 RATE = '-5%'
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / 'public' / 'voice'
+VOICE_DIR = ROOT / 'public' / 'voice'
 MANIFEST = ROOT / 'src' / 'data' / 'voice-manifest.json'
+
+
+async def generate(key, phrases):
+    out = VOICE_DIR / key
+    out.mkdir(parents=True, exist_ok=True)
+    if '--all' in sys.argv:
+        for f in out.glob('*.mp3'):
+            f.unlink()
+    wanted = {p['id'] for p in phrases}
+    for f in out.glob('*.mp3'):
+        if f.stem not in wanted:
+            f.unlink()
+    todo = [p for p in phrases if not (out / f"{p['id']}.mp3").exists()]
+    sem = asyncio.Semaphore(6)  # quelques requêtes en parallèle : bien plus rapide qu'une par une
+
+    async def one(p):
+        async with sem:
+            tmp = out / f"{p['id']}.part"
+            for attempt in range(4):  # le service coupe parfois une connexion : délai max + relance
+                try:
+                    await asyncio.wait_for(edge_tts.Communicate(p['text'], VOICES[key], rate=RATE).save(str(tmp)), 30)
+                    tmp.replace(out / f"{p['id']}.mp3")  # écrit d'un coup : pas de fichier tronqué
+                    return
+                except Exception:
+                    await asyncio.sleep(2 * (attempt + 1))
+            print(f"[{key}] échec : {p['text'][:60]}")
+
+    await asyncio.gather(*(one(p) for p in todo))
+    print(f'{key} : {len(todo)} phrases générées.')
 
 
 async def main():
     phrases = json.loads((ROOT / 'scripts' / '.voice-phrases.json').read_text(encoding='utf-8'))
-    OUT.mkdir(parents=True, exist_ok=True)
-    if '--all' in sys.argv:
-        for f in OUT.glob('*.mp3'):
-            f.unlink()
-    wanted = {p['id'] for p in phrases}
-    for f in OUT.glob('*.mp3'):
-        if f.stem not in wanted:
-            f.unlink()
-    todo = [p for p in phrases if not (OUT / f"{p['id']}.mp3").exists()]
-    for n, p in enumerate(todo, 1):
-        await edge_tts.Communicate(p['text'], VOICE, rate=RATE).save(str(OUT / f"{p['id']}.mp3"))
-        print(f"[{n}/{len(todo)}] {p['text'][:70]}")
-    ids = sorted(p['id'] for p in phrases if (OUT / f"{p['id']}.mp3").exists())
-    MANIFEST.write_text(json.dumps(ids), encoding='utf-8')
-    print(f'{len(ids)} phrases disponibles, {len(todo)} générées.')
+    keys = [a for a in sys.argv[1:] if a in VOICES] or list(VOICES)
+    for key in keys:
+        await generate(key, phrases)
+    manifest = {
+        key: sorted(p['id'] for p in phrases if (VOICE_DIR / key / f"{p['id']}.mp3").exists()) for key in VOICES
+    }
+    MANIFEST.write_text(json.dumps(manifest), encoding='utf-8')
+    print({k: len(v) for k, v in manifest.items()})
 
 
 asyncio.run(main())

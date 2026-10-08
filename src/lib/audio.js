@@ -69,74 +69,73 @@ export const beep = {
   victory: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, i * 0.12, 0.2)),
 }
 
-// Choix de la voix française la plus naturelle disponible sur l'appareil.
-// Sans choix explicite, le navigateur prend souvent une voix robotique par défaut.
-// Sur iOS, la qualité n'apparaît que dans voiceURI (ex. com.apple.voice.premium.fr-FR.Aurelie),
-// et les voix Siri ne sont jamais exposées aux pages web.
-const VOICE_KEY = 'iko-flex:voice'
-let voice = null
+// Voix de secours (si une phrase n'est pas enregistrée) : la voix française la plus naturelle du système.
+// Sur iOS, la qualité n'apparaît que dans voiceURI, et les voix Siri ne sont jamais exposées aux pages web.
+let systemVoice = null
 
-export function scoreVoice(v) {
+function scoreVoice(v) {
   if (!v.lang?.toLowerCase().startsWith('fr')) return -1
   const id = `${v.name} ${v.voiceURI}`
   let s = 0
   if (/premium/i.test(id)) s += 12
   if (/enhanced|améliorée|natural|neural|online/i.test(id)) s += 8
   if (/google|microsoft/i.test(id)) s += 4
-  if (/amélie|amelie|thomas|audrey|aurélie|aurelie|denise|henri|vivienne|remy|rémy/i.test(id)) s += 3
   if (v.lang.toLowerCase().replace('_', '-') === 'fr-fr') s += 2
   return s
 }
 
-export function frenchVoices() {
-  if (!('speechSynthesis' in window)) return []
-  return window.speechSynthesis
+function pickSystemVoice() {
+  if (!('speechSynthesis' in window)) return
+  systemVoice = window.speechSynthesis
     .getVoices()
     .filter((v) => scoreVoice(v) >= 0)
-    .sort((a, b) => scoreVoice(b) - scoreVoice(a))
-}
-
-function pickVoice() {
-  const voices = frenchVoices()
-  let saved = null
-  try {
-    saved = localStorage.getItem(VOICE_KEY)
-  } catch {
-    // stockage indisponible : choix automatique
-  }
-  voice = voices.find((v) => v.voiceURI === saved) ?? voices[0] ?? null
-}
-
-export function currentVoice() {
-  return voice
-}
-
-// Choix manuel (page labo) : mémorisé sur l'appareil
-export function setVoice(voiceURI) {
-  try {
-    localStorage.setItem(VOICE_KEY, voiceURI)
-  } catch {
-    // ignoré
-  }
-  pickVoice()
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null
 }
 
 if ('speechSynthesis' in window) {
-  pickVoice()
-  // La liste des voix arrive souvent en différé (Chrome, Android, iOS)
-  window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice)
+  pickSystemVoice()
+  window.speechSynthesis.addEventListener?.('voiceschanged', pickSystemVoice)
 }
 
-// Voix pré-enregistrée (Vivienne) : fichiers public/voice/<id>.mp3 (mis en cache hors ligne),
-// joués par l'élément audio débloqué au lancement. Voix du système en secours si une phrase manque.
-const RECORDED = new Set(VOICE_IDS)
-const clipUrl = (id) => `/voice/${id}.mp3`
+// Voix enregistrées (Microsoft neural, générées par scripts/generate_voice.py) : public/voice/<voix>/<id>.mp3,
+// jouées par l'élément audio débloqué au lancement. Choix mémorisé sur l'appareil (page labo).
+export const VOICES = [
+  { key: 'vivienne', name: 'Vivienne', desc: 'Femme · douce et naturelle' },
+  { key: 'remy', name: 'Rémy', desc: 'Homme · posé et naturel' },
+  { key: 'denise', name: 'Denise', desc: 'Femme · claire, plus classique' },
+  { key: 'henri', name: 'Henri', desc: 'Homme · grave, plus classique' },
+]
+const VOICE_KEY = 'iko-flex:voice'
+const DEFAULT_VOICE = 'vivienne'
+const recorded = Object.fromEntries(Object.entries(VOICE_IDS).map(([k, ids]) => [k, new Set(ids)]))
+
+export function currentVoice() {
+  let key = DEFAULT_VOICE
+  try {
+    key = localStorage.getItem(VOICE_KEY) ?? DEFAULT_VOICE
+  } catch {
+    // stockage indisponible : voix par défaut
+  }
+  return recorded[key]?.size ? key : DEFAULT_VOICE
+}
+
+export function setVoice(key) {
+  try {
+    localStorage.setItem(VOICE_KEY, key)
+  } catch {
+    // ignoré
+  }
+}
+
+const clipUrl = (voiceKey, id) => `/voice/${voiceKey}/${id}.mp3`
+const hasClip = (voiceKey, id) => recorded[voiceKey]?.has(id)
 
 // Précharge les phrases d'une séance (cache navigateur) pour qu'elles partent sans délai
 export function preloadSpeech(texts) {
+  const v = currentVoice()
   for (const t of texts) {
     const id = phraseId(t)
-    if (RECORDED.has(id)) fetch(clipUrl(id)).catch(() => {})
+    if (hasClip(v, id)) fetch(clipUrl(v, id)).catch(() => {})
   }
 }
 
@@ -147,20 +146,20 @@ export function stopSpeech() {
 
 function speakSystem(text) {
   if (!('speechSynthesis' in window)) return
-  if (!voice) pickVoice()
+  if (!systemVoice) pickSystemVoice()
   const u = new SpeechSynthesisUtterance(text)
-  if (voice) u.voice = voice
-  u.lang = voice?.lang ?? 'fr-FR'
+  if (systemVoice) u.voice = systemVoice
+  u.lang = systemVoice?.lang ?? 'fr-FR'
   u.rate = 1
   window.speechSynthesis.speak(u)
 }
 
-export function speak(text) {
+export function speak(text, voiceKey = currentVoice()) {
   stopSpeech()
   const id = phraseId(text)
-  if (!clipEl || !RECORDED.has(id)) return speakSystem(text)
+  if (!clipEl || !hasClip(voiceKey, id)) return speakSystem(text)
   if (ctx?.state === 'suspended') ctx.resume()
-  clipEl.src = clipUrl(id)
+  clipEl.src = clipUrl(voiceKey, id)
   clipEl.currentTime = 0
   clipEl.play().catch(() => speakSystem(text))
 }

@@ -1,50 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Figure from '../components/Figure.jsx'
 import { EXERCISES, GROUPS } from '../data/exercises.js'
 import { ANIMATIONS } from '../data/animations.js'
 import { EXTRA_ANIMATIONS } from '../data/animations-extra.js'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
-import { currentVoice, frenchVoices, setVoice, speak } from '../lib/audio.js'
+import { VOICES, currentVoice, setVoice, speak, unlockAudio } from '../lib/audio.js'
+import { PHRASES } from '../lib/phrases.js'
 import { experience, getLevel } from '../lib/progress.js'
 
-// Liste des voix françaises vues par le navigateur, avec test et choix manuel.
+// Choix de la voix enregistrée : toucher une voix = l'écouter et la garder.
 function VoicePicker() {
-  const [voices, setVoices] = useState(frenchVoices)
-  const [selected, setSelected] = useState(() => currentVoice()?.voiceURI)
-  useEffect(() => {
-    const refresh = () => {
-      setVoices(frenchVoices())
-      setSelected(currentVoice()?.voiceURI)
-    }
-    window.speechSynthesis?.addEventListener?.('voiceschanged', refresh)
-    const t = setTimeout(refresh, 500)
-    return () => {
-      clearTimeout(t)
-      window.speechSynthesis?.removeEventListener?.('voiceschanged', refresh)
-    }
-  }, [])
+  const [selected, setSelected] = useState(currentVoice)
 
-  const choose = (v) => {
-    setVoice(v.voiceURI)
-    setSelected(v.voiceURI)
-    speak('Serre les fessiers. Respire. Ensuite : Couch Stretch.')
+  const choose = (key) => {
+    unlockAudio()
+    setVoice(key)
+    setSelected(key)
+    speak(PHRASES.done, key)
   }
 
   return (
     <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-      <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Voix ({voices.length} en français)</p>
-      {voices.length === 0 && <p className="mt-2 text-sm text-white/50">Aucune voix française exposée par ce navigateur.</p>}
-      <ul className="mt-3 space-y-2">
-        {voices.map((v) => (
-          <li key={v.voiceURI}>
+      <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Voix du coach</p>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {VOICES.map((v) => (
+          <li key={v.key}>
             <button
-              onClick={() => choose(v)}
-              className={`w-full rounded-2xl border px-4 py-3 text-left text-sm ${v.voiceURI === selected ? 'border-white/60 bg-white/10' : 'border-white/10'}`}
+              onClick={() => choose(v.key)}
+              className={`w-full rounded-2xl border px-4 py-3 text-left ${v.key === selected ? 'border-white/60 bg-white/10' : 'border-white/10'}`}
             >
               <span className="font-semibold">{v.name}</span>
-              <span className="ml-2 text-white/40">{v.lang}</span>
-              <span className="block truncate text-xs text-white/30">{v.voiceURI}</span>
+              {v.key === selected && <span className="ml-2 text-xs text-white/50">✓ utilisée</span>}
+              <span className="block text-xs text-white/40">{v.desc}</span>
             </button>
           </li>
         ))}
@@ -53,16 +41,6 @@ function VoicePicker() {
   )
 }
 
-// Exercices de la dernière extension (à relire en priorité)
-const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
-const FILTERS = {
-  nouveaux: { label: 'Nouveaux', test: (e) => NEW_IDS.has(e.id) },
-  souplesse: { label: 'Souplesse', test: (e) => e.theme === 'souplesse' },
-  renfo: { label: 'Renfo', test: (e) => e.theme === 'renfo' },
-  tous: { label: 'Tous', test: () => true },
-}
-
-// Page cachée (#lab) : toutes les animations en boucle, pour valider le style et les poses.
 export default function Lab({ onBack }) {
   const [paused, setPaused] = useState(false)
   const [filter, setFilter] = useState('nouveaux')

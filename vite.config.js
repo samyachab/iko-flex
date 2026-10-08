@@ -29,9 +29,16 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+        // Hors ligne d'office : la voix par défaut (Vivienne). Les autres voix se mettent en cache en les utilisant.
+        globIgnores: ['voice/remy/**', 'voice/denise/**', 'voice/henri/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         // Polices Google mises en cache : l'app reste belle hors ligne
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/voice/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'voice-clips', expiration: { maxEntries: 1200 } },
+          },
           {
             urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
             handler: 'StaleWhileRevalidate',
