@@ -41,6 +41,16 @@ function VoicePicker() {
   )
 }
 
+// Exercices de la dernière extension (à relire en priorité)
+const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
+const FILTERS = {
+  nouveaux: { label: 'Nouveaux', test: (e) => NEW_IDS.has(e.id) },
+  souplesse: { label: 'Souplesse', test: (e) => e.theme === 'souplesse' },
+  renfo: { label: 'Renfo', test: (e) => e.theme === 'renfo' },
+  tous: { label: 'Tous', test: () => true },
+}
+
+// Page cachée (#lab) : toutes les animations en boucle, pour valider le style et les poses.
 export default function Lab({ onBack }) {
   const [paused, setPaused] = useState(false)
   const [filter, setFilter] = useState('nouveaux')
