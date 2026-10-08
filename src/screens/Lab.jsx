@@ -5,41 +5,8 @@ import { EXERCISES, GROUPS } from '../data/exercises.js'
 import { ANIMATIONS } from '../data/animations.js'
 import { EXTRA_ANIMATIONS } from '../data/animations-extra.js'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
-import { VOICES, currentVoice, setVoice, speak, unlockAudio } from '../lib/audio.js'
-import { PHRASES } from '../lib/phrases.js'
+import VoicePicker from '../components/VoicePicker.jsx'
 import { experience, getLevel } from '../lib/progress.js'
-
-// Choix de la voix enregistrée : toucher une voix = l'écouter et la garder.
-function VoicePicker() {
-  const [selected, setSelected] = useState(currentVoice)
-
-  const choose = (key) => {
-    unlockAudio()
-    setVoice(key)
-    setSelected(key)
-    speak(PHRASES.done, key)
-  }
-
-  return (
-    <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-      <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Voix du coach</p>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-        {VOICES.map((v) => (
-          <li key={v.key}>
-            <button
-              onClick={() => choose(v.key)}
-              className={`w-full rounded-2xl border px-4 py-3 text-left ${v.key === selected ? 'border-white/60 bg-white/10' : 'border-white/10'}`}
-            >
-              <span className="font-semibold">{v.name}</span>
-              {v.key === selected && <span className="ml-2 text-xs text-white/50">✓ utilisée</span>}
-              <span className="block text-xs text-white/40">{v.desc}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
 
 // Exercices de la dernière extension (à relire en priorité)
 const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
@@ -88,7 +55,7 @@ export default function Lab({ onBack }) {
         Niveau auto · souplesse {getLevel('souplesse')} ({experience('souplesse')} séances) · renfo {getLevel('renfo')} ({experience('renfo')} séances)
       </p>
 
-      <VoicePicker />
+      <VoicePicker className="mt-8" />
 
       <div className="mt-8 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
         {done.map((ex) => {

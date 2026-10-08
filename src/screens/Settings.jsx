@@ -5,6 +5,7 @@ import { ROUTINES, routineInfo } from '../lib/routine.js'
 import { DURATIONS, MIN_ENABLED, getSettings, saveSettings } from '../lib/settings.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 import { LEVEL_LABELS } from '../lib/progress.js'
+import VoicePicker from '../components/VoicePicker.jsx'
 
 const TITLES = { souplesse: 'Souplesse', renfo: 'Renfo' }
 
@@ -165,6 +166,9 @@ export default function Settings({ onBack }) {
       <div className="mt-6 flex flex-col gap-5">
         <RoutineSettings routineKey="souplesse" settings={settings} update={update} delay={0.15} />
         <RoutineSettings routineKey="renfo" settings={settings} update={update} delay={0.22} />
+        <motion.div {...rise(0.29)}>
+          <VoicePicker />
+        </motion.div>
       </div>
     </div>
   )
