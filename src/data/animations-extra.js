@@ -154,20 +154,24 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Vu de dessus, allongé sur le rouleau dans la longueur : les bras s'ouvrent en croix.
+  // Vu depuis la tête, dans l'axe du rouleau (rouleau = disque sous le dos) : allongé dessus, genoux pliés,
+  // les bras partent du plafond et s'ouvrent en croix jusqu'au sol, la poitrine s'ouvre avec la gravité.
   'roller-pectoral': {
     view: 'front',
-    ground: false,
-    hipHeight: 0,
-    props: [{ type: 'roller', x1: -8, y1: -86, x2: 8, y2: 12 }],
+    hipHeight: 25.5,
+    legOpacity: 0.3,
+    barWidth: 18,
+    props: [{ type: 'roller', x: 0, r: 7.5 }],
     base: {
-      armN: [80, 80],
-      legN: [8, 0, 0],
-      fs: { upperN: 0.15, foreN: 0.15, upperF: 0.15, foreF: 0.15, thighN: 0.7, thighF: 0.7, shinN: 0.15, shinF: 0.15, footN: 0.3, footF: 0.3 },
+      torso: 180,
+      head: 180,
+      armN: [178, 178],
+      legN: [160, 10, 90],
+      fs: { torso: 0.05, head: 0.05, thighN: 0.4, thighF: 0.4, footN: 0.3, footF: 0.3 },
     },
     keys: [
-      { pose: {}, hold: 0.6, move: 2.6 },
-      { pose: { armN: [108, 114], fs: { upperN: 0.95, foreN: 0.95, upperF: 0.95, foreF: 0.95 } }, hold: 3, move: 2.4 },
+      { pose: {}, hold: 0.6, move: 3 },
+      { pose: { armN: [70, 66] }, hold: 3.6, move: 2.4 },
     ],
   },
 
