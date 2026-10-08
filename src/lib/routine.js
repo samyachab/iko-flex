@@ -7,6 +7,7 @@ export const ROUTINES = {
     label: 'Routine Souplesse',
     emoji: '🔥',
     work: 45,
+    sideWork: 45, // exercices unilatéraux : 45 s par côté minimum
     rest: 10,
     // Poids de chaque zone dans la séance : priorité psoas/hanches
     plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2 },
@@ -17,6 +18,7 @@ export const ROUTINES = {
     label: 'Routine Renfo',
     emoji: '⚡',
     work: 50,
+    sideWork: 30, // exercices unilatéraux : 30 s par côté
     rest: 10,
     // Circuit fait 2 fois
     plan: { tronc: 2, haut: 2, jambes: 2 },
@@ -36,13 +38,17 @@ const shuffle = (arr) => {
 export const enabledPool = (key, settings = getSettings()) =>
   EXERCISES.filter((e) => e.theme === key && !settings[key].disabled.includes(e.id))
 
-// Nombre d'exercices différents (taille du circuit) pour la durée choisie
+// Durée d'un exercice dans la séance : un côté = un exercice à part entière (transition + effort)
+export const exerciseSeconds = (ex, c) => (ex.unilateral ? 2 * (c.rest + c.sideWork) : c.rest + c.work)
+
+// Nombre d'exercices différents (taille du circuit) pour la durée choisie,
+// estimé avec la durée moyenne des exercices actifs (les unilatéraux comptent double)
 export function routineInfo(key, settings = getSettings()) {
   const c = ROUTINES[key]
-  const pool = enabledPool(key, settings).length
-  const perExercise = (c.work + c.rest) * c.rounds
-  const size = Math.max(1, Math.min(pool, Math.round((settings[key].minutes * 60) / perExercise)))
-  return { size, count: size * c.rounds, minutes: Math.round((size * perExercise) / 60) }
+  const pool = enabledPool(key, settings)
+  const avg = pool.reduce((s, e) => s + exerciseSeconds(e, c), 0) / Math.max(1, pool.length)
+  const size = Math.max(1, Math.min(pool.length, Math.round((settings[key].minutes * 60) / (avg * c.rounds))))
+  return { size, count: size * c.rounds, minutes: Math.round((size * avg * c.rounds) / 60) }
 }
 
 // Ordre de remplissage des zones, proportionnel au plan :

@@ -6,14 +6,28 @@ import { PHRASES } from '../lib/phrases.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
 import Figure, { hasAnimation } from '../components/Figure.jsx'
 
-// Séquence : transition (10s) -> exercice -> transition -> exercice ...
-// La première transition sert de "mise en place".
+// Séquence : transition -> effort -> transition -> effort ...
+// La première transition sert de "mise en place". Un exercice unilatéral devient deux exercices :
+// côté droit, transition "change de côté", côté gauche (avec la durée par côté de la routine).
+// w = index de l'effort (une pastille de progression par effort, donc par côté).
 function buildSteps(routine) {
-  return routine.exercises.flatMap((ex, n) => [
-    { phase: 'rest', ex, n, duration: routine.rest },
-    { phase: 'work', ex, n, duration: routine.work },
-  ])
+  const steps = []
+  let w = 0
+  for (const ex of routine.exercises) {
+    if (ex.unilateral) {
+      steps.push({ phase: 'rest', ex, w, side: 1, duration: routine.rest })
+      steps.push({ phase: 'work', ex, w: w++, side: 1, duration: routine.sideWork })
+      steps.push({ phase: 'rest', ex, w, side: 2, switch: true, duration: routine.rest })
+      steps.push({ phase: 'work', ex, w: w++, side: 2, duration: routine.sideWork })
+    } else {
+      steps.push({ phase: 'rest', ex, w, duration: routine.rest })
+      steps.push({ phase: 'work', ex, w: w++, duration: routine.work })
+    }
+  }
+  return steps
 }
+
+const SIDE_LABEL = { 1: 'Côté droit', 2: 'Côté gauche' }
 
 function useWakeLock() {
   useEffect(() => {
@@ -186,8 +200,6 @@ export default function Player({ routine, onFinish, onQuit }) {
   const [remaining, setRemaining] = useState(steps[0].duration)
   const [paused, setPaused] = useState(false)
   const [confirmQuit, setConfirmQuit] = useState(false)
-  const [flips, setFlips] = useState(0)
-  const [switching, setSwitching] = useState(false)
   const endAt = useRef(null)
   if (endAt.current === null) endAt.current = Date.now() + steps[0].duration * 1000
   const lastSec = useRef(steps[0].duration)
@@ -195,7 +207,8 @@ export default function Player({ routine, onFinish, onQuit }) {
   const workedMs = useRef(0) // temps d'effort réellement fait (pour la règle des 70 %)
   const step = steps[i]
   const tone = TONES[routine.key]
-  const total = routine.exercises.length
+  const total = steps.filter((s) => s.phase === 'work').length
+  const plannedMs = steps.reduce((sum, s) => sum + (s.phase === 'work' ? s.duration * 1000 : 0), 0)
   const isRest = step.phase === 'rest'
   const breath = useBreath(paused)
 
@@ -206,9 +219,11 @@ export default function Player({ routine, onFinish, onQuit }) {
       PHRASES.switchSide,
       PHRASES.done,
       PHRASES.short,
-      ...routine.exercises.flatMap((ex, n) => [PHRASES.intro(ex, n === 0), PHRASES.cue(ex)]),
+      ...steps.map((s, k) =>
+        s.phase === 'rest' ? (s.switch ? PHRASES.switchSide : PHRASES.intro(s.ex, k === 0)) : s.side ? PHRASES.cueSide(s.ex, s.side) : PHRASES.cue(s.ex),
+      ),
     ])
-  }, [routine])
+  }, [steps])
 
   const leftMs = () => Math.max(0, paused ? pausedLeft.current : endAt.current - Date.now())
   const getLeftMs = useRef(leftMs)
@@ -221,7 +236,7 @@ export default function Player({ routine, onFinish, onQuit }) {
     if (step.phase === 'work') workedMs.current += step.duration * 1000 - leftMs()
     if (withSound && step.phase === 'work') beep.workEnd()
     if (i === steps.length - 1) {
-      onFinish({ workedMs: workedMs.current, plannedMs: total * routine.work * 1000 })
+      onFinish({ workedMs: workedMs.current, plannedMs })
       return
     }
     const next = steps[i + 1]
@@ -229,7 +244,6 @@ export default function Player({ routine, onFinish, onQuit }) {
     lastSec.current = next.duration
     setRemaining(next.duration)
     setPaused(false)
-    setSwitching(false)
     setI(i + 1)
   }
 
@@ -237,10 +251,11 @@ export default function Player({ routine, onFinish, onQuit }) {
   useEffect(() => {
     const s = steps[i]
     if (s.phase === 'rest') {
-      speak(PHRASES.intro(s.ex, i === 0))
+      if (s.switch) beep.switchSide()
+      speak(s.switch ? PHRASES.switchSide : PHRASES.intro(s.ex, i === 0))
     } else {
       beep.go()
-      speak(PHRASES.cue(s.ex))
+      speak(s.side ? PHRASES.cueSide(s.ex, s.side) : PHRASES.cue(s.ex))
     }
   }, [i, steps])
 
@@ -253,13 +268,6 @@ export default function Player({ routine, onFinish, onQuit }) {
       lastSec.current = left
       setRemaining(left)
       if (left > 0 && left <= 3) beep.tick()
-      if (step.phase === 'work' && step.ex.unilateral && left === Math.floor(step.duration / 2)) {
-        beep.switchSide()
-        speak(PHRASES.switchSide)
-        setFlips((f) => f + 1)
-        setSwitching(true)
-        setTimeout(() => setSwitching(false), 2200)
-      }
       if (left === 0) advance()
     }, 100)
     return () => clearInterval(id)
@@ -302,9 +310,9 @@ export default function Player({ routine, onFinish, onQuit }) {
           {confirmQuit ? 'Quitter ?' : '✕'}
         </motion.button>
         <div className="flex flex-1 items-center justify-center gap-1.5">
-          {routine.exercises.map((_, k) => {
-            const current = k === step.n
-            const done = k < step.n
+          {Array.from({ length: total }, (_, k) => {
+            const current = k === step.w
+            const done = k < step.w
             return (
               <motion.div
                 key={k}
@@ -319,7 +327,7 @@ export default function Player({ routine, onFinish, onQuit }) {
           })}
         </div>
         <span className="w-9 text-right text-sm font-semibold tabular-nums text-white/50">
-          {step.n + 1}/{total}
+          {step.w + 1}/{total}
         </span>
       </div>
 
@@ -334,7 +342,7 @@ export default function Player({ routine, onFinish, onQuit }) {
           exerciseId={animated ? step.ex.id : null}
           breath={breath}
           paused={paused}
-          flipKey={flips}
+          flipKey={step.side === 2 ? 1 : 0}
           onTap={togglePause}
         />
         {animated && (
@@ -351,18 +359,7 @@ export default function Player({ routine, onFinish, onQuit }) {
         )}
         <div className="mt-3 h-6">
           <AnimatePresence mode="wait">
-            {switching ? (
-              <motion.p
-                key="switch"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-sm font-bold uppercase tracking-[0.3em]"
-                style={{ color: tone.a }}
-              >
-                ⇄ change de côté
-              </motion.p>
-            ) : showBreath ? (
+            {showBreath ? (
               <motion.p
                 key={breath}
                 initial={{ opacity: 0, y: 4 }}
@@ -389,9 +386,23 @@ export default function Player({ routine, onFinish, onQuit }) {
           className="min-h-44 text-center"
         >
           <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em]" style={{ color: isRest ? 'rgba(255,255,255,0.45)' : tone.a }}>
-            {isRest ? (i === 0 ? 'Mets-toi en place' : 'Ensuite') : GROUPS[step.ex.group].label}
+            {isRest ? (step.switch ? '⇄ Change de côté' : i === 0 ? 'Mets-toi en place' : 'Ensuite') : GROUPS[step.ex.group].label}
           </p>
           <h2 className="font-display mt-2 text-[2.1rem] font-normal leading-[1.1] tracking-tight">{step.ex.name}</h2>
+          {step.side && (
+            <motion.span
+              key={`side-${step.side}`}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+              className="mt-2 inline-block rounded-full px-4 py-1 text-sm font-bold"
+              style={isRest ? { background: 'rgba(255,255,255,0.12)', color: '#F3EFE8' } : { background: gradient(tone, 90), color: '#121212' }}
+            >
+              {step.side === 2 ? '◀ ' : ''}
+              {SIDE_LABEL[step.side]}
+              {step.side === 1 ? ' ▶' : ''}
+            </motion.span>
+          )}
           {isRest ? (
             <>
               <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-white/55">{step.ex.execution}</p>

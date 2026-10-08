@@ -8,14 +8,20 @@ export const PHRASES = {
   intro: (ex, first) =>
     `${first ? "C'est parti. Premier mouvement" : 'Respire. Ensuite'} : ${spokenName(ex)}.${ex.warning ? ` ${ex.warning}` : ''}`,
   cue: (ex) => `${ex.cue}.`,
-  switchSide: 'Change de côté.',
+  // Exercices unilatéraux : chaque côté est annoncé comme un exercice à part
+  cueSide: (ex, side) => `Côté ${side === 1 ? 'droit' : 'gauche'}. ${ex.cue}.`,
+  switchSide: 'Change de côté. Côté gauche.',
   done: 'Séance terminée. Bien joué.',
   short: 'Séance écourtée. La série attend la prochaine.',
 }
 
 export function allPhrases(exercises) {
   const list = [PHRASES.switchSide, PHRASES.done, PHRASES.short]
-  for (const ex of exercises) list.push(PHRASES.intro(ex, true), PHRASES.intro(ex, false), PHRASES.cue(ex))
+  for (const ex of exercises) {
+    list.push(PHRASES.intro(ex, true), PHRASES.intro(ex, false))
+    if (ex.unilateral) list.push(PHRASES.cueSide(ex, 1), PHRASES.cueSide(ex, 2))
+    else list.push(PHRASES.cue(ex))
+  }
   return [...new Set(list)]
 }
 
