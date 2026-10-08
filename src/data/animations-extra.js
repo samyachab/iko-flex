@@ -25,56 +25,68 @@ export const EXTRA_ANIMATIONS = {
 
   // ───────── Souplesse : hanches & bassin (2e extension) ─────────
 
-  // Fente spiderman, mains au sol : le bras du côté du pied avant monte vers le plafond (rotation du buste).
+  // Depuis la planche : pied proche à l'extérieur de la main, le bras du même côté monte vers le plafond,
+  // retour en planche, puis même chose de l'autre côté (en alternance).
   'spiderman-rotation': {
     view: 'side',
     base: {
       torso: 114,
-      armN: [-20, -20],
-      armF: [-24, -24],
-      legN: [95, -20, 90],
-      legF: [-74, -74, 15],
+      head: 108,
+      armN: [0, 0],
+      armF: [0, 0],
+      legN: [-66, -66, 60],
+      legF: [-66, -66, 60],
     },
     keys: [
-      { pose: {}, hold: 0.4, move: 1.6 },
-      { pose: { torso: 120, head: 165, armN: [180, 180] }, hold: 1.2, move: 1.6 },
+      { pose: {}, hold: 0.2, move: 0.9 },
+      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
+      { pose: { x: 19, torso: 120, head: 165, armN: [180, 180], armF: [-24, -24], legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.8, move: 0.9 },
+      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legN: [95, -20, 90], legF: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
+      { pose: {}, hold: 0.2, move: 0.9 },
+      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
+      { pose: { x: 19, torso: 120, head: 165, armF: [180, 180], armN: [-20, -20], legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.8, move: 0.9 },
+      { pose: { x: 19, head: 110, armN: [-20, -20], armF: [-24, -24], legF: [95, -20, 90], legN: [-74, -74, 15] }, hold: 0.1, move: 0.9 },
     ],
   },
 
-  // Squat très profond, kettlebell contre la poitrine, coudes contre l'intérieur des genoux :
-  // le bassin se balance doucement pour ouvrir les hanches.
+  // Vue de face, squat très profond, kettlebell contre la poitrine : les coudes, à l'intérieur des genoux,
+  // repoussent les genoux vers l'extérieur, puis relâchent.
   'prying-squat': {
-    view: 'side',
-    props: [{ type: 'weight', at: ['handN', 'handF'], r: 8, dx: 3 }],
+    view: 'front',
+    props: [{ type: 'weight', at: ['handN', 'handF'], r: 8, dy: 3 }],
     base: {
-      x: -14,
-      torso: 135,
-      head: 155,
-      armN: [2.9, 146],
-      armF: [0, 144],
-      legN: [84.7, -41.5, 90],
-      legF: [83, -42.5, 90],
+      torso: 180,
+      head: 180,
+      armN: [22.9, -122.5],
+      legN: [110, 0, 90],
+      fs: { torso: 0.8, thighN: 0.7, thighF: 0.7, footN: 0.5, footF: 0.5 },
     },
     keys: [
-      { pose: {}, hold: 1, move: 2 },
-      { pose: { x: -10, torso: 140, head: 158, armN: [7.4, 152], armF: [4.5, 150], legN: [81.8, -50.1, 90], legF: [80, -51, 90] }, hold: 1, move: 2 },
+      { pose: {}, hold: 0.8, move: 1.6 },
+      { pose: { armN: [40, -108], legN: [104, -10, 90], fs: { thighN: 0.9, thighF: 0.9 } }, hold: 1.4, move: 1.6 },
     ],
   },
 
-  // Vue de face, assis en 90/90 (jambe proche devant, jambe éloignée derrière) : on pousse sur les tibias
-  // pour monter à genoux, bassin tendu vers l'avant et fessiers serrés, puis on redescend.
+  // Vue de face, assis en 90/90 : on pousse sur les tibias pour monter à genoux, bassin tendu vers l'avant,
+  // on redescend, les genoux basculent comme des essuie-glaces, et on monte de l'autre côté.
   'shin-box-lift': {
     view: 'front',
     base: {
       torso: 180,
       armN: [14, -24],
-      legN: [100, -89, 90],
-      legF: [58, -86.6, -90],
-      fs: { torso: 0.85, shinN: 0.36, thighF: 0.25, shinF: 0.9 },
+      legN: [140, 0, 90],
+      legF: [-140, 0, -90],
+      fs: { torso: 0.85 },
     },
     keys: [
-      { pose: {}, hold: 0.4, move: 1.4 },
-      { pose: { x: 16, legN: [33.5, -90, 90], legF: [-14.2, -86.4, -90], fs: { torso: 1, thighN: 1, thighF: 0.86, shinF: 0.89 } }, hold: 1, move: 1.6 },
+      { pose: {}, hold: 0.2, move: 1 },
+      { pose: { legN: [100, -89, 90], legF: [-302, -86.6, -90], fs: { torso: 0.85, shinN: 0.36, thighF: 0.25, shinF: 0.9 } }, hold: 0.2, move: 1.2 },
+      { pose: { x: 16, legN: [33.5, -90, 90], legF: [-374.2, -86.4, -90], fs: { torso: 1, shinN: 0.36, thighF: 0.86, shinF: 0.89 } }, hold: 0.8, move: 1.2 },
+      { pose: { legN: [100, -89, 90], legF: [-302, -86.6, -90], fs: { torso: 0.85, shinN: 0.36, thighF: 0.25, shinF: 0.9 } }, hold: 0.2, move: 1 },
+      { pose: {}, hold: 0.2, move: 1 },
+      { pose: { legN: [302, 86.6, 90], legF: [-100, 89, -90], fs: { torso: 0.85, thighN: 0.25, shinN: 0.9, shinF: 0.36 } }, hold: 0.2, move: 1.2 },
+      { pose: { x: -16, legN: [374.2, 86.4, 90], legF: [-33.5, 90, -90], fs: { torso: 1, thighN: 0.86, shinN: 0.89, shinF: 0.36 } }, hold: 0.8, move: 1.2 },
+      { pose: { legN: [302, 86.6, 90], legF: [-100, 89, -90], fs: { torso: 0.85, thighN: 0.25, shinN: 0.9, shinF: 0.36 } }, hold: 0.2, move: 1 },
     ],
   },
 
