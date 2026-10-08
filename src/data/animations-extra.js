@@ -77,6 +77,23 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
+  // Assis, jambe éloignée tendue au sol, pied de la jambe proche posé de l'autre côté du genou :
+  // le bras opposé enlace le genou plié et le tire vers la poitrine, buste bien droit.
+  'fessier-assis': {
+    view: 'side',
+    base: {
+      torso: 180,
+      armN: [-20, -14],
+      armF: [55, 120],
+      legN: [139.2, 11.5, 90],
+      legF: [90, 90, 175],
+    },
+    keys: [
+      { pose: {}, hold: 0.8, move: 2.2 },
+      { pose: { torso: 182, head: 181, armF: [62, 160], legN: [140.9, 0.1, 90] }, hold: 3.2, move: 2 },
+    ],
+  },
+
   // Allongé au bord du lit, une cuisse tirée contre la poitrine, l'autre jambe pend dans le vide.
   'psoas-table': {
     view: 'side',
