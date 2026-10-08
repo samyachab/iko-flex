@@ -594,7 +594,7 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Assis sur une chaise, charge posée sur les genoux : on monte sur la pointe des pieds.
+  // Assis sur une chaise, charge posée sur un genou : on monte sur la pointe de ce pied (un côté à la fois).
   'soleaire-assis': {
     view: 'side',
     hipHeight: 39.5,
@@ -611,7 +611,7 @@ export const EXTRA_ANIMATIONS = {
     },
     keys: [
       { pose: {}, hold: 0.3, move: 1 },
-      { pose: { legN: [98, 2.3, 50], legF: [98, 2.3, 50] }, hold: 0.6, move: 1.6 },
+      { pose: { legN: [98, 2.3, 50] }, hold: 0.6, move: 1.6 },
     ],
   },
 
