@@ -86,6 +86,36 @@ export default function Lab({ onBack }) {
         ))}
       </section>
 
+      {/* Test des couleurs du personnage sur le fond bleu du Renfo */}
+      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+        <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Couleurs · fond Renfo</p>
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {[
+            ['#121212', 'Encre'],
+            ['#1c2740', 'Bleu nuit'],
+            ['#173a33', 'Vert sapin'],
+            ['#3b1f3a', 'Prune'],
+            ['#4a2418', 'Terre brûlée'],
+            ['#2b2d33', 'Graphite'],
+            ['#4a1626', 'Bordeaux'],
+            ['#3a2418', 'Chocolat'],
+          ].map(([c, label]) => (
+            <div key={c} className="flex flex-col items-center">
+              <div className="relative aspect-square w-full">
+                <motion.div
+                  className="absolute inset-0"
+                  style={{ background: gradient(TONES.renfo) }}
+                  animate={{ borderRadius: SHAPES }}
+                  transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <Figure id="goblet-squat" variant="v2" color={c} paused={paused} className="absolute inset-[12%]" />
+              </div>
+              <p className="mt-2 text-xs text-white/50">{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <VoicePicker className="mt-8" />
 
       <div className="mt-8 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
