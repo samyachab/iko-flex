@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import Figure from '../components/Figure.jsx'
 import { EXERCISES, GROUPS } from '../data/exercises.js'
 import { ANIMATIONS } from '../data/animations.js'
+import { EXTRA_ANIMATIONS } from '../data/animations-extra.js'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
 import { currentVoice, frenchVoices, setVoice, speak } from '../lib/audio.js'
 import { experience, getLevel } from '../lib/progress.js'
@@ -52,10 +53,21 @@ function VoicePicker() {
   )
 }
 
+// Exercices de la dernière extension (à relire en priorité)
+const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
+const FILTERS = {
+  nouveaux: { label: 'Nouveaux', test: (e) => NEW_IDS.has(e.id) },
+  souplesse: { label: 'Souplesse', test: (e) => e.theme === 'souplesse' },
+  renfo: { label: 'Renfo', test: (e) => e.theme === 'renfo' },
+  tous: { label: 'Tous', test: () => true },
+}
+
 // Page cachée (#lab) : toutes les animations en boucle, pour valider le style et les poses.
 export default function Lab({ onBack }) {
   const [paused, setPaused] = useState(false)
-  const done = EXERCISES.filter((e) => ANIMATIONS[e.id])
+  const [filter, setFilter] = useState('nouveaux')
+  const animated = EXERCISES.filter((e) => ANIMATIONS[e.id])
+  const done = animated.filter(FILTERS[filter].test)
   const todo = EXERCISES.filter((e) => !ANIMATIONS[e.id] && e.theme !== 'salle')
 
   return (
@@ -65,11 +77,23 @@ export default function Lab({ onBack }) {
       </button>
       <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Labo animations</p>
       <h1 className="font-display mt-2 text-4xl font-light">
-        {done.length} / {done.length + todo.length}
+        {animated.length} / {animated.length + todo.length}
       </h1>
       <button onClick={() => setPaused(!paused)} className="mt-4 rounded-full border border-white/15 px-4 py-2 text-sm">
         {paused ? '▶ Lecture' : '⏸ Pause'}
       </button>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {Object.entries(FILTERS).map(([key, f]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`rounded-full border px-4 py-2 text-sm ${filter === key ? 'border-white/60 bg-white/10' : 'border-white/15 text-white/60'}`}
+          >
+            {f.label} ({animated.filter(f.test).length})
+          </button>
+        ))}
+      </div>
 
       {/* Progression automatique (invisible ailleurs dans l'app) */}
       <p className="mt-4 text-xs text-white/40">
