@@ -19,6 +19,8 @@ export default function Figure({ id, paused = false, color = INK, className = ''
   const segs = useMemo(() => anim && segments(anim.view), [anim])
   const bands = useMemo(() => anim?.props?.filter((p) => p.type === 'band') ?? [], [anim])
   const weights = useMemo(() => anim?.props?.filter((p) => p.type === 'weight') ?? [], [anim])
+  // Rouleaux tenus entre deux articulations (ex. deadbug press) : suivent le corps comme une charge
+  const heldRollers = useMemo(() => anim?.props?.filter((p) => p.type === 'roller' && p.at) ?? [], [anim])
   const els = useRef({})
   const time = useRef(0)
 
@@ -46,14 +48,15 @@ export default function Figure({ id, paused = false, color = INK, className = ''
         el.setAttribute('x2', c[0])
         el.setAttribute('y2', c[1])
       })
-      weights.forEach((w, k) => {
-        const el = els.current[`weight${k}`]
+      const attach = (el, w) => {
         if (!el) return
         // Point d'accroche : une articulation, ou le milieu de deux (ex. kettlebell tenue à deux mains)
         const pts = [].concat(w.at).map((n) => j[n])
         el.setAttribute('cx', pts.reduce((a, p) => a + p[0], 0) / pts.length + (w.dx ?? 0))
         el.setAttribute('cy', pts.reduce((a, p) => a + p[1], 0) / pts.length + (w.dy ?? 0))
-      })
+      }
+      weights.forEach((w, k) => attach(els.current[`weight${k}`], w))
+      heldRollers.forEach((w, k) => attach(els.current[`roller${k}`], w))
     }
     draw()
     // Pas de coupure si "réduire les animations" est actif : la démo du mouvement est le contenu lui-même.
@@ -67,7 +70,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       raf = requestAnimationFrame(tick)
     })
     return () => cancelAnimationFrame(raf)
-  }, [anim, s, segs, bands, weights, paused])
+  }, [anim, s, segs, bands, weights, heldRollers, paused])
 
   if (!anim) return null
   // Trois niveaux de sombre pour que les superpositions restent lisibles :
@@ -78,6 +81,8 @@ export default function Figure({ id, paused = false, color = INK, className = ''
   const table = anim.props?.find((p) => p.type === 'table')
   const boxes = anim.props?.filter((p) => p.type === 'box') ?? []
   const mat = anim.props?.find((p) => p.type === 'mat')
+  const floorRollers = anim.props?.filter((p) => p.type === 'roller' && !p.at) ?? []
+  const cones = anim.props?.filter((p) => p.type === 'cone') ?? []
 
   return (
     <svg viewBox={`${vb.x} ${vb.y} ${vb.size} ${vb.size}`} className={className} aria-hidden="true">
@@ -127,6 +132,17 @@ export default function Figure({ id, paused = false, color = INK, className = ''
           strokeWidth="2"
         />
       ))}
+      {/* Rouleau au sol (vu de profil : disque ; vu de dessus : barre arrondie), dessiné sous le corps */}
+      {floorRollers.map((r, k) =>
+        r.r ? (
+          <circle key={k} cx={r.x} cy={-r.r} r={r.r} fill={color} fillOpacity="0.14" stroke={color} strokeOpacity="0.3" strokeWidth="2" />
+        ) : (
+          <rect key={k} x={r.x1} y={r.y1} width={r.x2 - r.x1} height={r.y2 - r.y1} rx={(r.x2 - r.x1) / 2} fill={color} fillOpacity="0.14" stroke={color} strokeOpacity="0.3" strokeWidth="2" />
+        ),
+      )}
+      {cones.map((c, k) => (
+        <path key={k} d={`M${c.x - 6} 0 L${c.x} ${-(c.h ?? 11)} L${c.x + 6} 0 Z`} fill={color} fillOpacity="0.3" strokeLinejoin="round" stroke={color} strokeOpacity="0.3" strokeWidth="2" />
+      ))}
       {/* legOpacity (option d'animation) : jambes en retrait, dessinées derrière tout le reste */}
       {['L', 'F', 'B', 'N'].map((layer) => (
         <g key={layer} stroke={color} strokeLinecap="round" fill="none" opacity={layers[layer]}>
@@ -141,6 +157,9 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       {/* Élastiques : trait fin par-dessus le corps */}
       {bands.map((_, k) => (
         <line key={k} ref={(el) => (els.current[`band${k}`] = el)} stroke={color} strokeOpacity="0.75" strokeWidth="2" strokeLinecap="round" />
+      ))}
+      {heldRollers.map((r, k) => (
+        <circle key={k} ref={(el) => (els.current[`roller${k}`] = el)} r={r.r ?? 6} fill={color} fillOpacity="0.35" stroke={color} strokeOpacity="0.6" strokeWidth="2" />
       ))}
       {/* Charges (kettlebell, haltères) : disque plein, toujours au premier plan */}
       {weights.map((w, k) => (

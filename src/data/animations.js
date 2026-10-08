@@ -20,6 +20,8 @@
 // keys : poses successives. hold = pause sur la pose (s), move = durée du passage à la suivante (s).
 // La boucle revient à la première pose.
 
+import { EXTRA_ANIMATIONS } from './animations-extra.js'
+
 export const STAND = {
   x: 0,
   torso: 180,
@@ -206,21 +208,21 @@ export const ANIMATIONS = {
     ],
   },
 
-  // Allongé sur le dos, élastique sous le pied : la jambe tendue monte, quadriceps contracté.
+  // Allongé sur le dos, l'autre jambe au sol : genou ramené à la poitrine (mains derrière la cuisse),
+  // puis on tend la jambe pied vers le plafond, pointe de pied tirée vers soi.
   'ischio-actif': {
     view: 'side',
-    props: [{ type: 'band', from: 'handN', to: 'toeN' }],
     base: {
       torso: -90,
       head: -90,
-      armN: [150, 120],
-      armF: [146, 118],
-      legN: [140, 140, 230],
+      armN: [150, 80],
+      armF: [146, 82],
+      legN: [200, 110, 200],
       legF: [90, 90, 180],
     },
     keys: [
-      { pose: {}, hold: 0.8, move: 2.4 },
-      { pose: { armN: [168, 150], armF: [164, 148], legN: [172, 172, 255] }, hold: 2.8, move: 2.2 },
+      { pose: {}, hold: 0.5, move: 1.5 },
+      { pose: { legN: [188, 188, 278] }, hold: 1, move: 1.5 },
     ],
   },
 
@@ -500,4 +502,6 @@ export const ANIMATIONS = {
       { pose: { x: 31, y: 104, torso: 178, armN: [-40, 20], armF: [45, 140], legN: [13.4, -9.3, 90], legF: [95, 0, 90] }, hold: 0.5, move: 1.1 },
     ],
   },
+
+  ...EXTRA_ANIMATIONS,
 }

@@ -19,6 +19,8 @@ const TAGS = {
   nerf: { zone: 'le nerf sciatique', transfer: 'Nerf libéré : la « fausse raideur » des ischios disparaît.' },
   cervicales: { zone: 'les cervicales', transfer: 'Nuque détendue : regard loin, tête stable jusqu’à la ligne.' },
   sprint: { zone: 'l’explosivité', transfer: 'Jambe d’appui plus forte : coup de rein disponible pour le finish.' },
+  tibias: { zone: 'les tibias', transfer: 'Tibias solides : attaque du pied plus sûre et périostites tenues à distance.' },
+  dos: { zone: 'la colonne', transfer: 'Colonne mobile : le haut du corps tourne librement sans tirer sur les lombaires.' },
 }
 
 const joinFr = (items) =>

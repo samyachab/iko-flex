@@ -11,7 +11,7 @@ export const ROUTINES = {
     sideWork: 45, // exercices unilatéraux : 45 s par côté minimum
     rest: 10,
     // Poids de chaque zone dans la séance : priorité psoas/hanches
-    plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2 },
+    plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2, dos: 1, roller: 1 },
     rounds: 1,
   },
   renfo: {
@@ -22,7 +22,7 @@ export const ROUTINES = {
     sideWork: 30, // secours pour un exercice renfo sans programmation (prog)
     rest: 10,
     // Séries par exercice (voir prog dans exercises.js), un exercice après l'autre
-    plan: { tronc: 2, haut: 2, jambes: 2 },
+    plan: { tronc: 2, haut: 2, jambes: 2, cheville: 1, plio: 1 },
     rounds: 1,
   },
 }

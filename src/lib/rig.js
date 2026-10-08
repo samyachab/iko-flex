@@ -150,6 +150,10 @@ export function frame(anim, s) {
       maxX = Math.max(maxX, pr.x2)
       minY = Math.min(minY, pr.top)
     }
+    if ((pr.type === 'roller' && pr.r && !pr.at) || pr.type === 'cone') {
+      minX = Math.min(minX, pr.x - (pr.r ?? 6))
+      maxX = Math.max(maxX, pr.x + (pr.r ?? 6))
+    }
     if (pr.type === 'wall' && pr.x != null) {
       minX = Math.min(minX, pr.x - 4)
       maxX = Math.max(maxX, pr.x + 4)

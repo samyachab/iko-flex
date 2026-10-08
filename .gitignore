@@ -5,3 +5,4 @@ dist
 .claude/settings.local.json
 voice-samples
 scripts/.voice-phrases.json
+scripts/pose-sheet.out.html
