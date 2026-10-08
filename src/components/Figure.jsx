@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef } from 'react'
 import { ANIMATIONS } from '../data/animations.js'
 import { LEN, WID, frame, sampler, segments, solve } from '../lib/rig.js'
 
@@ -18,7 +18,7 @@ const PROFILE = {
   upper: [[0, 5.9], [0.35, 5.5], [1, 4.1]],
   fore: [[0, 4.1], [0.28, 4.5], [1, 2.9]],
   // du bassin (0) à la base du cou (1)
-  torso: [[0, 9.6], [0.85, 11.4], [1, 10]],
+  torso: [[0, 9.6], [0.85, 11.4], [1, 9]],
   neck: [[0, 3.9], [1, 3.4]],
 }
 
@@ -58,8 +58,15 @@ function limb(a, b, profile, ext = 0) {
   return `M${f2(left[0][0])} ${f2(left[0][1])}${curve(left)}A${r1} ${r1} 0 0 0 ${f2(right[0][0])} ${f2(right[0][1])}${curve(right)}A${r0} ${r0} 0 0 0 ${f2(left[0][0])} ${f2(left[0][1])}Z`
 }
 
-const NECK_GAP = 23 // distance base du cou -> centre de la tête (squelette : 16,5)
-const HEAD_R = 9.2
+const NECK_GAP = 20 // distance base du cou -> centre de la tête (squelette : 16,5)
+const HEAD_R = 9.4
+
+// Mélange une couleur hexadécimale avec du blanc (k = 0 : inchangée, 1 : blanc)
+function lighten(hex, k) {
+  const n = parseInt(hex.slice(1), 16)
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (255 - v) * k))
+  return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`
+}
 
 const angleOf = (a, b) => (Math.atan2(b[0] - a[0], b[1] - a[1]) * 180) / Math.PI
 
@@ -69,6 +76,7 @@ export function hasAnimation(id) {
 
 export default function Figure({ id, paused = false, color = INK, className = '', variant = 'v1' }) {
   const v2 = variant === 'v2'
+  const uid = useId().replace(/:/g, '')
   const anim = ANIMATIONS[id]
   const s = useMemo(() => anim && sampler(anim), [anim])
   const vb = useMemo(() => anim && frame(anim, s), [anim, s])
@@ -183,24 +191,24 @@ export default function Figure({ id, paused = false, color = INK, className = ''
     <svg viewBox={`${vb.x} ${vb.y} ${vb.size} ${vb.size}`} className={className} aria-hidden="true">
       {v2 && (
         <defs>
-          <radialGradient id={`shadow-${id}`}>
+          <radialGradient id={`shadow-${uid}`}>
             <stop offset="0" stopColor={color} stopOpacity="0.28" />
             <stop offset="1" stopColor={color} stopOpacity="0" />
           </radialGradient>
           {/* Volume : lumière douce venant du haut-gauche sur chaque partie du corps */}
-          <linearGradient id={`trunk-${id}`} x1="0" y1="0" x2="0.6" y2="1">
-            <stop offset="0" stopColor="#4a4340" />
+          <linearGradient id={`trunk-${uid}`} x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0" stopColor={lighten(color, 0.22)} />
             <stop offset="0.55" stopColor={color} />
             <stop offset="1" stopColor={color} />
           </linearGradient>
-          <linearGradient id={`body-${id}`} x1="0.15" y1="0" x2="0.85" y2="1">
-            <stop offset="0" stopColor="#5a4a44" />
-            <stop offset="0.45" stopColor="#241f1d" />
+          <linearGradient id={`body-${uid}`} x1="0.15" y1="0" x2="0.85" y2="1">
+            <stop offset="0" stopColor={lighten(color, 0.3)} />
+            <stop offset="0.45" stopColor={lighten(color, 0.08)} />
             <stop offset="1" stopColor={color} />
           </linearGradient>
         </defs>
       )}
-      {v2 && anim.ground !== false && <ellipse ref={(el) => (els.current.shadow = el)} cy={1} ry={4.5} fill={`url(#shadow-${id})`} />}
+      {v2 && anim.ground !== false && <ellipse ref={(el) => (els.current.shadow = el)} cy={1} ry={4.5} fill={`url(#shadow-${uid})`} />}
       {anim.ground !== false && (
         <line x1={vb.x + 8} x2={vb.x + vb.size - 8} y1={0.5} y2={0.5} stroke={color} strokeOpacity="0.22" strokeWidth="1.5" strokeLinecap="round" />
       )}
@@ -265,7 +273,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
           stroke={v2 ? (layer === 'B' ? 'none' : '#ffffff') : color}
           strokeOpacity={v2 ? 0.14 : 1}
           strokeLinecap="round"
-          fill={v2 ? `url(#${layer === 'B' ? 'trunk' : 'body'}-${id})` : 'none'}
+          fill={v2 ? `url(#${layer === 'B' ? 'trunk' : 'body'}-${uid})` : 'none'}
           opacity={layers[layer]}
         >
           {segs.map(([, , w, l], k) =>
@@ -280,7 +288,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
           {v2 && layer === 'B' && <path ref={(el) => (els.current.neck = el)} stroke="none" />}
           {layer === 'B' &&
             (v2 ? (
-              <circle ref={(el) => (els.current.head = el)} r={HEAD_R} fill={`url(#trunk-${id})`} stroke="none" />
+              <circle ref={(el) => (els.current.head = el)} r={HEAD_R} fill={`url(#trunk-${uid})`} stroke="none" />
             ) : (
               <circle ref={(el) => (els.current.head = el)} r={LEN.head} fill={color} stroke="none" />
             ))}
