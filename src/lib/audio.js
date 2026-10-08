@@ -54,8 +54,6 @@ function tone(freq, duration, delay = 0, volume = 0.25) {
 
 export const beep = {
   tick: () => tone(880, 0.12),
-  // Tempo des répétitions : une note par phase (descente grave, maintien neutre, remontée aiguë)
-  tempo: (phase, count) => tone(phase === 0 ? 392 : phase === count - 1 ? 784 : 587, 0.14, 0, 0.2),
   workEnd: () => {
     tone(660, 0.18)
     tone(440, 0.4, 0.2)

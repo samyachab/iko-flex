@@ -4,6 +4,7 @@ import { EXERCISES, GROUPS } from '../data/exercises.js'
 import { ROUTINES, routineInfo } from '../lib/routine.js'
 import { DURATIONS, MIN_ENABLED, getSettings, saveSettings } from '../lib/settings.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
+import { LEVEL_LABELS } from '../lib/progress.js'
 
 const TITLES = { souplesse: 'Souplesse', renfo: 'Renfo' }
 
@@ -72,6 +73,34 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
           </button>
         ))}
       </div>
+
+      {routineKey === 'renfo' && (
+        <>
+          <p className="mt-5 text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40">Niveau</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {['auto', 1, 2, 3].map((lv) => {
+              const active = (s.level ?? 'auto') === lv
+              return (
+                <button
+                  key={lv}
+                  onClick={() => set({ level: lv })}
+                  className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+                  style={
+                    active
+                      ? { background: gradient(t, 90), color: '#121212' }
+                      : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }
+                  }
+                >
+                  {lv === 'auto' ? 'Auto' : LEVEL_LABELS[lv]}
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-white/40">
+            Auto : séries et répétitions augmentent avec ta régularité.
+          </p>
+        </>
+      )}
 
       <p className="mt-2 text-xs leading-relaxed text-white/40">
         {routineKey === 'souplesse'

@@ -97,7 +97,8 @@ function candidates(key, settings) {
 export function buildRoutine(key, settings = getSettings()) {
   const config = ROUTINES[key]
   const target = settings[key].minutes * 60
-  const level = getLevel(key)
+  const chosen = settings[key].level
+  const level = chosen && chosen !== 'auto' ? chosen : getLevel(key)
   const { list, favorite } = candidates(key, settings)
   const k = Math.min(1, Math.max(0, (settings[key].minutes - SHORT) / (LONG - SHORT)))
   const plans = new Map()

@@ -61,32 +61,6 @@ function stepPhrase(s, k) {
   return s.side ? PHRASES.cueSide(s.ex, s.side) : PHRASES.cue(s.ex)
 }
 
-// Répétitions guidées : numéro de répétition et phase du tempo en cours, avec un bip par phase
-function useTempo(step, readLeftMs, paused) {
-  const [state, setState] = useState({ rep: 1, phase: 0 })
-  const last = useRef('')
-  useEffect(() => {
-    last.current = ''
-    setState({ rep: 1, phase: 0 })
-    if (step.phase !== 'work' || !step.reps || paused) return
-    const tempo = step.ex.prog.tempo
-    const repMs = tempo.reduce((s, [, sec]) => s + sec, 0) * 1000
-    const id = setInterval(() => {
-      const elapsed = Math.max(0, step.duration * 1000 - readLeftMs())
-      const rep = Math.min(step.reps, Math.floor(elapsed / repMs) + 1)
-      let t = elapsed - (rep - 1) * repMs
-      let phase = 0
-      while (phase < tempo.length - 1 && t >= tempo[phase][1] * 1000) t -= tempo[phase++][1] * 1000
-      const key = `${rep}-${phase}`
-      if (key === last.current) return
-      last.current = key
-      beep.tempo(phase, tempo.length)
-      setState({ rep, phase })
-    }, 50)
-    return () => clearInterval(id)
-  }, [step, readLeftMs, paused])
-  return state
-}
 
 function useWakeLock() {
   useEffect(() => {
@@ -136,7 +110,7 @@ function useBreath(paused) {
   return phase
 }
 
-function Orb({ tone, isRest, stepId, getLeftMs, remaining, breath, paused, flipKey, onTap, exerciseId }) {
+function Orb({ tone, isRest, stepId, getLeftMs, remaining, breath, paused, flipKey, onTap, exerciseId, selfPaced }) {
   const size = Math.min(window.innerWidth * 0.68, window.innerHeight * 0.34, 290)
   const ring = size + 44
   const r = ring / 2 - 3
@@ -151,11 +125,12 @@ function Orb({ tone, isRest, stepId, getLeftMs, remaining, breath, paused, flipK
     offset.set(0)
   }, [stepId, offset])
   useEffect(() => {
-    if (paused) return
+    // Série en répétitions : à ton rythme, pas de compte à rebours (anneau plein)
+    if (paused || selfPaced) return
     const ms = getLeftMs()
     const controls = animate(offset, c, { duration: ms / 1000, ease: 'linear' })
     return () => controls.stop()
-  }, [stepId, paused, c, offset, getLeftMs])
+  }, [stepId, paused, selfPaced, c, offset, getLeftMs])
 
   const scale = paused ? 0.8 : isRest ? 0.62 : breath === 'in' ? 1 : 0.84
 
@@ -263,6 +238,7 @@ export default function Player({ routine, onFinish, onQuit }) {
   if (endAt.current === null) endAt.current = Date.now() + steps[0].duration * 1000
   const lastSec = useRef(steps[0].duration)
   const pausedLeft = useRef(0)
+  const startedAt = useRef(Date.now()) // début de l'étape (séries à ton rythme)
   const workedMs = useRef(0) // temps d'effort réellement fait (pour la règle des 70 %)
   const step = steps[i]
   const tone = TONES[routine.key]
@@ -291,7 +267,11 @@ export default function Player({ routine, onFinish, onQuit }) {
   // L'horloge de l'étape suivante est posée AVANT le re-render,
   // pour que l'anneau de l'orbe parte directement avec la bonne durée.
   const advance = (withSound = true) => {
-    if (step.phase === 'work') workedMs.current += step.duration * 1000 - leftMs()
+    if (step.phase === 'work' && step.reps) {
+      // Série à ton rythme : comptée entière si elle a duré au moins 5 s (évite de valider en passant)
+      const elapsed = Date.now() - startedAt.current
+      workedMs.current += elapsed >= 5000 ? step.duration * 1000 : elapsed
+    } else if (step.phase === 'work') workedMs.current += step.duration * 1000 - leftMs()
     if (withSound && step.phase === 'work') beep.workEnd()
     if (i === steps.length - 1) {
       onFinish({ workedMs: workedMs.current, plannedMs })
@@ -302,6 +282,7 @@ export default function Player({ routine, onFinish, onQuit }) {
     lastSec.current = next.duration
     setRemaining(next.duration)
     setPaused(false)
+    startedAt.current = Date.now()
     setI(i + 1)
   }
 
@@ -317,12 +298,13 @@ export default function Player({ routine, onFinish, onQuit }) {
   // Boucle du chrono, basée sur l'horloge réelle (pas de dérive)
   useEffect(() => {
     if (paused) return
+    if (step.phase === 'work' && step.reps) return // à ton rythme : on attend "Série terminée"
     const id = setInterval(() => {
       const left = Math.max(0, Math.ceil((endAt.current - Date.now()) / 1000))
       if (left === lastSec.current) return
       lastSec.current = left
       setRemaining(left)
-      if (left > 0 && left <= 3 && !(step.phase === 'work' && step.reps)) beep.tick()
+      if (left > 0 && left <= 3) beep.tick()
       if (left === 0) advance()
     }, 100)
     return () => clearInterval(id)
@@ -350,8 +332,7 @@ export default function Player({ routine, onFinish, onQuit }) {
     onQuit()
   }
 
-  const tempo = useTempo(step, readLeftMs, paused)
-  const repMode = step.phase === 'work' && step.reps
+  const repMode = Boolean(step.phase === 'work' && step.reps)
   const animated = hasAnimation(step.ex.id)
   const showBreath = !paused && !repMode && (isRest || routine.key === 'souplesse')
 
@@ -400,18 +381,19 @@ export default function Player({ routine, onFinish, onQuit }) {
           breath={breath}
           paused={paused}
           flipKey={step.side === 2 ? 1 : 0}
-          onTap={togglePause}
+          selfPaced={repMode}
+          onTap={repMode ? () => advance() : togglePause}
         />
         {animated && repMode && (
           <motion.span
-            key={`rep-${tempo.rep}`}
-            initial={{ scale: 1.25, opacity: 0.5 }}
+            key={`reps-${i}`}
+            initial={{ scale: 1.2, opacity: 0.5 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             className="font-display -mt-1 text-5xl font-light leading-none tabular-nums text-[#F3EFE8]"
           >
-            {tempo.rep}
-            <span className="text-2xl text-white/40">/{step.reps}</span>
+            {step.reps}
+            <span className="ml-2 text-lg text-white/45">rép.</span>
           </motion.span>
         )}
         {animated && !repMode && (
@@ -428,17 +410,15 @@ export default function Player({ routine, onFinish, onQuit }) {
         )}
         <div className="mt-3 h-6">
           <AnimatePresence mode="wait">
-            {repMode && !paused ? (
+            {repMode ? (
               <motion.p
-                key={`phase-${tempo.rep}-${tempo.phase}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                key="tempo"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="font-display text-gradient text-2xl italic"
-                style={{ backgroundImage: gradient(tone, 90) }}
+                className="text-xs text-white/45"
               >
-                {step.ex.prog.tempo[tempo.phase][0]}
+                À ton rythme · tempo {step.ex.prog.tempo.map(([label, sec]) => `${label.toLowerCase()} ${sec} s`).join(', ')}
               </motion.p>
             ) : showBreath ? (
               <motion.p
@@ -525,8 +505,22 @@ export default function Player({ routine, onFinish, onQuit }) {
         </motion.div>
       </AnimatePresence>
 
+      {/* Série en répétitions : un seul gros bouton, la personne avance à son rythme */}
+      {repMode && (
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => advance()}
+          className="mt-4 w-full rounded-full py-4 text-base font-bold text-ink"
+          style={{ background: gradient(tone, 90), boxShadow: `0 10px 40px ${tone.glow}` }}
+        >
+          {step.set === step.sets && step.side !== 1 ? 'Exercice terminé ✓' : 'Série terminée ✓'}
+        </motion.button>
+      )}
+
       {/* Contrôles discrets */}
-      <div className="mt-4 flex items-center justify-center gap-4">
+      <div className={`mt-4 flex items-center justify-center gap-4 ${repMode ? 'hidden' : ''}`}>
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={togglePause}

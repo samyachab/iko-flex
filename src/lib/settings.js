@@ -7,7 +7,7 @@ export const MIN_ENABLED = 3 // une routine garde toujours au moins 3 exercices 
 
 const DEFAULTS = {
   souplesse: { minutes: 12, favorite: null, disabled: [] },
-  renfo: { minutes: 12, favorite: null, disabled: [] },
+  renfo: { minutes: 12, favorite: null, disabled: [], level: 'auto' }, // level : 'auto' | 1 | 2 | 3
 }
 
 export function getSettings() {
