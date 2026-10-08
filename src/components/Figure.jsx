@@ -7,6 +7,7 @@ import { LEN, WID, frame, sampler, segments, solve } from '../lib/rig.js'
 
 const SPEED = 1.15 // > 1 = plus rapide que les durées écrites dans animations.js
 export const INK = '#121212'
+export const NIGHT = '#1c2740' // bleu nuit, couleur retenue pour le nouveau style
 
 // Style "v2" (prototype, option 1) : silhouette athlétique dessinée à partir du même squelette.
 // Chaque partie du corps suit un profil [position le long du segment (0 -> 1), demi-épaisseur] :
@@ -58,8 +59,9 @@ function limb(a, b, profile, ext = 0) {
   return `M${f2(left[0][0])} ${f2(left[0][1])}${curve(left)}A${r1} ${r1} 0 0 0 ${f2(right[0][0])} ${f2(right[0][1])}${curve(right)}A${r0} ${r0} 0 0 0 ${f2(left[0][0])} ${f2(left[0][1])}Z`
 }
 
-const NECK_GAP = 20 // distance base du cou -> centre de la tête (squelette : 16,5)
-const HEAD_R = 9.4
+const NECK_GAP = 21 // distance base du cou -> centre de la tête (squelette : 16,5)
+const HEAD_RX = 8.4 // tête ovale, allongée dans l'axe du cou
+const HEAD_RY = 10.6
 
 // Mélange une couleur hexadécimale avec du blanc (k = 0 : inchangée, 1 : blanc)
 function lighten(hex, k) {
@@ -116,6 +118,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
         const k = NECK_GAP / hl
         const head = [j.neck[0] + hx * k, j.neck[1] + hy * k]
         els.current.head?.setAttribute('cx', f2(head[0]))
+        els.current.head?.setAttribute('transform', `rotate(${f2(-angleOf(j.neck, head))} ${f2(head[0])} ${f2(head[1])})`)
         els.current.head?.setAttribute('cy', f2(head[1]))
         els.current.neck?.setAttribute('d', limb(j.neck, head, PROFILE.neck))
         for (const [h, e] of [['handN', 'elbowN'], ['handF', 'elbowF']]) {
@@ -288,7 +291,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
           {v2 && layer === 'B' && <path ref={(el) => (els.current.neck = el)} stroke="none" />}
           {layer === 'B' &&
             (v2 ? (
-              <circle ref={(el) => (els.current.head = el)} r={HEAD_R} fill={`url(#trunk-${uid})`} stroke="none" />
+              <ellipse ref={(el) => (els.current.head = el)} rx={HEAD_RX} ry={HEAD_RY} fill={`url(#trunk-${uid})`} stroke="none" />
             ) : (
               <circle ref={(el) => (els.current.head = el)} r={LEN.head} fill={color} stroke="none" />
             ))}
