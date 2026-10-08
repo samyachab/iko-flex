@@ -61,19 +61,20 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Assis, mains à plat au sol : on repousse pour décoller les fesses et les pieds, jambes tendues.
-  'l-sit': {
-    view: 'side',
+  // Vue de face, assis en 90/90 (jambe proche devant, jambe éloignée derrière) : on pousse sur les tibias
+  // pour monter à genoux, bassin tendu vers l'avant et fessiers serrés, puis on redescend.
+  'shin-box-lift': {
+    view: 'front',
     base: {
-      torso: 176,
-      armN: [6, 6],
-      armF: [2, 2],
-      legN: [90, 90, 170],
-      legF: [90, 90, 170],
+      torso: 180,
+      armN: [14, -24],
+      legN: [100, -89, 90],
+      legF: [58, -86.6, -90],
+      fs: { torso: 0.85, shinN: 0.36, thighF: 0.25, shinF: 0.9 },
     },
     keys: [
-      { pose: {}, hold: 0.6, move: 0.8 },
-      { pose: { torso: 172, legN: [97, 97, 175], legF: [97, 97, 175] }, hold: 2.4, move: 0.8 },
+      { pose: {}, hold: 0.4, move: 1.4 },
+      { pose: { x: 16, legN: [33.5, -90, 90], legF: [-14.2, -86.4, -90], fs: { torso: 1, thighN: 1, thighF: 0.86, shinF: 0.89 } }, hold: 1, move: 1.6 },
     ],
   },
 
