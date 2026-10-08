@@ -78,20 +78,22 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Assis, jambe éloignée tendue au sol, pied de la jambe proche posé de l'autre côté du genou :
-  // le bras opposé enlace le genou plié et le tire vers la poitrine, buste bien droit.
+  // Vue de face, assis : la jambe tendue part vers nous (pointe de pied vers le haut). L'autre genou monte,
+  // le pied passe par-dessus et se pose au sol de l'autre côté du genou tendu ; le bras opposé enlace
+  // le genou plié et le tire vers l'épaule opposée, buste bien droit.
   'fessier-assis': {
-    view: 'side',
+    view: 'front',
     base: {
       torso: 180,
-      armN: [-20, -14],
-      armF: [55, 30],
-      legN: [139.2, 11.5, 90],
-      legF: [90, 90, 175],
+      armN: [22, 8],
+      armF: [29, 90],
+      legN: [200, -25.5, -60],
+      legF: [0, 0, 180],
+      fs: { torso: 0.9, thighN: 0.7, footN: 0.5, thighF: 0.15, shinF: 0.05, footF: 0.8 },
     },
     keys: [
       { pose: {}, hold: 0.8, move: 2.2 },
-      { pose: { torso: 182, head: 181, armF: [64, 18], legN: [140.9, 0.1, 90] }, hold: 3.2, move: 2 },
+      { pose: { head: 186, armF: [19.8, 95], legN: [210, -20, -60], fs: { shinN: 0.87 } }, hold: 3.2, move: 2 },
     ],
   },
 
