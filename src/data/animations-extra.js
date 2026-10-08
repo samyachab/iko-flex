@@ -23,6 +23,60 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
+  // ───────── Souplesse : hanches & bassin (2e extension) ─────────
+
+  // Fente spiderman, mains au sol : le bras du côté du pied avant monte vers le plafond (rotation du buste).
+  'spiderman-rotation': {
+    view: 'side',
+    base: {
+      torso: 114,
+      armN: [-20, -20],
+      armF: [-24, -24],
+      legN: [95, -20, 90],
+      legF: [-74, -74, 15],
+    },
+    keys: [
+      { pose: {}, hold: 0.4, move: 1.6 },
+      { pose: { torso: 120, head: 165, armN: [180, 180] }, hold: 1.2, move: 1.6 },
+    ],
+  },
+
+  // Squat très profond, kettlebell contre la poitrine, coudes contre l'intérieur des genoux :
+  // le bassin se balance doucement pour ouvrir les hanches.
+  'prying-squat': {
+    view: 'side',
+    props: [{ type: 'weight', at: ['handN', 'handF'], r: 8, dx: 3 }],
+    base: {
+      x: -14,
+      torso: 135,
+      head: 155,
+      armN: [2.9, 146],
+      armF: [0, 144],
+      legN: [84.7, -41.5, 90],
+      legF: [83, -42.5, 90],
+    },
+    keys: [
+      { pose: {}, hold: 1, move: 2 },
+      { pose: { x: -10, torso: 140, head: 158, armN: [7.4, 152], armF: [4.5, 150], legN: [81.8, -50.1, 90], legF: [80, -51, 90] }, hold: 1, move: 2 },
+    ],
+  },
+
+  // Assis, mains à plat au sol : on repousse pour décoller les fesses et les pieds, jambes tendues.
+  'l-sit': {
+    view: 'side',
+    base: {
+      torso: 176,
+      armN: [6, 6],
+      armF: [2, 2],
+      legN: [90, 90, 170],
+      legF: [90, 90, 170],
+    },
+    keys: [
+      { pose: {}, hold: 0.6, move: 0.8 },
+      { pose: { torso: 172, legN: [97, 97, 175], legF: [97, 97, 175] }, hold: 2.4, move: 0.8 },
+    ],
+  },
+
   // Allongé au bord du lit, une cuisse tirée contre la poitrine, l'autre jambe pend dans le vide.
   'psoas-table': {
     view: 'side',
@@ -594,7 +648,7 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Assis sur une chaise, charge posée sur un genou : on monte sur la pointe de ce pied (un côté à la fois).
+  // Assis sur une chaise, kettlebell sur un genou : montée rapide sur la pointe, descente très lente retenue (excentrique).
   'soleaire-assis': {
     view: 'side',
     hipHeight: 39.5,
@@ -610,8 +664,8 @@ export const EXTRA_ANIMATIONS = {
       legF: [87.3, -2.3, 90],
     },
     keys: [
-      { pose: {}, hold: 0.3, move: 1 },
-      { pose: { legN: [98, 2.3, 50] }, hold: 0.6, move: 1.6 },
+      { pose: {}, hold: 0.4, move: 0.6 },
+      { pose: { legN: [98, 2.3, 50] }, hold: 0.6, move: 3.6 },
     ],
   },
 
