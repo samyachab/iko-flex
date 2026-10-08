@@ -18,8 +18,8 @@ const PROFILE = {
   upper: [[0, 5.9], [0.35, 5.5], [1, 4.1]],
   fore: [[0, 4.1], [0.28, 4.5], [1, 2.9]],
   // du bassin (0) à la base du cou (1)
-  torso: [[0, 10], [0.2, 10.4], [0.45, 8.7], [0.72, 11.6], [0.9, 12.2], [1, 9.5]],
-  neck: [[0, 4.6], [1, 3.9]],
+  torso: [[0, 9.6], [1, 11.4]],
+  neck: [[0, 4.4], [1, 3.8]],
 }
 
 const f2 = (v) => v.toFixed(2)
@@ -98,9 +98,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       els.current.head?.setAttribute('cy', j.head[1])
       if (v2) {
         // Tête ovale orientée comme le cou, cou dessiné, mains en moufle dans l'axe de l'avant-bras
-        const ha = angleOf(j.neck, j.head)
-        els.current.head?.setAttribute('transform', `rotate(${f2(-ha)} ${f2(j.head[0])} ${f2(j.head[1])})`)
-        els.current.neck?.setAttribute('d', limb(j.neck, [(j.neck[0] + j.head[0]) / 2, (j.neck[1] + j.head[1]) / 2], PROFILE.neck))
+        els.current.neck?.setAttribute('d', limb(j.neck, j.head, PROFILE.neck))
         for (const [h, e] of [['handN', 'elbowN'], ['handF', 'elbowF']]) {
           const el = els.current[h]
           if (!el) continue
@@ -160,7 +158,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
   // Trois niveaux de sombre pour que les superpositions restent lisibles :
   // membres éloignés très clairs, tronc + tête intermédiaires, membres proches presque pleins.
   const layers = v2
-    ? { F: anim.view === 'side' ? 0.38 : 0.95, B: 0.9, N: 1, L: anim.legOpacity ?? 1 }
+    ? { F: anim.view === 'side' ? 0.38 : 0.95, B: 0.6, N: 1, L: anim.legOpacity ?? 1 }
     : { F: anim.view === 'side' ? 0.3 : 0.92, B: 0.6, N: 0.95, L: anim.legOpacity ?? 1 }
   const layerOf = (w, l) => (anim.legOpacity != null && ['thigh', 'shin', 'foot'].includes(w) ? 'L' : l)
   const wall = anim.props?.find((p) => p.type === 'wall')
@@ -179,6 +177,11 @@ export default function Figure({ id, paused = false, color = INK, className = ''
             <stop offset="1" stopColor={color} stopOpacity="0" />
           </radialGradient>
           {/* Volume : lumière douce venant du haut-gauche sur chaque partie du corps */}
+          <linearGradient id={`trunk-${id}`} x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0" stopColor="#4a4340" />
+            <stop offset="0.55" stopColor={color} />
+            <stop offset="1" stopColor={color} />
+          </linearGradient>
           <linearGradient id={`body-${id}`} x1="0.15" y1="0" x2="0.85" y2="1">
             <stop offset="0" stopColor="#5a4a44" />
             <stop offset="0.45" stopColor="#241f1d" />
@@ -248,10 +251,10 @@ export default function Figure({ id, paused = false, color = INK, className = ''
       {['L', 'F', 'B', 'N'].map((layer) => (
         <g
           key={layer}
-          stroke={v2 ? '#ffffff' : color}
+          stroke={v2 ? (layer === 'B' ? 'none' : '#ffffff') : color}
           strokeOpacity={v2 ? 0.14 : 1}
           strokeLinecap="round"
-          fill={v2 ? `url(#body-${id})` : 'none'}
+          fill={v2 ? `url(#${layer === 'B' ? 'trunk' : 'body'}-${id})` : 'none'}
           opacity={layers[layer]}
         >
           {segs.map(([, , w, l], k) =>
@@ -266,7 +269,7 @@ export default function Figure({ id, paused = false, color = INK, className = ''
           {v2 && layer === 'B' && <path ref={(el) => (els.current.neck = el)} stroke="none" />}
           {layer === 'B' &&
             (v2 ? (
-              <ellipse ref={(el) => (els.current.head = el)} rx={8.4} ry={10} fill={`url(#body-${id})`} strokeWidth="0.8" />
+              <circle ref={(el) => (els.current.head = el)} r={9.6} fill={`url(#trunk-${id})`} stroke="none" />
             ) : (
               <circle ref={(el) => (els.current.head = el)} r={LEN.head} fill={color} stroke="none" />
             ))}
