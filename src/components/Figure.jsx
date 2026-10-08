@@ -7,7 +7,10 @@ import { LEN, WID, frame, sampler, segments, solve } from '../lib/rig.js'
 
 const SPEED = 1.15 // > 1 = plus rapide que les durées écrites dans animations.js
 export const INK = '#121212'
-export const NIGHT = '#1c2740' // bleu nuit, couleur retenue pour le nouveau style
+// Couleurs retenues pour le nouveau style : bleu nuit sur le fond Souplesse, terre brûlée sur le fond bleu du Renfo
+export const NIGHT = '#1c2740'
+export const EARTH = '#4a2418'
+export const FIGURE_COLORS = { souplesse: NIGHT, renfo: EARTH }
 
 // Style "v2" (prototype, option 1) : silhouette athlétique dessinée à partir du même squelette.
 // Chaque partie du corps suit un profil [position le long du segment (0 -> 1), demi-épaisseur] :
