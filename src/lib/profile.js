@@ -61,6 +61,7 @@ export function resolveProfile(profile) {
   for (const m of rules.exclude_tags ?? []) push(avoid, m, 'règle du coach')
   for (const [m, text] of Object.entries(rules.adapt ?? {})) push(adapt, m, text)
   addNeeds(rules.force_include)
+  addFavor(rules.favor)
 
   const overrides = rules.overrides ?? {}
   const replaced = new Map() // exercice remplacé -> remplaçant

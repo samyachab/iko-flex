@@ -9,6 +9,7 @@
 //     exclude_tags  : mécaniques en plus à éviter
 //     force_include : mécaniques imposées, { mécanique: N } = toutes les N séances
 //     adapt         : { mécanique: consigne } en plus de celles des conditions
+//     favor         : { mécanique: poids } en plus de celui des conditions et du sport
 //     overrides     : par exercice { exclude, include (même si une condition l'exclut), replace_by, warning }
 //
 // ⚠ Ce fichier part dans le code public de l'appli : uniquement des profils fictifs ou le tien.
@@ -20,12 +21,24 @@ export const PROFILES = {
     id: 'samy',
     name: 'Samy',
     sport: 'course',
-    posture_issues: ['hyperlordose', 'psoas_raide', 'epaules_enroulees', 'epaules_crispees', 'dorsiflexion_limitee', 'prevention_tibiale'],
+    posture_issues: [
+      'hyperlordose',
+      'psoas_raide',
+      'hanches_raides',
+      'epaules_enroulees',
+      'epaules_raides',
+      'epaules_crispees',
+      'dorsiflexion_limitee',
+      'prevention_tibiale',
+    ],
     pain_points: [],
     keys: ['lunge-psoas', 'couch-stretch', 'pectoral-porte', 'soleaire'],
     rules: {
       exclude_tags: [],
-      force_include: {},
+      // Évaluation du coach pour le 800 m (bilans/samy.md, section 5) : anti-rotation une séance sur 2,
+      // pliométrie une sur 3, travail sur une jambe privilégié
+      force_include: { anti_rotation: 2, impact: 3 },
+      favor: { unipodal: 1 },
       overrides: {
         // Gardé à ta demande : surtout un étirement des mollets, ischios en second
         'chien-tete-en-bas': { include: true, warning: 'Pour toi : dos long, genoux légèrement fléchis si ça tire derrière les cuisses.' },

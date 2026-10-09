@@ -149,7 +149,8 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   // Besoin "toutes les N séances" : pas imposé s'il a été travaillé il y a moins de N jours.
   const { exercises: done } = getRotation(key)
   const lastDone = (m) => Math.min(...EXERCISES.filter((e) => e.biomechanics?.includes(m)).map((e) => daysSince(done[e.id])))
-  for (const m of needsFor(key, rules)) {
+  // Les besoins de chaque séance passent avant ceux d'une séance sur N (si le temps manque)
+  for (const m of needsFor(key, rules).sort((a, b) => rules.needs.get(a) - rules.needs.get(b))) {
     if (rules.needs.get(m) > 1 && lastDone(m) < rules.needs.get(m)) continue
     if (picked.some((e) => e.biomechanics?.includes(m))) continue
     const ex = ordered.find((e) => !picked.includes(e) && e.biomechanics?.includes(m) && tryAdd(e))
@@ -158,7 +159,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   // Couverture : au moins une zone de chaque, les plus importantes d'abord si la séance est courte
   for (const g of coverageOrder(key)) {
     if (favorites.some((f) => f.group === g) || !byGroup[g]?.length) continue
-    const ex = byGroup[g].find(tryAdd)
+    const ex = byGroup[g].find((e) => tryAdd(e))
     if (ex) take(g, ex)
   }
   // Complément : alternance des zones selon leur poids dans le plan
@@ -167,7 +168,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   const left = () => Object.values(byGroup).reduce((n, l) => n + l.length, 0)
   for (let i = 0, misses = 0; left() && misses < slots.length; i++) {
     const g = slots[i % slots.length]
-    const ex = byGroup[g]?.find(tryAdd)
+    const ex = byGroup[g]?.find((e) => tryAdd(e))
     if (ex) {
       take(g, ex)
       misses = 0

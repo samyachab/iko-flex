@@ -59,6 +59,18 @@ export const CONDITIONS = {
     favor: { dorsiflexion: 2 },
     needs: { dorsiflexion: 1 },
   },
+  hanches_raides: {
+    label: 'Mobilité de hanche faible',
+    kind: 'posture',
+    favor: { rotation_hanche: 2, adducteurs_etirement: 1, flexion_hanche_profonde: 1, psoas_etirement: 1 },
+    needs: { rotation_hanche: 1 },
+  },
+  epaules_raides: {
+    label: 'Mobilité d’épaule faible',
+    kind: 'posture',
+    favor: { elevation_bras: 2, extension_thoracique: 1, rotation_thoracique: 1, ouverture_pectorale: 1 },
+    needs: { extension_thoracique: 1, elevation_bras: 2 },
+  },
   prevention_tibiale: {
     label: 'Tibias sensibles (prévention périostite)',
     kind: 'posture',
