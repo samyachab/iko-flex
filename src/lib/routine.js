@@ -84,18 +84,18 @@ function slotOrder(plan) {
   return order
 }
 
-// Exercices actifs rangés par zone, + favori à part. Dans chaque zone : les exercices faits il y a
+// Exercices actifs rangés par zone, + favoris à part. Dans chaque zone : les exercices faits il y a
 // le plus longtemps (ou jamais) d'abord, avance donnée par le profil (score plafonné à 6 jours),
 // ordre aléatoire entre exercices à égalité.
 function candidates(key, settings, rules) {
   const pool = enabledPool(key, settings, rules)
-  const favorite = pool.find((e) => e.id === settings[key].favorite)
+  const favorites = pool.filter((e) => settings[key].favorites.includes(e.id))
   const { exercises: done } = getRotation(key)
   const rank = (e) => daysSince(done[e.id]) + Math.min(6, assess(e, rules).score)
   const byGroup = {}
   const ordered = shuffle(pool).sort((a, b) => rank(b) - rank(a))
-  for (const e of ordered) if (e !== favorite) (byGroup[e.group] ??= []).push(e)
-  return { byGroup, favorite, ordered }
+  for (const e of ordered) if (!favorites.includes(e)) (byGroup[e.group] ??= []).push(e)
+  return { byGroup, favorites, ordered }
 }
 
 // Ordre de couverture du jour : jours depuis la dernière fois (0 à 14) + bonus de priorité de la zone.
@@ -109,7 +109,7 @@ function coverageOrder(key) {
 
 // Construit la séance pour la durée choisie :
 // 1. les exercices clés du profil (keys) sont déjà allongés selon la longueur de la séance (45 s à 12 min -> max à 30 min) ;
-// 2. favori, puis un exercice par besoin du profil (needs), puis un exercice par zone dans l'ordre de couverture (le plus court qui rentre si besoin),
+// 2. favoris (toujours là), puis un exercice par besoin du profil (needs), puis un exercice par zone dans l'ordre de couverture (le plus court qui rentre si besoin),
 //    puis on complète en alternant les zones tant que la durée le permet ;
 // 3. le temps restant allonge les exercices qui gagnent à durer (clés d'abord), jusqu'à leur maximum ;
 // 4. renfo : si tous les exercices sont pris et qu'il reste du temps, on fait un 3e tour.
@@ -118,7 +118,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   const target = settings[key].minutes * 60
   const chosen = settings[key].level
   const level = chosen && chosen !== 'auto' ? chosen : getLevel(key)
-  const { byGroup, favorite, ordered } = candidates(key, settings, rules)
+  const { byGroup, favorites, ordered } = candidates(key, settings, rules)
   const isKey = (ex) => rules.keys.has(ex.id)
   const k = Math.min(1, Math.max(0, (settings[key].minutes - SHORT) / (LONG - SHORT)))
   const plans = new Map()
@@ -133,10 +133,10 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
 
   const picked = []
   let total = 0
-  const tryAdd = (ex) => {
+  const tryAdd = (ex, force = false) => {
     const plan = start(ex)
     const t = exerciseSeconds(ex, config, plan)
-    if (picked.length && total + t > target + 20) return false
+    if (!force && picked.length && total + t > target + 20) return false
     picked.push(ex)
     plans.set(ex.id, plan)
     total += t
@@ -144,7 +144,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   }
   const take = (group, ex) => byGroup[group].splice(byGroup[group].indexOf(ex), 1)
 
-  if (favorite) tryAdd(favorite)
+  for (const ex of favorites) tryAdd(ex, true)
   // Besoins du profil : la mécanique doit apparaître dans la séance (le meilleur candidat qui rentre).
   // Besoin "toutes les N séances" : pas imposé s'il a été travaillé il y a moins de N jours.
   const { exercises: done } = getRotation(key)
@@ -152,12 +152,12 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   for (const m of needsFor(key, rules)) {
     if (rules.needs.get(m) > 1 && lastDone(m) < rules.needs.get(m)) continue
     if (picked.some((e) => e.biomechanics?.includes(m))) continue
-    const ex = ordered.find((e) => e !== favorite && !picked.includes(e) && e.biomechanics?.includes(m) && tryAdd(e))
+    const ex = ordered.find((e) => !picked.includes(e) && e.biomechanics?.includes(m) && tryAdd(e))
     if (ex) take(ex.group, ex)
   }
   // Couverture : au moins une zone de chaque, les plus importantes d'abord si la séance est courte
   for (const g of coverageOrder(key)) {
-    if (favorite?.group === g || !byGroup[g]?.length) continue
+    if (favorites.some((f) => f.group === g) || !byGroup[g]?.length) continue
     const ex = byGroup[g].find(tryAdd)
     if (ex) take(g, ex)
   }
@@ -200,10 +200,10 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
     }
   }
 
-  // Ordre final : favori en premier, puis alternance des zones
+  // Ordre final : alternance des zones, favoris mélangés aux autres (leur place change à chaque séance)
   const groups = {}
-  for (const e of picked) if (e !== favorite) (groups[e.group] ??= []).push(e)
-  const circuit = favorite && picked.includes(favorite) ? [favorite] : []
+  for (const e of shuffle(picked)) (groups[e.group] ??= []).push(e)
+  const circuit = []
   const lists = Object.values(groups)
   for (let i = 0; i < Math.max(0, ...lists.map((l) => l.length)); i++) {
     for (const l of shuffle(lists)) if (l[i]) circuit.push(l[i])

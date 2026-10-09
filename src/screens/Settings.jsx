@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { EQUIPMENT, EXERCISES, GROUPS } from '../data/exercises.js'
 import { ROUTINES, enabledPool, hasEquipment, profilePool, routineInfo } from '../lib/routine.js'
-import { DURATIONS, MIN_ENABLED, getSettings, saveSettings } from '../lib/settings.js'
+import { DURATIONS, MAX_FAVORITES, MIN_ENABLED, getSettings, saveSettings } from '../lib/settings.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 import { LEVEL_LABELS } from '../lib/progress.js'
 import VoicePicker from '../components/VoicePicker.jsx'
@@ -43,10 +43,14 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
     if (!off && enabledCount <= MIN_ENABLED) return
     set({
       disabled: off ? s.disabled.filter((d) => d !== id) : [...s.disabled, id],
-      favorite: !off && s.favorite === id ? null : s.favorite,
+      favorites: off ? s.favorites : s.favorites.filter((f) => f !== id),
     })
   }
-  const star = (id) => set({ favorite: s.favorite === id ? null : id, disabled: s.disabled.filter((d) => d !== id) })
+  const star = (id) => {
+    const fav = s.favorites.includes(id)
+    if (!fav && s.favorites.length >= MAX_FAVORITES) return
+    set({ favorites: fav ? s.favorites.filter((f) => f !== id) : [...s.favorites, id], disabled: s.disabled.filter((d) => d !== id) })
+  }
 
   return (
     <motion.section {...rise(delay)} className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5">
@@ -110,7 +114,7 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
       </p>
 
       <p className="mt-6 text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40">Exercices</p>
-      <p className="mt-1 text-xs text-white/40">★ = inclus à chaque séance (un seul par routine). Au moins {MIN_ENABLED} exercices actifs.</p>
+      <p className="mt-1 text-xs text-white/40">★ = inclus à chaque séance ({s.favorites.length}/{MAX_FAVORITES}), le reste change à chaque fois. Au moins {MIN_ENABLED} exercices actifs.</p>
 
       {groups.map((g) => (
         <div key={g} className="mt-4">
@@ -123,14 +127,16 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
               .map((e) => {
                 const equipped = hasEquipment(e, settings)
                 const on = equipped && !s.disabled.includes(e.id)
-                const fav = s.favorite === e.id
+                const fav = s.favorites.includes(e.id)
+                const full = !fav && s.favorites.length >= MAX_FAVORITES
                 return (
                   <li key={e.id} className="flex items-center gap-3 py-2.5">
                     <button
                       onClick={() => star(e.id)}
                       aria-label={fav ? 'Retirer des incontournables' : 'Inclure à chaque séance'}
                       className="text-xl leading-none transition-transform active:scale-90"
-                      style={{ color: fav ? t.a : 'rgba(255,255,255,0.18)' }}
+                      disabled={full}
+                      style={{ color: fav ? t.a : full ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.18)' }}
                     >
                       ★
                     </button>
