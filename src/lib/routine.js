@@ -145,8 +145,12 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   const take = (group, ex) => byGroup[group].splice(byGroup[group].indexOf(ex), 1)
 
   if (favorite) tryAdd(favorite)
-  // Besoins du profil : la mécanique doit apparaître dans la séance (le meilleur candidat qui rentre)
+  // Besoins du profil : la mécanique doit apparaître dans la séance (le meilleur candidat qui rentre).
+  // Besoin "toutes les N séances" : pas imposé s'il a été travaillé il y a moins de N jours.
+  const { exercises: done } = getRotation(key)
+  const lastDone = (m) => Math.min(...EXERCISES.filter((e) => e.biomechanics?.includes(m)).map((e) => daysSince(done[e.id])))
   for (const m of needsFor(key, rules)) {
+    if (rules.needs.get(m) > 1 && lastDone(m) < rules.needs.get(m)) continue
     if (picked.some((e) => e.biomechanics?.includes(m))) continue
     const ex = ordered.find((e) => e !== favorite && !picked.includes(e) && e.biomechanics?.includes(m) && tryAdd(e))
     if (ex) take(ex.group, ex)

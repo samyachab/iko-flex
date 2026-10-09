@@ -6,3 +6,5 @@ dist
 voice-samples
 scripts/.voice-phrases.json
 scripts/pose-sheet.out.html
+scripts/tags-table.out.md
+bilans/

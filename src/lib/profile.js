@@ -2,7 +2,7 @@
 // Ordre de priorité, du plus fort au plus faible :
 //   1. coach (overrides.include / exclude / replace_by)
 //   2. sécurité : contre-indication ou mécanique à éviter -> l'exercice sort
-//   3. besoins (needs) : au moins un exercice de la mécanique par séance
+//   3. besoins (needs) : un exercice de la mécanique toutes les N séances (1 = à chaque séance)
 //   4. préférences (favor, sport) : l'exercice revient plus souvent
 //   5. rotation et réglages de la personne (lib/routine.js)
 import { CONDITIONS, SPORTS } from '../data/conditions.js'
@@ -31,6 +31,9 @@ export function setProfileId(id) {
 
 const push = (map, k, v) => map.set(k, [...(map.get(k) ?? []), v])
 
+// needs / force_include : ['psoas_etirement'] (chaque séance) ou { ischio_actif: 2 } (une séance sur 2)
+const needEntries = (needs) => (Array.isArray(needs) ? needs.map((m) => [m, 1]) : Object.entries(needs ?? {}))
+
 // Conditions -> règles sur les mécaniques
 export function resolveProfile(profile) {
   const rules = profile.rules ?? {}
@@ -38,7 +41,10 @@ export function resolveProfile(profile) {
   const avoid = new Map() // mécanique -> conditions qui l'interdisent
   const adapt = new Map() // mécanique -> consignes en plus
   const favor = new Map() // mécanique -> poids
-  const needs = new Set(rules.force_include ?? [])
+  const needs = new Map() // mécanique -> toutes les N séances (la plus fréquente gagne)
+  const addNeeds = (obj) => {
+    for (const [m, every] of needEntries(obj)) needs.set(m, Math.min(every, needs.get(m) ?? Infinity))
+  }
   const addFavor = (obj) => {
     for (const [m, w] of Object.entries(obj ?? {})) favor.set(m, (favor.get(m) ?? 0) + w)
   }
@@ -48,10 +54,13 @@ export function resolveProfile(profile) {
     for (const m of c.avoid ?? []) push(avoid, m, c.label)
     for (const [m, text] of Object.entries(c.adapt ?? {})) push(adapt, m, text)
     addFavor(c.favor)
-    for (const m of c.needs ?? []) needs.add(m)
+    addNeeds(c.needs)
   }
   addFavor(SPORTS[profile.sport]?.favor)
+  // Règles du coach, appliquées après les conditions
   for (const m of rules.exclude_tags ?? []) push(avoid, m, 'règle du coach')
+  for (const [m, text] of Object.entries(rules.adapt ?? {})) push(adapt, m, text)
+  addNeeds(rules.force_include)
 
   const overrides = rules.overrides ?? {}
   const replaced = new Map() // exercice remplacé -> remplaçant
@@ -109,7 +118,7 @@ export function assess(ex, rules = currentRules()) {
 // de ses exercices permis). Ex. psoas_etirement est dans 1 renfo sur 6 : besoin de la souplesse seulement,
 // sinon les fentes bulgares seraient imposées à chaque séance de renfo.
 export function needsFor(theme, rules = currentRules()) {
-  return [...rules.needs].filter((m) => {
+  return [...rules.needs.keys()].filter((m) => {
     const all = EXERCISES.filter((e) => e.biomechanics?.includes(m) && assess(e, rules).allowed)
     return all.length && all.filter((e) => e.theme === theme).length * 3 >= all.length
   })
@@ -119,8 +128,9 @@ export function needsFor(theme, rules = currentRules()) {
 export function profileReport(rules = currentRules(), themes = ['souplesse', 'renfo']) {
   const pool = EXERCISES.filter((e) => themes.includes(e.theme))
   const verdicts = pool.map((ex) => ({ ex, ...assess(ex, rules) }))
-  const needs = [...rules.needs].map((m) => ({
+  const needs = [...rules.needs].map(([m, every]) => ({
     mechanic: m,
+    every,
     label: MECHANICS[m]?.label ?? m,
     exercises: verdicts.filter((v) => v.allowed && v.ex.biomechanics?.includes(m)).map((v) => v.ex),
   }))

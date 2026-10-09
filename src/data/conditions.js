@@ -2,7 +2,7 @@
 //   avoid : l'exercice sort d'office s'il a une de ces mécaniques (la sécurité passe avant tout)
 //   adapt : l'exercice reste, avec une consigne en plus pour cette personne
 //   favor : poids ajouté à l'exercice (il revient plus souvent)
-//   needs : au moins un exercice de cette mécanique dans chaque séance qui peut en contenir
+//   needs : { mécanique: N } -> un exercice de cette mécanique toutes les N séances (1 = chaque séance)
 //   refer : condition qui demande l'avis d'un pro (kiné, médecin) avant de s'entraîner seul
 // Le profil d'une personne ne stocke que ses conditions : les règles en découlent (lib/profile.js).
 
@@ -13,10 +13,13 @@ export const CONDITIONS = {
     kind: 'posture',
     // Bassin basculé en avant : les ischios sont déjà allongés et tendus, pas courts.
     // Les étirer en maintien n'apporte rien ; il faut les renforcer et les faire glisser activement.
-    avoid: ['ischio_passif'],
-    adapt: { risque_cambrure: 'Pour toi : ventre rentré, fessiers serrés, ne creuse pas le bas du dos.' },
+    avoid: ['ischio_passif', 'extension_lombaire_active', 'jambes_tendues_levees'],
+    adapt: {
+      risque_cambrure: 'Pour toi : ventre rentré, fessiers serrés, ne creuse pas le bas du dos.',
+      extension_lombaire: 'Pour toi : creuse à peine, insiste sur l’arrondi.',
+    },
     favor: { retroversion: 2, psoas_etirement: 2, anti_extension: 1, fessier_renfo: 1, ischio_actif: 1, ischio_renfo: 1, neurodynamique: 1 },
-    needs: ['psoas_etirement', 'retroversion', 'ischio_actif'],
+    needs: { psoas_etirement: 1, retroversion: 1, ischio_actif: 2 },
   },
   dos_plat: {
     label: 'Dos plat (bassin en rétroversion)',
@@ -24,26 +27,44 @@ export const CONDITIONS = {
     // Le cas inverse : ischios vraiment courts, lordose effacée
     adapt: { flexion_lombaire: 'Pour toi : garde une légère cambrure naturelle, n’arrondis pas à fond.' },
     favor: { ischio_passif: 2, ischio_actif: 1, extension_lombaire: 1, flechisseurs_renfo: 1 },
-    needs: ['ischio_actif'],
+    needs: { ischio_actif: 1 },
   },
   psoas_raide: {
     label: 'Psoas raide',
     kind: 'posture',
     favor: { psoas_etirement: 2, retroversion: 1 },
-    needs: ['psoas_etirement'],
+    needs: { psoas_etirement: 1 },
   },
   epaules_enroulees: {
     label: 'Épaules enroulées vers l’avant',
     kind: 'posture',
     adapt: { poussee: 'Pour toi : omoplates basses et serrées, les épaules ne roulent pas vers l’avant.' },
     favor: { ouverture_pectorale: 2, extension_thoracique: 2, retraction_scapulaire: 2 },
-    needs: ['ouverture_pectorale', 'retraction_scapulaire'],
+    needs: { ouverture_pectorale: 1, retraction_scapulaire: 1 },
+  },
+  epaules_crispees: {
+    label: 'Épaules qui montent vers les oreilles (trapèzes supérieurs crispés)',
+    kind: 'posture',
+    adapt: {
+      elevation_bras: 'Pour toi : épaules loin des oreilles.',
+      retraction_scapulaire: 'Pour toi : omoplates vers le bas, épaules loin des oreilles.',
+      poussee: 'Pour toi : épaules loin des oreilles.',
+    },
+    favor: { retraction_scapulaire: 1, etirement_cervical: 1, anti_rotation: 1 },
   },
   dorsiflexion_limitee: {
     label: 'Chevilles raides (dorsiflexion limitée)',
     kind: 'posture',
     favor: { dorsiflexion: 2 },
-    needs: ['dorsiflexion'],
+    needs: { dorsiflexion: 1 },
+  },
+  prevention_tibiale: {
+    label: 'Tibias sensibles (prévention périostite)',
+    kind: 'posture',
+    // Pas de douleur actuelle : on garde les impacts, on renforce et on soigne l'amorti
+    adapt: { impact: 'Pour toi : réception silencieuse sur l’avant du pied, chevilles souples.' },
+    favor: { tibial_renfo: 2, flexion_plantaire_etirement: 1, mollet_renfo: 1, dorsiflexion: 1 },
+    needs: { tibial_renfo: 2 },
   },
 
   // ───────── Douleurs ─────────
@@ -62,14 +83,14 @@ export const CONDITIONS = {
     kind: 'douleur',
     avoid: ['impact'],
     favor: { tibial_renfo: 2, mollet_renfo: 1, dorsiflexion: 1 },
-    needs: ['tibial_renfo'],
+    needs: { tibial_renfo: 1 },
   },
   tfl: {
     label: 'Douleur TFL / bandelette ilio-tibiale',
     kind: 'douleur',
     adapt: { compression_roller: 'Pour toi : pression douce, jamais sur une zone qui brûle.' },
     favor: { abducteurs_renfo: 2, fessier_renfo: 1 },
-    needs: ['abducteurs_renfo'],
+    needs: { abducteurs_renfo: 1 },
   },
   sciatique: {
     label: 'Sciatique',
@@ -123,7 +144,7 @@ export const CONDITIONS = {
 
 // Sport principal : léger bonus sur ce qui transfère (jamais d'exclusion)
 export const SPORTS = {
-  course: { label: 'Course / athlétisme', favor: { dorsiflexion: 1, mollet_renfo: 1, tibial_renfo: 1, fessier_renfo: 1, impact: 1 } },
+  course: { label: 'Course / athlétisme', favor: { dorsiflexion: 1, mollet_renfo: 1, tibial_renfo: 1, fessier_renfo: 1, impact: 1, anti_rotation: 1 } },
   yoga: { label: 'Yoga / pilates', favor: { fessier_renfo: 1, abducteurs_renfo: 1, anti_extension: 1, retraction_scapulaire: 1 } },
   muscu: { label: 'Musculation', favor: { ouverture_pectorale: 1, rotation_thoracique: 1, dorsiflexion: 1, extension_thoracique: 1 } },
   collectif: { label: 'Sport collectif', favor: { abducteurs_renfo: 1, ischio_renfo: 1, unipodal: 1, dorsiflexion: 1 } },

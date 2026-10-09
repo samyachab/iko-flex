@@ -8,6 +8,19 @@ globalThis.localStorage = {
   removeItem: (k) => store.delete(k),
 }
 
+// Horloge simulée : une séance par jour, pour que la rotation et les besoins "1 séance sur N" jouent
+const RealDate = Date
+let dayOffset = 0
+globalThis.Date = class extends RealDate {
+  constructor(...args) {
+    if (args.length) super(...args)
+    else super(RealDate.now() + dayOffset * 86400000)
+  }
+  static now() {
+    return RealDate.now() + dayOffset * 86400000
+  }
+}
+
 const { PROFILES } = await import('../src/data/profiles.js')
 const { needsFor, profileReport, resolveProfile } =await import('../src/lib/profile.js')
 const { buildRoutine } = await import('../src/lib/routine.js')
@@ -36,7 +49,7 @@ for (const profile of Object.values(PROFILES)) {
 
   console.log(`\nBesoins :`)
   for (const n of report.needs) {
-    console.log(`  ${n.exercises.length ? '✓' : '✗ NON COUVERT'} ${n.label.padEnd(24)} ${n.exercises.map((e) => e.id).join(', ')}`)
+    console.log(`  ${n.exercises.length ? '✓' : '✗ NON COUVERT'} ${n.label.padEnd(24)} ${n.every > 1 ? `1 séance/${n.every} ` : ''}${n.exercises.map((e) => e.id).join(', ')}`)
   }
 
   console.log(`\nPrivilégiés (top 10) : ${report.favored.slice(0, 10).map((v) => `${v.ex.id}(${v.score})`).join(', ')}`)
@@ -45,19 +58,19 @@ for (const profile of Object.values(PROFILES)) {
   for (const key of ['souplesse', 'renfo']) {
     settings[key].minutes = minutes
     const counts = {}
-    const missed = {}
+    const hits = {}
     for (let i = 0; i < SESSIONS; i++) {
+      dayOffset = i
       const r = buildRoutine(key, settings, rules)
       for (const ex of new Set(r.exercises)) counts[ex.id] = (counts[ex.id] ?? 0) + 1
       for (const m of needsFor(key, rules)) {
-        if (!r.exercises.some((e) => e.biomechanics?.includes(m))) missed[m] = (missed[m] ?? 0) + 1
+        if (r.exercises.some((e) => e.biomechanics?.includes(m))) hits[m] = (hits[m] ?? 0) + 1
       }
       recordSession(key, r.exercises)
     }
     const top = Object.entries(counts).sort((a, b) => b[1] - a[1])
     console.log(`\n${key} ${minutes} min, ${SESSIONS} séances : ${top.length} exercices différents · besoins : ${needsFor(key, rules).join(', ') || 'aucun'}`)
     console.log('  ' + top.map(([id, n]) => `${id} ${n}`).join(', '))
-    const miss = Object.entries(missed)
-    console.log(miss.length ? `  besoins manqués : ${miss.map(([m, n]) => `${m} ${n}/${SESSIONS}`).join(', ')}` : '  besoins : présents à chaque séance')
+    console.log(`  besoins présents : ${needsFor(key, rules).map((m) => `${m} ${hits[m] ?? 0}/${SESSIONS}${rules.needs.get(m) > 1 ? ` (visé 1/${rules.needs.get(m)})` : ''}`).join(', ')}`)
   }
 }

@@ -7,7 +7,8 @@ export const MECHANICS = {
   // Bassin & colonne lombaire
   retroversion: { label: 'Rétroversion active', desc: 'Le bassin bascule en arrière, fessiers et abdos serrés.' },
   risque_cambrure: { label: 'Risque de cambrure', desc: 'La compensation typique est de creuser le bas du dos : la consigne fait tout.' },
-  extension_lombaire: { label: 'Extension lombaire', desc: 'Le bas du dos se creuse volontairement.' },
+  extension_lombaire: { label: 'Extension lombaire', desc: 'Le bas du dos se creuse, en mobilité douce (phase "creuser" du Cat-Cow).' },
+  extension_lombaire_active: { label: 'Extension lombaire pure', desc: 'Les muscles du dos soulèvent le buste ou les jambes à plat ventre (type Superman).' },
   flexion_lombaire: { label: 'Flexion lombaire', desc: 'Le bas du dos s’arrondit.' },
   rotation_lombaire: { label: 'Rotation lombaire', desc: 'Torsion du bas du dos.' },
   anti_extension: { label: 'Anti-extension', desc: 'Le tronc résiste à la cambrure (gainage avant).' },
@@ -25,6 +26,7 @@ export const MECHANICS = {
   flechisseurs_renfo: { label: 'Renfo fléchisseurs', desc: 'Montée de genou contre une charge.' },
   adducteurs_etirement: { label: 'Étirement adducteurs', desc: 'Intérieur des cuisses ouvert.' },
   rotation_hanche: { label: 'Rotation de hanche', desc: 'Rotations interne et externe de la hanche.' },
+  jambes_tendues_levees: { label: 'Jambes tendues levées', desc: 'Sur le dos, lever les jambes tendues (type Leg Raises) : long bras de levier sur le psoas et les lombaires.' },
   flexion_hanche_profonde: { label: 'Flexion de hanche profonde', desc: 'Cuisse ramenée très près du buste.' },
 
   // Genou
