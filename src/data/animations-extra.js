@@ -682,7 +682,40 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
+  // Debout, kettlebell sur le bout du pied : le genou monte à l'horizontale, pied armé, bassin en rétroversion.
+  'psoas-march': {
+    view: 'side',
+    props: [{ type: 'weight', at: 'toeN', r: 5.5, dx: -3, dy: -6 }],
+    base: {
+      armN: [-24, 58],
+      armF: [-28, 54],
+      legN: [2, 0, 90],
+      legF: [-2, 0, 90],
+    },
+    keys: [
+      { pose: {}, hold: 0.4, move: 1 },
+      { pose: { torso: 182, legN: [90, 2, 108] }, hold: 0.9, move: 1.8 },
+    ],
+  },
+
   // ───────── Renfo : mollets & tibias ─────────
+
+  // Fente, kettlebell en goblet : le genou avant avance, le talon avant décolle au maximum, et on tient.
+  'fente-iso-soleaire': {
+    view: 'side',
+    props: [{ type: 'weight', at: ['handN', 'handF'], r: 8, dy: 5 }],
+    base: {
+      torso: 180,
+      armN: [8, 130],
+      armF: [5, 127],
+      legN: [49.9, -0.1, 90],
+      legF: [-40.8, -42.7, 50],
+    },
+    keys: [
+      { pose: {}, hold: 0.5, move: 1.6 },
+      { pose: { x: 3, torso: 182, legN: [63.7, -7.8, 45], legF: [-43.5, -45.4, 50] }, hold: 3, move: 1.4 },
+    ],
+  },
 
   // Dos au mur, pieds avancés : on relève les pointes de pieds, puis on redescend lentement.
   'tibialis-raises': {
