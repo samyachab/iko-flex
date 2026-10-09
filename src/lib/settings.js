@@ -1,5 +1,6 @@
 // Réglages des routines, stockés sur l'appareil (LocalStorage).
 // Par routine : durée, exercice toujours inclus (un seul), exercices désactivés.
+// Commun : missing = matériel que l'utilisateur n'a pas (les exercices qui en ont besoin sont retirés).
 const KEY = 'iko-flex:settings'
 
 export const DURATIONS = { souplesse: [8, 12, 15, 20, 30], renfo: [8, 12, 16, 20, 30] }
@@ -8,6 +9,7 @@ export const MIN_ENABLED = 3 // une routine garde toujours au moins 3 exercices 
 const DEFAULTS = {
   souplesse: { minutes: 12, favorite: null, disabled: [] },
   renfo: { minutes: 12, favorite: null, disabled: [], level: 'auto' }, // level : 'auto' | 1 | 2 | 3
+  missing: [],
 }
 
 export function getSettings() {
@@ -16,6 +18,7 @@ export function getSettings() {
     return {
       souplesse: { ...DEFAULTS.souplesse, ...saved.souplesse },
       renfo: { ...DEFAULTS.renfo, ...saved.renfo },
+      missing: saved.missing ?? [],
     }
   } catch {
     return structuredClone(DEFAULTS)

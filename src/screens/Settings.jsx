@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { EXERCISES, GROUPS } from '../data/exercises.js'
-import { ROUTINES, routineInfo } from '../lib/routine.js'
+import { EQUIPMENT, EXERCISES, GROUPS } from '../data/exercises.js'
+import { ROUTINES, enabledPool, hasEquipment, routineInfo } from '../lib/routine.js'
 import { DURATIONS, MIN_ENABLED, getSettings, saveSettings } from '../lib/settings.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 import { LEVEL_LABELS } from '../lib/progress.js'
@@ -33,7 +33,7 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
   const t = TONES[routineKey]
   const info = routineInfo(routineKey, settings)
   const all = EXERCISES.filter((e) => e.theme === routineKey)
-  const enabledCount = all.filter((e) => !s.disabled.includes(e.id)).length
+  const enabledCount = enabledPool(routineKey, settings).length
   const groups = Object.keys(ROUTINES[routineKey].plan)
   for (const e of all) if (!groups.includes(e.group)) groups.push(e.group)
 
@@ -121,7 +121,8 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
             {all
               .filter((e) => e.group === g)
               .map((e) => {
-                const on = !s.disabled.includes(e.id)
+                const equipped = hasEquipment(e, settings)
+                const on = equipped && !s.disabled.includes(e.id)
                 const fav = s.favorite === e.id
                 return (
                   <li key={e.id} className="flex items-center gap-3 py-2.5">
@@ -133,14 +134,66 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
                     >
                       ★
                     </button>
-                    <span className={`flex-1 text-sm ${on ? 'text-white/85' : 'text-white/30 line-through'}`}>{e.name}</span>
-                    <Toggle on={on} disabled={on && enabledCount <= MIN_ENABLED} onChange={() => toggle(e.id)} color={t.b} />
+                    <span className="flex-1">
+                      <span className={`text-sm ${on ? 'text-white/85' : 'text-white/30 line-through'}`}>{e.name}</span>
+                      {e.equip && (
+                        <span className={`block text-[0.7rem] ${equipped ? 'text-white/35' : 'text-white/25'}`}>
+                          {equipped ? '' : 'Sans '}
+                          {e.equip.map((k) => EQUIPMENT[k].label).join(' + ')}
+                        </span>
+                      )}
+                    </span>
+                    <Toggle
+                      on={on}
+                      disabled={!equipped || (on && enabledCount <= MIN_ENABLED)}
+                      onChange={() => toggle(e.id)}
+                      color={t.b}
+                    />
                   </li>
                 )
               })}
           </ul>
         </div>
       ))}
+    </motion.section>
+  )
+}
+
+// Matériel disponible : décocher un objet retire de toutes les routines les exercices qui en ont besoin
+function EquipmentSettings({ settings, update, delay }) {
+  const missing = settings.missing ?? []
+  const count = (k) => EXERCISES.filter((e) => e.equip?.includes(k)).length
+  const toggle = (k) => {
+    const next = { ...settings, missing: missing.includes(k) ? missing.filter((m) => m !== k) : [...missing, k] }
+    // Chaque routine garde au moins MIN_ENABLED exercices faisables
+    if (['souplesse', 'renfo'].some((r) => enabledPool(r, next).length < MIN_ENABLED)) return
+    update(next)
+  }
+
+  return (
+    <motion.section {...rise(delay)} className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5">
+      <h2 className="font-display text-3xl font-medium">Mon matériel</h2>
+      <p className="mt-1 text-xs leading-relaxed text-white/40">
+        Décoche ce que tu n’as pas : les exercices qui en ont besoin sortent des deux routines.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {Object.entries(EQUIPMENT).map(([k, { label }]) => {
+          const have = !missing.includes(k)
+          return (
+            <button
+              key={k}
+              onClick={() => toggle(k)}
+              aria-pressed={have}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                have ? 'border-white/40 bg-white/10 text-white' : 'border-white/10 text-white/35 line-through'
+              }`}
+            >
+              {have ? '✓ ' : ''}
+              {label} <span className="font-normal text-white/40">· {count(k)}</span>
+            </button>
+          )
+        })}
+      </div>
     </motion.section>
   )
 }
@@ -164,8 +217,9 @@ export default function Settings({ onBack }) {
         Enregistrés automatiquement sur ce téléphone.
       </motion.p>
       <div className="mt-6 flex flex-col gap-5">
-        <RoutineSettings routineKey="souplesse" settings={settings} update={update} delay={0.15} />
-        <RoutineSettings routineKey="renfo" settings={settings} update={update} delay={0.22} />
+        <EquipmentSettings settings={settings} update={update} delay={0.15} />
+        <RoutineSettings routineKey="souplesse" settings={settings} update={update} delay={0.2} />
+        <RoutineSettings routineKey="renfo" settings={settings} update={update} delay={0.25} />
         <motion.div {...rise(0.29)}>
           <VoicePicker />
         </motion.div>

@@ -41,8 +41,11 @@ const shuffle = (arr) => {
   return a
 }
 
+// Exercice faisable avec le matériel de l'utilisateur
+export const hasEquipment = (ex, settings = getSettings()) => !ex.equip?.some((k) => settings.missing?.includes(k))
+
 export const enabledPool = (key, settings = getSettings()) =>
-  EXERCISES.filter((e) => e.theme === key && !settings[key].disabled.includes(e.id))
+  EXERCISES.filter((e) => e.theme === key && !settings[key].disabled.includes(e.id) && hasEquipment(e, settings))
 
 const STEP = 15 // allongement par palier de 15 s
 const SHORT = 12 // durée (min) à partir de laquelle on commence à allonger les exercices clés
