@@ -517,6 +517,11 @@ export default function Player({ routine, onFinish, onQuit }) {
               ⚠ {step.ex.warning}
             </p>
           )}
+          {routine.notes?.[step.ex.id]?.map((note) => (
+            <p key={note} className="max-w-xs text-xs leading-relaxed" style={{ color: '#9FD3FF' }}>
+              {note}
+            </p>
+          ))}
         </motion.div>
       </AnimatePresence>
 

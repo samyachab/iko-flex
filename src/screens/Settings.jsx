@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { EQUIPMENT, EXERCISES, GROUPS } from '../data/exercises.js'
-import { ROUTINES, enabledPool, hasEquipment, routineInfo } from '../lib/routine.js'
+import { ROUTINES, enabledPool, hasEquipment, profilePool, routineInfo } from '../lib/routine.js'
 import { DURATIONS, MIN_ENABLED, getSettings, saveSettings } from '../lib/settings.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 import { LEVEL_LABELS } from '../lib/progress.js'
@@ -32,7 +32,7 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
   const s = settings[routineKey]
   const t = TONES[routineKey]
   const info = routineInfo(routineKey, settings)
-  const all = EXERCISES.filter((e) => e.theme === routineKey)
+  const all = profilePool(routineKey) // les exercices écartés par le profil n'apparaissent pas
   const enabledCount = enabledPool(routineKey, settings).length
   const groups = Object.keys(ROUTINES[routineKey].plan)
   for (const e of all) if (!groups.includes(e.group)) groups.push(e.group)

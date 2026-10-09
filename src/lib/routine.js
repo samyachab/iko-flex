@@ -2,6 +2,7 @@ import { EXERCISES } from '../data/exercises.js'
 import { getSettings } from './settings.js'
 import { getLevel } from './progress.js'
 import { daysSince, getRotation } from './rotation.js'
+import { assess, currentRules, needsFor } from './profile.js'
 
 export const ROUTINES = {
   souplesse: {
@@ -44,8 +45,12 @@ const shuffle = (arr) => {
 // Exercice faisable avec le matériel de l'utilisateur
 export const hasEquipment = (ex, settings = getSettings()) => !ex.equip?.some((k) => settings.missing?.includes(k))
 
-export const enabledPool = (key, settings = getSettings()) =>
-  EXERCISES.filter((e) => e.theme === key && !settings[key].disabled.includes(e.id) && hasEquipment(e, settings))
+// Exercices permis par le profil (conditions, règles du coach) : les autres n'apparaissent nulle part
+export const profilePool = (key, rules = currentRules()) =>
+  EXERCISES.filter((e) => e.theme === key && assess(e, rules).allowed)
+
+export const enabledPool = (key, settings = getSettings(), rules = currentRules()) =>
+  profilePool(key, rules).filter((e) => !settings[key].disabled.includes(e.id) && hasEquipment(e, settings))
 
 const STEP = 15 // allongement par palier de 15 s
 const SHORT = 12 // durée (min) à partir de laquelle on commence à allonger les exercices clés
@@ -80,15 +85,17 @@ function slotOrder(plan) {
 }
 
 // Exercices actifs rangés par zone, + favori à part. Dans chaque zone : les exercices faits il y a
-// le plus longtemps (ou jamais) d'abord, ordre aléatoire entre exercices à égalité.
-function candidates(key, settings) {
-  const pool = enabledPool(key, settings)
+// le plus longtemps (ou jamais) d'abord, avance donnée par le profil (score plafonné à 6 jours),
+// ordre aléatoire entre exercices à égalité.
+function candidates(key, settings, rules) {
+  const pool = enabledPool(key, settings, rules)
   const favorite = pool.find((e) => e.id === settings[key].favorite)
   const { exercises: done } = getRotation(key)
+  const rank = (e) => daysSince(done[e.id]) + Math.min(6, assess(e, rules).score)
   const byGroup = {}
-  const ordered = shuffle(pool).sort((a, b) => daysSince(done[b.id]) - daysSince(done[a.id]))
+  const ordered = shuffle(pool).sort((a, b) => rank(b) - rank(a))
   for (const e of ordered) if (e !== favorite) (byGroup[e.group] ??= []).push(e)
-  return { byGroup, favorite }
+  return { byGroup, favorite, ordered }
 }
 
 // Ordre de couverture du jour : jours depuis la dernière fois (0 à 14) + bonus de priorité de la zone.
@@ -101,17 +108,18 @@ function coverageOrder(key) {
 }
 
 // Construit la séance pour la durée choisie :
-// 1. les exercices clés (priority) sont déjà allongés selon la longueur de la séance (45 s à 12 min -> max à 30 min) ;
-// 2. favori, puis un exercice par zone dans l'ordre de couverture (le plus court qui rentre si besoin),
+// 1. les exercices clés du profil (keys) sont déjà allongés selon la longueur de la séance (45 s à 12 min -> max à 30 min) ;
+// 2. favori, puis un exercice par besoin du profil (needs), puis un exercice par zone dans l'ordre de couverture (le plus court qui rentre si besoin),
 //    puis on complète en alternant les zones tant que la durée le permet ;
 // 3. le temps restant allonge les exercices qui gagnent à durer (clés d'abord), jusqu'à leur maximum ;
 // 4. renfo : si tous les exercices sont pris et qu'il reste du temps, on fait un 3e tour.
-export function buildRoutine(key, settings = getSettings()) {
+export function buildRoutine(key, settings = getSettings(), rules = currentRules()) {
   const config = ROUTINES[key]
   const target = settings[key].minutes * 60
   const chosen = settings[key].level
   const level = chosen && chosen !== 'auto' ? chosen : getLevel(key)
-  const { byGroup, favorite } = candidates(key, settings)
+  const { byGroup, favorite, ordered } = candidates(key, settings, rules)
+  const isKey = (ex) => rules.keys.has(ex.id)
   const k = Math.min(1, Math.max(0, (settings[key].minutes - SHORT) / (LONG - SHORT)))
   const plans = new Map()
   const start = (ex) => {
@@ -120,7 +128,7 @@ export function buildRoutine(key, settings = getSettings()) {
       return { sets, amount, baseSets: sets }
     }
     const [min, max] = doseOf(ex, config)
-    return { work: ex.priority ? Math.round((min + (max - min) * k) / STEP) * STEP : min }
+    return { work: isKey(ex) ? Math.round((min + (max - min) * k) / STEP) * STEP : min }
   }
 
   const picked = []
@@ -137,6 +145,12 @@ export function buildRoutine(key, settings = getSettings()) {
   const take = (group, ex) => byGroup[group].splice(byGroup[group].indexOf(ex), 1)
 
   if (favorite) tryAdd(favorite)
+  // Besoins du profil : la mécanique doit apparaître dans la séance (le meilleur candidat qui rentre)
+  for (const m of needsFor(key, rules)) {
+    if (picked.some((e) => e.biomechanics?.includes(m))) continue
+    const ex = ordered.find((e) => e !== favorite && !picked.includes(e) && e.biomechanics?.includes(m) && tryAdd(e))
+    if (ex) take(ex.group, ex)
+  }
   // Couverture : au moins une zone de chaque, les plus importantes d'abord si la séance est courte
   for (const g of coverageOrder(key)) {
     if (favorite?.group === g || !byGroup[g]?.length) continue
@@ -157,7 +171,7 @@ export function buildRoutine(key, settings = getSettings()) {
   }
 
   // Temps restant : étirements clés puis maintiens allongés par paliers ; exercices programmés : +1 série max
-  const weight = (e) => (e.priority ? 2 : 0) + (e.kind === 'static' ? 1 : 0)
+  const weight = (e) => (isKey(e) ? 2 : 0) + (e.kind === 'static' ? 1 : 0)
   const extendable = [...picked].sort((a, b) => weight(b) - weight(a))
   let slack = target - total
   let grew = true
@@ -194,12 +208,14 @@ export function buildRoutine(key, settings = getSettings()) {
   const exercises = []
   for (let r = 0; r < config.rounds; r++) exercises.push(...circuit)
   const totalSeconds = exercises.reduce((sum, ex) => sum + exerciseSeconds(ex, config, plans.get(ex.id)), 0)
-  return { ...config, level, exercises, plans: Object.fromEntries(plans), totalSeconds }
+  // Consignes propres à la personne (conditions adaptées, mot du coach), affichées dans le Player
+  const notes = Object.fromEntries(picked.map((e) => [e.id, assess(e, rules).notes]).filter(([, n]) => n.length))
+  return { ...config, level, exercises, plans: Object.fromEntries(plans), notes, totalSeconds }
 }
 
 // Aperçu (accueil, réglages) : moyenne de quelques tirages, la séance réelle varie légèrement
-export function routineInfo(key, settings = getSettings()) {
-  const runs = Array.from({ length: 5 }, () => buildRoutine(key, settings))
+export function routineInfo(key, settings = getSettings(), rules = currentRules()) {
+  const runs = Array.from({ length: 5 }, () => buildRoutine(key, settings, rules))
   const avg = (f) => Math.round(runs.reduce((s, r) => s + f(r), 0) / runs.length)
   return { minutes: avg((r) => r.totalSeconds / 60), count: avg((r) => r.exercises.length) }
 }

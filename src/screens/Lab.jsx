@@ -7,6 +7,53 @@ import { EXTRA_ANIMATIONS } from '../data/animations-extra.js'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
 import VoicePicker from '../components/VoicePicker.jsx'
 import { experience, getLevel } from '../lib/progress.js'
+import { PROFILES } from '../data/profiles.js'
+import { currentRules, getProfileId, profileReport, setProfileId } from '../lib/profile.js'
+
+// Profil actif : ce que le filtre écarte, adapte et impose (les vrais profils viendront avec la connexion)
+function ProfilePanel() {
+  const active = getProfileId()
+  const report = profileReport(currentRules(active))
+  const pick = (id) => {
+    setProfileId(id)
+    window.location.reload()
+  }
+  return (
+    <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 text-sm">
+      <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Profil actif</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {Object.values(PROFILES).map((p) => (
+          <button
+            key={p.id}
+            onClick={() => pick(p.id)}
+            className={`rounded-full border px-4 py-2 ${p.id === active ? 'border-white/60 bg-white/10' : 'border-white/15 text-white/60'}`}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+      {report.refer.length > 0 && <p className="mt-3 text-[#FFC29A]">⚕ Avis d’un pro conseillé : {report.refer.join(', ')}</p>}
+      <p className="mt-4 font-semibold">Écartés ({report.blocked.length})</p>
+      <ul className="mt-1 space-y-1 text-xs text-white/55">
+        {report.blocked.map((v) => (
+          <li key={v.ex.id}>
+            ✕ {v.ex.name} <span className="text-white/30">· {v.blockedBy.join(' · ')}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 font-semibold">Besoins (au moins un par séance)</p>
+      <ul className="mt-1 space-y-1 text-xs text-white/55">
+        {report.needs.map((n) => (
+          <li key={n.mechanic} className={n.exercises.length ? '' : 'text-[#FFC29A]'}>
+            {n.exercises.length ? '✓' : '✗ à créer :'} {n.label}{' '}
+            <span className="text-white/30">· {n.exercises.map((e) => e.name).join(', ')}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 font-semibold">Consignes ajoutées : {report.adapted.length} exercices</p>
+    </section>
+  )
+}
 
 // Exercices de la dernière extension (à relire en priorité)
 const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
@@ -54,6 +101,8 @@ export default function Lab({ onBack }) {
       <p className="mt-4 text-xs text-white/40">
         Niveau auto · souplesse {getLevel('souplesse')} ({experience('souplesse')} séances) · renfo {getLevel('renfo')} ({experience('renfo')} séances)
       </p>
+
+      <ProfilePanel />
 
       <VoicePicker className="mt-8" />
 
