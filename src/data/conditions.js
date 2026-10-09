@@ -45,10 +45,11 @@ export const CONDITIONS = {
   epaules_crispees: {
     label: 'Épaules qui montent vers les oreilles (trapèzes supérieurs crispés)',
     kind: 'posture',
+    // Même texte partout : une seule consigne s'affiche même si l'exercice coche plusieurs mécaniques
     adapt: {
-      elevation_bras: 'Pour toi : épaules loin des oreilles.',
+      elevation_bras: 'Pour toi : omoplates vers le bas, épaules loin des oreilles.',
       retraction_scapulaire: 'Pour toi : omoplates vers le bas, épaules loin des oreilles.',
-      poussee: 'Pour toi : épaules loin des oreilles.',
+      poussee: 'Pour toi : omoplates vers le bas, épaules loin des oreilles.',
     },
     favor: { retraction_scapulaire: 1, etirement_cervical: 1, anti_rotation: 1 },
   },
