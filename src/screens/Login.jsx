@@ -20,7 +20,7 @@ function Field({ label, ...props }) {
 
 // Connexion : email + mot de passe, connecté tout de suite (aucun email envoyé).
 // "Continuer sans compte" garde tout sur l'appareil, avec la routine générale.
-export default function Login({ onDone, onGuest }) {
+export default function Login({ onDone, onGuest, onPrivacy }) {
   const [mode, setMode] = useState('signup') // 'signup' | 'signin'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -92,6 +92,15 @@ export default function Login({ onDone, onGuest }) {
           autoComplete={signup ? 'new-password' : 'current-password'}
           placeholder={`${MIN_PASSWORD} caractères minimum`}
         />
+
+        {signup && (
+          <p className="text-xs leading-relaxed text-white/40">
+            Tes données restent privées : seuls toi et ton coach y avez accès.{' '}
+            <button type="button" onClick={onPrivacy} className="text-white/70 underline underline-offset-4">
+              Confidentialité
+            </button>
+          </p>
+        )}
 
         {error && (
           <p role="alert" className="text-sm leading-relaxed" style={{ color: t.a }}>

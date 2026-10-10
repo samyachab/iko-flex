@@ -7,6 +7,7 @@ import Reward from './screens/Reward.jsx'
 import Lab from './screens/Lab.jsx'
 import Settings from './screens/Settings.jsx'
 import Login from './screens/Login.jsx'
+import Privacy from './screens/Privacy.jsx'
 import { bootstrap, continueAsGuest, isGuest, pushSession, signOut } from './lib/cloud.js'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
@@ -23,7 +24,8 @@ export default function App() {
   // Ouverture : session existante -> fiche et historique depuis le coffre ; sinon écran de connexion
   const open = async () => {
     const acct = await bootstrap()
-    setAccount(acct)
+    // Échec de lecture : on ouvre quand même l'accueil avec les données du téléphone
+    setAccount(acct?.failed ? null : acct)
     setScreen((s) => (s === 'lab' ? s : acct || isGuest() ? 'hub' : 'login'))
   }
   useEffect(() => {
@@ -33,6 +35,17 @@ export default function App() {
     await signOut()
     setAccount(null)
     setScreen('login')
+  }
+  // Compte supprimé (déjà effacé du coffre et de l'appareil)
+  const deleted = () => {
+    setAccount(null)
+    setScreen('login')
+  }
+  // Page confidentialité : retour à l'écran d'où on vient
+  const [privacyFrom, setPrivacyFrom] = useState('login')
+  const openPrivacy = () => {
+    setPrivacyFrom(screen)
+    setScreen('privacy')
   }
   const [routine, setRoutine] = useState(null)
   const [result, setResult] = useState(null) // { valid, ratio, streak }
@@ -77,6 +90,7 @@ export default function App() {
             {screen === 'loading' && <div className="h-full" />}
             {screen === 'login' && (
               <Login
+                onPrivacy={openPrivacy}
                 onDone={() => {
                   setScreen('loading')
                   open()
@@ -89,8 +103,16 @@ export default function App() {
             )}
             {screen === 'hub' && <Hub name={account?.name} onLaunch={launch} onOpenLab={() => setScreen('lab')} onOpenSettings={() => setScreen('settings')} />}
             {screen === 'settings' && (
-              <Settings account={account} onLogout={logout} onLogin={() => setScreen('login')} onBack={() => setScreen('hub')} />
+              <Settings
+                account={account}
+                onLogout={logout}
+                onDeleted={deleted}
+                onPrivacy={openPrivacy}
+                onLogin={() => setScreen('login')}
+                onBack={() => setScreen('hub')}
+              />
             )}
+            {screen === 'privacy' && <Privacy onBack={() => setScreen(privacyFrom)} />}
             {screen === 'lab' && (
               <Lab
                 onBack={() => {

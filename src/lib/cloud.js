@@ -64,8 +64,9 @@ export async function signUp(email, password, name) {
   return { user: data.user }
 }
 
-export async function signOut() {
-  await supabase.auth.signOut()
+// scope 'local' : seulement cet appareil (après suppression du compte, le serveur ne le connaît plus)
+export async function signOut(scope = 'global') {
+  await supabase.auth.signOut({ scope })
   userId = null
   try {
     for (const k of PERSONAL_KEYS) localStorage.removeItem(k)
@@ -75,9 +76,17 @@ export async function signOut() {
 }
 
 // À l'ouverture : session existante ? Si oui, on remplit l'appareil depuis le coffre.
-// Renvoie { user, name, personalized } ou null (pas connecté).
-export async function bootstrap() {
-  const { data } = await supabase.auth.getSession()
+// Renvoie { user, name, personalized }, null (pas connecté) ou { failed: true } si la session n'a pas pu être lue
+// (ex. verrou de session tenu par un autre onglet) : l'appli s'ouvre alors avec les données de l'appareil.
+const BOOT_TIMEOUT = 8000
+export function bootstrap() {
+  const timeout = new Promise((resolve) => setTimeout(() => resolve({ failed: true }), BOOT_TIMEOUT))
+  return Promise.race([readAccount().catch(() => ({ failed: true })), timeout])
+}
+
+async function readAccount() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
   const user = data.session?.user
   if (!user) return null
   userId = user.id
@@ -155,4 +164,50 @@ export function pushSession(routine, exercises) {
     .from('sessions')
     .insert({ routine, done_on: today(), exercises: [...new Set(exercises.map((e) => e.id))] })
     .then(() => {}, () => {})
+}
+
+// ───────── Droits RGPD : export et suppression ─────────
+
+// Toutes les données du compte, telles qu'elles sont dans le coffre, en un fichier JSON
+export async function exportMyData() {
+  const { data } = await supabase.auth.getUser()
+  const user = data.user
+  if (!user) return { error: 'Connecte-toi pour exporter tes données.' }
+  const [profile, settings, sessions] = await Promise.all([
+    supabase.from('profiles').select('name, status, data, created_at, updated_at').eq('id', user.id).maybeSingle(),
+    supabase.from('user_settings').select('settings, updated_at').eq('user_id', user.id).maybeSingle(),
+    supabase.from('sessions').select('routine, done_on, exercises, created_at').order('done_on'),
+  ])
+  const failed = [profile, settings, sessions].find((r) => r.error)
+  if (failed) return { error: frenchError(failed.error) }
+  const content = {
+    exporte_le: new Date().toISOString(),
+    compte: { email: user.email, cree_le: user.created_at, derniere_connexion: user.last_sign_in_at },
+    fiche: profile.data,
+    reglages: settings.data,
+    seances: sessions.data,
+  }
+  const file = new File([JSON.stringify(content, null, 2)], `iko-flex-mes-donnees-${today()}.json`, { type: 'application/json' })
+  // iPhone (app installée) : la feuille de partage permet d'enregistrer le fichier ; ailleurs, téléchargement
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Mes données Iko Flex' })
+      return { ok: true }
+    } catch (e) {
+      if (e?.name === 'AbortError') return { ok: false }
+    }
+  }
+  const url = URL.createObjectURL(file)
+  const a = Object.assign(document.createElement('a'), { href: url, download: file.name })
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+  return { ok: true }
+}
+
+// Suppression définitive : compte, fiche, réglages et séances (côté coffre), puis l'appareil
+export async function deleteAccount() {
+  const { error } = await supabase.rpc('delete_my_account')
+  if (error) return { error: frenchError(error) }
+  await signOut('local')
+  return { ok: true }
 }
