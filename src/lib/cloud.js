@@ -7,6 +7,7 @@ import { addProfiles, setProfileId } from './profile.js'
 import { getSettings, onSettingsSaved, saveSettings } from './settings.js'
 import { getHistory, mergeHistory } from './streaks.js'
 import { mergeRotation } from './rotation.js'
+import { squarePhoto } from './image.js'
 
 const GUEST_KEY = 'iko-flex:guest'
 // Données personnelles effacées de l'appareil à la déconnexion (téléphone prêté, partagé...)
@@ -184,10 +185,12 @@ export async function exportMyData() {
   const { data } = await supabase.auth.getUser()
   const user = data.user
   if (!user) return { error: 'Connecte-toi pour exporter tes données.' }
-  const [profile, settings, sessions] = await Promise.all([
+  const [profile, settings, sessions, player, intake] = await Promise.all([
     supabase.from('profiles').select('name, status, data, created_at, updated_at').eq('id', user.id).maybeSingle(),
     supabase.from('user_settings').select('settings, updated_at').eq('user_id', user.id).maybeSingle(),
     supabase.from('sessions').select('routine, done_on, exercises, created_at').order('done_on'),
+    supabase.from('players').select('display_name, avatar, share, photo_path, updated_at').eq('user_id', user.id).maybeSingle(),
+    supabase.from('intakes').select('mode, answers, proposal, red_flags, health_consent_at, submitted_at').eq('user_id', user.id).maybeSingle(),
   ])
   const failed = [profile, settings, sessions].find((r) => r.error)
   if (failed) return { error: frenchError(failed.error) }
@@ -197,6 +200,8 @@ export async function exportMyData() {
     fiche: profile.data,
     reglages: settings.data,
     seances: sessions.data,
+    profil_public: player.data ?? null,
+    questionnaire: intake.data ?? null,
   }
   const file = new File([JSON.stringify(content, null, 2)], `iko-flex-mes-donnees-${today()}.json`, { type: 'application/json' })
   // iPhone (app installée) : la feuille de partage permet d'enregistrer le fichier ; ailleurs, téléchargement
@@ -217,6 +222,7 @@ export async function exportMyData() {
 
 // Suppression définitive : compte, fiche, réglages et séances (côté coffre), puis l'appareil
 export async function deleteAccount() {
+  await removeAllPhotos().catch(() => {})
   const { error } = await supabase.rpc('delete_my_account')
   if (error) return { error: frenchError(error) }
   await signOut('local')
@@ -287,8 +293,46 @@ export async function submitIntake({ mode, answers, proposal, redFlags }) {
 // Pseudo, avatar, participation au classement (null si jamais réglé)
 export async function getPlayer() {
   if (!userId) return null
-  const { data } = await supabase.from('players').select('display_name, avatar, share').eq('user_id', userId).maybeSingle()
+  const { data } = await supabase.from('players').select('display_name, avatar, share, photo_path').eq('user_id', userId).maybeSingle()
   return data
+}
+
+// ───────── Photo de profil (stockage privé "avatars", un dossier par personne) ─────────
+
+const BUCKET = 'avatars'
+
+// Recadre, réduit et envoie la photo ; supprime l'ancienne. Renvoie le chemin à enregistrer dans players.
+export async function uploadPhoto(file, previousPath) {
+  if (!userId) return { error: 'Connecte-toi d’abord.' }
+  let blob
+  try {
+    blob = await squarePhoto(file)
+  } catch {
+    return { error: 'Cette image ne peut pas être lue. Essaie une autre photo.' }
+  }
+  const path = `${userId}/${Date.now()}.jpg`
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' })
+  if (error) return { error: frenchError(error) }
+  if (previousPath) await supabase.storage.from(BUCKET).remove([previousPath])
+  return { path }
+}
+
+export async function removePhoto(path) {
+  if (path) await supabase.storage.from(BUCKET).remove([path])
+}
+
+// Liens temporaires (1 h) pour afficher des photos privées : { chemin: url }
+export async function photoUrls(paths) {
+  const list = [...new Set(paths.filter(Boolean))]
+  if (!list.length) return {}
+  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(list, 3600)
+  return Object.fromEntries((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]))
+}
+
+// Toutes ses photos (pour la suppression du compte : le stockage n'est pas effacé en cascade)
+async function removeAllPhotos() {
+  const { data } = await supabase.storage.from(BUCKET).list(userId)
+  if (data?.length) await supabase.storage.from(BUCKET).remove(data.map((f) => `${userId}/${f.name}`))
 }
 
 export async function savePlayer(player) {

@@ -163,7 +163,7 @@ function useLongPress(callback, ms = 800) {
   return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onPointerCancel: cancel, onContextMenu: (e) => e.preventDefault() }
 }
 
-export default function Hub({ name, player, badge = 0, onLaunch, onOpenLab, onOpenSettings, onOpenProfile }) {
+export default function Hub({ name, player, photo, badge = 0, onLaunch, onOpenLab, onOpenSettings, onOpenProfile }) {
   const initial = (player?.display_name ?? name ?? '').trim().charAt(0).toUpperCase()
   const longPress = useLongPress(onOpenLab)
   const { streaks, calendar, greeting } = useHubData(name)
@@ -198,7 +198,9 @@ export default function Hub({ name, player, badge = 0, onLaunch, onOpenLab, onOp
           className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10"
           style={{ background: player ? gradient(AVATARS[player.avatar] ?? AVATARS.aurore) : 'rgba(255,255,255,0.05)' }}
         >
-          {player && initial ? (
+          {photo ? (
+            <img src={photo} alt="" className="h-full w-full rounded-full object-cover" draggable={false} />
+          ) : player && initial ? (
             <span className="font-display text-base font-semibold text-ink">{initial}</span>
           ) : (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white/70">

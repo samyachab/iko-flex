@@ -11,7 +11,7 @@ import Privacy from './screens/Privacy.jsx'
 import Coach from './screens/Coach.jsx'
 import Onboarding from './screens/Onboarding.jsx'
 import Profile from './screens/Profile.jsx'
-import { bootstrap, continueAsGuest, countNewSignups, getPlayer, isGuest, pushSession, signOut } from './lib/cloud.js'
+import { bootstrap, continueAsGuest, countNewSignups, getPlayer, isGuest, photoUrls, pushSession, signOut } from './lib/cloud.js'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
 import { recordSession } from './lib/rotation.js'
@@ -25,6 +25,11 @@ export default function App() {
   const [account, setAccount] = useState(null) // { user, name, personalized } quand connecté
   const [newSignups, setNewSignups] = useState(0) // coach : inscrits depuis sa dernière visite
   const [player, setPlayer] = useState(null) // pseudo + avatar (bouton profil de l'accueil)
+  const [playerPhoto, setPlayerPhoto] = useState(null) // lien temporaire de la photo de profil
+  useEffect(() => {
+    if (!player?.photo_path) return setPlayerPhoto(null)
+    photoUrls([player.photo_path]).then((u) => setPlayerPhoto(u[player.photo_path] ?? null))
+  }, [player?.photo_path])
 
   // Ouverture : session existante -> fiche et historique depuis le coffre ; sinon écran de connexion
   const open = async () => {
@@ -118,6 +123,7 @@ export default function App() {
             {screen === 'hub' && <Hub
                 name={account?.name}
                 player={player}
+                photo={playerPhoto}
                 badge={newSignups}
                 onLaunch={launch}
                 onOpenLab={() => setScreen('lab')}

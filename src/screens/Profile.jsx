@@ -1,17 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import AccountCard from '../components/AccountCard.jsx'
-import { getLeaderboard, getPlayer, savePlayer } from '../lib/cloud.js'
+import { getLeaderboard, getPlayer, photoUrls, removePhoto, savePlayer, uploadPhoto } from '../lib/cloud.js'
 import { getStreaks } from '../lib/streaks.js'
-import { AVATARS, TONES, gradient, rise } from '../lib/theme.js'
+import { AVATARS, SHAPES, TONES, gradient, rise } from '../lib/theme.js'
 
 const card = 'rounded-[2rem] border border-white/10 bg-white/[0.04] p-5'
 const label = 'text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40'
 const MAX_NAME = 24
 
-// Avatar : un blob de la couleur choisie, avec l'initiale
-export function Avatar({ name, avatar = 'aurore', size = 44 }) {
+// Avatar : la photo de profil dans une forme organique ; sans photo, un blob coloré avec l'initiale
+export function Avatar({ name, avatar = 'aurore', photo, size = 44 }) {
+  if (photo) {
+    return (
+      <motion.div
+        className="shrink-0 overflow-hidden"
+        style={{ width: size, height: size }}
+        animate={{ borderRadius: SHAPES }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <img src={photo} alt="" className="h-full w-full object-cover" draggable={false} />
+      </motion.div>
+    )
+  }
   return (
     <Blob palette={AVATARS[avatar] ?? AVATARS.aurore} size={size} speed={0.8}>
       <span className="font-display font-semibold text-ink" style={{ fontSize: size * 0.42 }}>
@@ -26,11 +38,16 @@ function Leaderboard({ player, onJoin, onLeave }) {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
   const [by, setBy] = useState('streak') // 'streak' | 'week'
+  const [photos, setPhotos] = useState({})
 
   useEffect(() => {
     if (!player?.share) return
-    getLeaderboard().then((res) => (res.error ? setError(res.error) : setRows(res.rows)))
-  }, [player?.share])
+    getLeaderboard().then(async (res) => {
+      if (res.error) return setError(res.error)
+      setRows(res.rows)
+      setPhotos(await photoUrls(res.rows.map((r) => r.photo_path)))
+    })
+  }, [player?.share, player?.photo_path])
 
   if (!player?.share) {
     return (
@@ -93,7 +110,7 @@ function Leaderboard({ player, onJoin, onLeave }) {
             className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${r.is_me ? 'bg-white/[0.09]' : ''}`}
           >
             <span className={`w-6 text-center font-display text-lg ${i < 3 ? 'text-white' : 'text-white/40'}`}>{i + 1}</span>
-            <Avatar name={r.display_name} avatar={r.avatar} size={34} />
+            <Avatar name={r.display_name} avatar={r.avatar} photo={photos[r.photo_path]} size={34} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white/85">
               {r.display_name}
               {r.is_me && <span className="ml-1 font-normal text-white/40">(toi)</span>}
@@ -114,14 +131,41 @@ function Leaderboard({ player, onJoin, onLeave }) {
   )
 }
 
-// Personnaliser : pseudo et couleur d'avatar
-function Customize({ player, fallbackName, onSave }) {
+// Personnaliser : photo de profil et pseudo
+function Customize({ player, photo, fallbackName, onSave, onPhoto, onRemovePhoto }) {
   const [name, setName] = useState(player?.display_name ?? fallbackName ?? '')
-  const [avatar, setAvatar] = useState(player?.avatar ?? 'aurore')
-  const changed = name.trim() !== (player?.display_name ?? '') || avatar !== (player?.avatar ?? 'aurore')
+  const [busy, setBusy] = useState(false)
+  const input = useRef(null)
+  const changed = name.trim() !== (player?.display_name ?? '')
+  const pick = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    await onPhoto(file)
+    setBusy(false)
+  }
   return (
     <motion.section {...rise(0.18)} className={card}>
       <p className={label}>Personnaliser</p>
+      <div className="mt-4 flex items-center gap-4">
+        <Avatar name={name || fallbackName} avatar={player?.avatar} photo={photo} size={64} />
+        <div className="flex flex-col items-start gap-2">
+          <button
+            onClick={() => input.current?.click()}
+            disabled={busy}
+            className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 disabled:opacity-50"
+          >
+            {busy ? 'Envoi…' : photo ? 'Changer de photo' : 'Ajouter une photo'}
+          </button>
+          {photo && !busy && (
+            <button onClick={onRemovePhoto} className="text-xs text-white/40 underline underline-offset-4">
+              Retirer la photo
+            </button>
+          )}
+        </div>
+        <input ref={input} type="file" accept="image/*" onChange={pick} className="hidden" />
+      </div>
       <label className="mt-3 block">
         <span className="text-xs text-white/45">Pseudo</span>
         <input
@@ -131,34 +175,24 @@ function Customize({ player, fallbackName, onSave }) {
           className="mt-1 w-full select-text rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-base text-white outline-none focus:border-white/40"
         />
       </label>
-      <p className="mt-4 text-xs text-white/45">Couleur</p>
-      <div className="mt-2 flex flex-wrap gap-3">
-        {Object.entries(AVATARS).map(([k, a]) => (
-          <button
-            key={k}
-            onClick={() => setAvatar(k)}
-            aria-label={a.label}
-            aria-pressed={avatar === k}
-            className={`rounded-full p-1 ${avatar === k ? 'ring-2 ring-white/70' : ''}`}
-          >
-            <span className="block h-9 w-9 rounded-full" style={{ background: gradient(a) }} />
-          </button>
-        ))}
-      </div>
       <motion.button
         whileTap={{ scale: 0.97 }}
         disabled={!changed || !name.trim()}
-        onClick={() => onSave({ display_name: name.trim(), avatar })}
+        onClick={() => onSave({ display_name: name.trim() })}
         className="mt-5 w-full rounded-full border border-white/15 py-3 text-sm font-semibold text-white/80 disabled:opacity-30"
       >
-        Enregistrer
+        Enregistrer le pseudo
       </motion.button>
+      <p className="mt-3 text-xs leading-relaxed text-white/35">
+        Ta photo est visible par toi, ton coach, et les amis du classement si tu y participes.
+      </p>
     </motion.section>
   )
 }
 
 export default function Profile({ account, onBack, onPlayerChange, ...accountProps }) {
   const [player, setPlayer] = useState(undefined) // undefined = chargement, null = jamais réglé
+  const [photo, setPhoto] = useState(null) // lien temporaire de sa propre photo
   const [message, setMessage] = useState(null)
   const streaks = getStreaks()
   const best = Math.max(streaks.souplesse.count, streaks.renfo.count)
@@ -167,12 +201,17 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
     if (account) getPlayer().then((p) => setPlayer(p ?? null))
     else setPlayer(null)
   }, [account])
+  useEffect(() => {
+    if (!player?.photo_path) return setPhoto(null)
+    photoUrls([player.photo_path]).then((u) => setPhoto(u[player.photo_path] ?? null))
+  }, [player?.photo_path])
 
   const update = async (patch) => {
     const next = {
       display_name: player?.display_name ?? account?.name ?? 'Moi',
       avatar: player?.avatar ?? 'aurore',
       share: player?.share ?? false,
+      photo_path: player?.photo_path ?? null,
       ...patch,
     }
     const res = await savePlayer(next)
@@ -180,6 +219,15 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
     setMessage(null)
     setPlayer(next)
     onPlayerChange?.(next)
+  }
+  const changePhoto = async (file) => {
+    const res = await uploadPhoto(file, player?.photo_path)
+    if (res.error) return setMessage(res.error)
+    await update({ photo_path: res.path })
+  }
+  const deletePhoto = async () => {
+    await removePhoto(player?.photo_path)
+    await update({ photo_path: null })
   }
 
   const shown = player?.display_name ?? account?.name ?? 'Invité'
@@ -191,7 +239,7 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
       </motion.button>
 
       <motion.div {...rise(0.05)} className="mt-6 flex items-center gap-4">
-        <Avatar name={shown} avatar={player?.avatar} size={72} />
+        <Avatar name={shown} avatar={player?.avatar} photo={photo} size={72} />
         <div>
           <h1 className="font-display text-4xl font-light tracking-tight">{shown}</h1>
           <p className="mt-1 text-sm text-white/45">
@@ -205,7 +253,14 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
           player !== undefined && (
             <>
               <Leaderboard player={player} onJoin={() => update({ share: true })} onLeave={() => update({ share: false })} />
-              <Customize key={player?.updated_at ?? 'new'} player={player} fallbackName={account.name} onSave={update} />
+              <Customize
+                player={player}
+                photo={photo}
+                fallbackName={account.name}
+                onSave={update}
+                onPhoto={changePhoto}
+                onRemovePhoto={deletePhoto}
+              />
             </>
           )
         ) : (

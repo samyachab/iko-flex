@@ -39,7 +39,8 @@ const SECTIONS = [
     title: 'Qui les voit',
     body: [
       'Toi, et Samy en tant que coach, pour ajuster ta fiche. Personne d’autre.',
-      'Si tu rejoins le classement entre amis (c’est un choix, réversible) : les autres participants voient ton pseudo, ton avatar, ta série et tes jours actifs de la semaine. Jamais ta fiche ni tes exercices.',
+      'Si tu rejoins le classement entre amis (c’est un choix, réversible) : les autres participants voient ton pseudo, ta photo de profil, ta série et tes jours actifs de la semaine. Jamais ta fiche ni tes exercices.',
+      'Ta photo de profil (si tu en ajoutes une) est recadrée et réduite sur ton téléphone, puis rangée dans un espace privé : seuls toi, ton coach et les participants du classement peuvent la voir. Elle est effacée avec ton compte.',
     ],
   },
   {
