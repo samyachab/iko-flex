@@ -101,9 +101,10 @@ async function readAccount() {
 
 // Fiche : validée par le coach -> profil perso ; sinon routine générale
 async function loadProfile(user) {
-  const [{ data, error }, coach] = await Promise.all([
+  const [{ data, error }, coach, intake] = await Promise.all([
     supabase.from('profiles').select('name, status, data').eq('id', user.id).maybeSingle(),
     supabase.rpc('is_coach'),
+    supabase.from('intakes').select('mode').eq('user_id', user.id).maybeSingle(),
   ])
   if (error) throw error
   const personalized = data?.status === 'active' && Object.keys(data.data ?? {}).length > 0
@@ -111,7 +112,14 @@ async function loadProfile(user) {
     addProfiles({ [user.id]: { ...data.data, id: user.id, name: data.name ?? 'Moi' } })
     setProfileId(user.id)
   } else setProfileId('general')
-  return { name: data?.name ?? user.user_metadata?.name ?? null, personalized, coach: coach.data === true }
+  return {
+    name: data?.name ?? user.user_metadata?.name ?? null,
+    personalized,
+    status: data?.status ?? 'general',
+    coach: coach.data === true,
+    // Questionnaire d'accueil à proposer : jamais rempli, et pas de fiche déjà faite par le coach
+    needsOnboarding: !intake.error && !intake.data && data?.status === 'general',
+  }
 }
 
 // Réglages : ceux du coffre gagnent ; s'il est vide (premier appareil), on y envoie ceux du téléphone
@@ -227,6 +235,24 @@ export async function listAthletes() {
 // Enregistre la fiche d'une personne (statut + contenu) ; seul un coach y est autorisé (RLS)
 export async function saveAthlete(id, { status, data }) {
   const { error } = await supabase.from('profiles').update({ status, data }).eq('id', id)
+  if (error) return { error: frenchError(error) }
+  return { ok: true }
+}
+
+// ───────── Questionnaire d'accueil ─────────
+
+// Envoie les réponses ; en sur-mesure, le coffre prépare une fiche "à valider" pour le coach
+export async function submitIntake({ mode, answers, proposal, redFlags }) {
+  if (!userId) return { error: 'Connecte-toi pour envoyer ton questionnaire.' }
+  const { error } = await supabase.from('intakes').upsert({
+    user_id: userId,
+    mode,
+    answers,
+    proposal,
+    red_flags: Boolean(redFlags),
+    health_consent_at: answers.consent ? new Date().toISOString() : null,
+    submitted_at: new Date().toISOString(),
+  })
   if (error) return { error: frenchError(error) }
   return { ok: true }
 }

@@ -19,6 +19,7 @@ const SECTIONS = [
       'Tes réglages : durées, favoris, exercices désactivés, matériel.',
       'Ton historique : les jours de séance et les exercices faits.',
       'Si tu choisis une routine personnalisée : ta fiche (sport, posture, zones sensibles ou douleurs). Ce sont des données de santé : elles ne sont utilisées que pour construire tes séances, et seulement avec ton accord.',
+      'Si tu remplis le questionnaire sur-mesure : tes réponses et ce que tu écris. Ton texte est analysé directement sur ton téléphone (aucune intelligence artificielle externe), puis relu par ton coach.',
       'Sans compte : rien ne quitte ton téléphone.',
     ],
   },

@@ -9,6 +9,7 @@ import Settings from './screens/Settings.jsx'
 import Login from './screens/Login.jsx'
 import Privacy from './screens/Privacy.jsx'
 import Coach from './screens/Coach.jsx'
+import Onboarding from './screens/Onboarding.jsx'
 import { bootstrap, continueAsGuest, isGuest, pushSession, signOut } from './lib/cloud.js'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
@@ -27,7 +28,7 @@ export default function App() {
     const acct = await bootstrap()
     // Échec de lecture : on ouvre quand même l'accueil avec les données du téléphone
     setAccount(acct?.failed ? null : acct)
-    setScreen((s) => (s === 'lab' ? s : acct || isGuest() ? 'hub' : 'login'))
+    setScreen((s) => (s === 'lab' ? s : acct?.needsOnboarding ? 'onboarding' : acct || isGuest() ? 'hub' : 'login'))
   }
   useEffect(() => {
     open()
@@ -115,11 +116,21 @@ export default function App() {
                 onDeleted={deleted}
                 onPrivacy={openPrivacy}
                 onCoach={() => setScreen('coach')}
+                onOnboarding={() => setScreen('onboarding')}
                 onLogin={() => setScreen('login')}
                 onBack={() => setScreen('hub')}
               />
             )}
             {screen === 'privacy' && <Privacy onBack={() => setScreen(privacyFrom)} />}
+            {screen === 'onboarding' && (
+              <Onboarding
+                name={account?.name}
+                onDone={async () => {
+                  await refreshAccount()
+                  setScreen('hub')
+                }}
+              />
+            )}
             {screen === 'coach' && <Coach account={account} onOwnProfileSaved={refreshAccount} onBack={() => setScreen('settings')} />}
             {screen === 'lab' && (
               <Lab

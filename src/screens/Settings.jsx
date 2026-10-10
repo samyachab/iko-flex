@@ -206,7 +206,7 @@ function EquipmentSettings({ settings, update, delay }) {
 }
 
 // Compte : qui est connecté, fiche perso ou routine générale, déconnexion
-function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, delay }) {
+function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onOnboarding, delay }) {
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(null) // 'export' | 'delete'
   const [message, setMessage] = useState(null)
@@ -235,9 +235,16 @@ function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onC
           <p className="mt-1 text-xs leading-relaxed text-white/40">
             {account.personalized
               ? 'Fiche personnalisée active : tes séances suivent ton bilan.'
-              : 'Routine générale. Ta fiche personnalisée apparaîtra ici quand elle sera validée.'}
+              : account.status === 'draft'
+                ? 'Questionnaire envoyé : ton coach prépare ta fiche. En attendant, routine générale.'
+                : 'Routine générale.'}
             {account.offline && ' (hors ligne : dernières données de ce téléphone)'}
           </p>
+          {!account.coach && (
+            <button onClick={onOnboarding} className="mt-3 block text-sm text-white/60 underline underline-offset-4">
+              {account.status === 'general' ? 'Passer à une routine sur-mesure' : 'Refaire mon questionnaire'}
+            </button>
+          )}
           {account.coach && (
             <button
               onClick={onCoach}
@@ -304,7 +311,7 @@ function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onC
   )
 }
 
-export default function Settings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onBack }) {
+export default function Settings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onOnboarding, onBack }) {
   const [settings, setSettings] = useState(getSettings)
   const update = (next) => {
     setSettings(next)
@@ -336,6 +343,7 @@ export default function Settings({ account, onLogout, onLogin, onDeleted, onPriv
           onDeleted={onDeleted}
           onPrivacy={onPrivacy}
           onCoach={onCoach}
+          onOnboarding={onOnboarding}
           delay={0.33}
         />
       </div>
