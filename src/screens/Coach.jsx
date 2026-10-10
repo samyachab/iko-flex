@@ -48,6 +48,7 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
   const [sport, setSport] = useState(d.sport ?? 'aucun')
   const [issues, setIssues] = useState(d.posture_issues ?? [])
   const [pains, setPains] = useState(d.pain_points ?? [])
+  const [goals, setGoals] = useState(d.goals ?? [])
   const [keys, setKeys] = useState(d.keys ?? [])
   const [rulesText, setRulesText] = useState(JSON.stringify({ ...EMPTY_RULES, ...d.rules }, null, 2))
   const [plan] = useState(d.plan)
@@ -60,7 +61,7 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
   } catch {
     rules = null
   }
-  const data = { sport, posture_issues: issues, pain_points: pains, keys, rules: rules ?? EMPTY_RULES, ...(plan ? { plan } : {}) }
+  const data = { sport, goals, posture_issues: issues, pain_points: pains, keys, rules: rules ?? EMPTY_RULES, ...(plan ? { plan } : {}) }
   const report = useMemo(() => profileReport(resolveProfile(data)), [JSON.stringify(data)])
 
   const toggle = (list, setList, id) => setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
@@ -109,6 +110,15 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
             {Object.entries(SPORTS).map(([k, s]) => (
               <Chip key={k} on={sport === k} onClick={() => setSport(k)}>
                 {s.label}
+              </Chip>
+            ))}
+          </div>
+
+          <p className={`${label} mt-6`}>Objectifs</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {conditions('objectif').map(([k, c]) => (
+              <Chip key={k} color="#9D8BFF" on={goals.includes(k)} onClick={() => toggle(goals, setGoals, k)}>
+                {c.label}
               </Chip>
             ))}
           </div>

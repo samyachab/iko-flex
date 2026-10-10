@@ -1,7 +1,7 @@
 // Profils : une personne = des faits (conditions, sport) + les exceptions du coach.
 // Les règles (éviter / adapter / privilégier) sont calculées depuis conditions.js par lib/profile.js.
 //
-//   posture_issues, pain_points : clés de CONDITIONS
+//   posture_issues, pain_points, goals : clés de CONDITIONS (kind posture / douleur / objectif)
 //   sport  : clé de SPORTS
 //   keys   : exercices clés, allongés en priorité quand la séance est longue
 //   rules  : exceptions du coach, appliquées après les conditions

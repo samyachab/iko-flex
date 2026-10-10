@@ -47,7 +47,9 @@ const needEntries = (needs) => (Array.isArray(needs) ? needs.map((m) => [m, 1]) 
 // Conditions -> règles sur les mécaniques
 export function resolveProfile(profile) {
   const rules = profile.rules ?? {}
-  const conditions = [...(profile.posture_issues ?? []), ...(profile.pain_points ?? [])].filter((c) => CONDITIONS[c])
+  const conditions = [...(profile.posture_issues ?? []), ...(profile.pain_points ?? []), ...(profile.goals ?? [])].filter(
+    (c) => CONDITIONS[c],
+  )
   const avoid = new Map() // mécanique -> conditions qui l'interdisent
   const adapt = new Map() // mécanique -> consignes en plus
   const favor = new Map() // mécanique -> poids
