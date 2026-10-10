@@ -206,7 +206,7 @@ function EquipmentSettings({ settings, update, delay }) {
 }
 
 // Compte : qui est connecté, fiche perso ou routine générale, déconnexion
-function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, delay }) {
+function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, delay }) {
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(null) // 'export' | 'delete'
   const [message, setMessage] = useState(null)
@@ -238,6 +238,15 @@ function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, del
               : 'Routine générale. Ta fiche personnalisée apparaîtra ici quand elle sera validée.'}
             {account.offline && ' (hors ligne : dernières données de ce téléphone)'}
           </p>
+          {account.coach && (
+            <button
+              onClick={onCoach}
+              className="mt-4 w-full rounded-full py-3 text-sm font-bold text-ink"
+              style={{ background: gradient(TONES.renfo, 90) }}
+            >
+              Espace coach
+            </button>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
             <button onClick={onLogout} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/70">
               Me déconnecter
@@ -295,7 +304,7 @@ function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, del
   )
 }
 
-export default function Settings({ account, onLogout, onLogin, onDeleted, onPrivacy, onBack }) {
+export default function Settings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onBack }) {
   const [settings, setSettings] = useState(getSettings)
   const update = (next) => {
     setSettings(next)
@@ -326,6 +335,7 @@ export default function Settings({ account, onLogout, onLogin, onDeleted, onPriv
           onLogin={onLogin}
           onDeleted={onDeleted}
           onPrivacy={onPrivacy}
+          onCoach={onCoach}
           delay={0.33}
         />
       </div>

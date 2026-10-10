@@ -8,6 +8,7 @@ import Lab from './screens/Lab.jsx'
 import Settings from './screens/Settings.jsx'
 import Login from './screens/Login.jsx'
 import Privacy from './screens/Privacy.jsx'
+import Coach from './screens/Coach.jsx'
 import { bootstrap, continueAsGuest, isGuest, pushSession, signOut } from './lib/cloud.js'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
@@ -35,6 +36,11 @@ export default function App() {
     await signOut()
     setAccount(null)
     setScreen('login')
+  }
+  // Fiche du coach modifiée par lui-même : on la recharge sans changer d'écran
+  const refreshAccount = async () => {
+    const acct = await bootstrap()
+    if (!acct?.failed) setAccount(acct)
   }
   // Compte supprimé (déjà effacé du coffre et de l'appareil)
   const deleted = () => {
@@ -108,11 +114,13 @@ export default function App() {
                 onLogout={logout}
                 onDeleted={deleted}
                 onPrivacy={openPrivacy}
+                onCoach={() => setScreen('coach')}
                 onLogin={() => setScreen('login')}
                 onBack={() => setScreen('hub')}
               />
             )}
             {screen === 'privacy' && <Privacy onBack={() => setScreen(privacyFrom)} />}
+            {screen === 'coach' && <Coach account={account} onOwnProfileSaved={refreshAccount} onBack={() => setScreen('settings')} />}
             {screen === 'lab' && (
               <Lab
                 onBack={() => {

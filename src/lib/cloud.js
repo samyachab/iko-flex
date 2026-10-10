@@ -101,14 +101,17 @@ async function readAccount() {
 
 // Fiche : validée par le coach -> profil perso ; sinon routine générale
 async function loadProfile(user) {
-  const { data, error } = await supabase.from('profiles').select('name, status, data').eq('id', user.id).maybeSingle()
+  const [{ data, error }, coach] = await Promise.all([
+    supabase.from('profiles').select('name, status, data').eq('id', user.id).maybeSingle(),
+    supabase.rpc('is_coach'),
+  ])
   if (error) throw error
   const personalized = data?.status === 'active' && Object.keys(data.data ?? {}).length > 0
   if (personalized) {
     addProfiles({ [user.id]: { ...data.data, id: user.id, name: data.name ?? 'Moi' } })
     setProfileId(user.id)
   } else setProfileId('general')
-  return { name: data?.name ?? user.user_metadata?.name ?? null, personalized }
+  return { name: data?.name ?? user.user_metadata?.name ?? null, personalized, coach: coach.data === true }
 }
 
 // Réglages : ceux du coffre gagnent ; s'il est vide (premier appareil), on y envoie ceux du téléphone
@@ -209,5 +212,21 @@ export async function deleteAccount() {
   const { error } = await supabase.rpc('delete_my_account')
   if (error) return { error: frenchError(error) }
   await signOut('local')
+  return { ok: true }
+}
+
+// ───────── Espace coach ─────────
+
+// Toutes les personnes inscrites, avec fiche et activité (refusé côté serveur si on n'est pas coach)
+export async function listAthletes() {
+  const { data, error } = await supabase.rpc('coach_overview')
+  if (error) return { error: frenchError(error) }
+  return { athletes: data }
+}
+
+// Enregistre la fiche d'une personne (statut + contenu) ; seul un coach y est autorisé (RLS)
+export async function saveAthlete(id, { status, data }) {
+  const { error } = await supabase.from('profiles').update({ status, data }).eq('id', id)
+  if (error) return { error: frenchError(error) }
   return { ok: true }
 }
