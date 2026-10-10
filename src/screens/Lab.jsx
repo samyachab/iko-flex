@@ -56,7 +56,50 @@ function ProfilePanel() {
 
 // Exercices de la dernière extension (à relire en priorité)
 const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
+// Bibliothèque générale : classiques pour tous, ajoutés le 10 octobre 2026 (à relire en priorité)
+const GENERAL_IDS = new Set([
+  'pince-assise',
+  'pince-debout',
+  'pince-debout-croisee',
+  'ischio-sangle',
+  'ischio-pied-sureleve',
+  'papillon',
+  'cobra',
+  'quadri-allonge',
+  'epaule-croise',
+  'triceps-tete',
+  'poignets',
+  'nuque',
+  'lateral-debout',
+  'biceps-mur',
+  'squat',
+  'fentes-avant',
+  'pont-fessier',
+  'hip-thrust-kb',
+  'mollets-debout',
+  'superman',
+  'crunch',
+  'leg-raises',
+  'russian-twist',
+  'mountain-climbers',
+  'shoulder-taps',
+  'pompes-inclinees',
+  'dips-chaise',
+  'heel-touches',
+  'bicycle-crunch',
+  'hollow-hold',
+  'toe-touch-crunch',
+  'flutter-kicks',
+  'sit-in',
+  'plank-genou-coude',
+  'gainage-lateral-dynamique',
+  'squat-saute',
+  'jumping-jacks',
+  'burpees',
+])
+
 const FILTERS = {
+  generale: { label: 'Générale', test: (e) => GENERAL_IDS.has(e.id) },
   nouveaux: { label: 'Nouveaux', test: (e) => NEW_IDS.has(e.id) },
   souplesse: { label: 'Souplesse', test: (e) => e.theme === 'souplesse' },
   renfo: { label: 'Renfo', test: (e) => e.theme === 'renfo' },
@@ -66,7 +109,7 @@ const FILTERS = {
 // Page cachée (#lab) : toutes les animations en boucle, pour valider le style et les poses.
 export default function Lab({ onBack }) {
   const [paused, setPaused] = useState(false)
-  const [filter, setFilter] = useState('nouveaux')
+  const [filter, setFilter] = useState('generale')
   const animated = EXERCISES.filter((e) => ANIMATIONS[e.id])
   const done = animated.filter(FILTERS[filter].test)
   const todo = EXERCISES.filter((e) => !ANIMATIONS[e.id] && e.theme !== 'salle')

@@ -8,8 +8,10 @@ export const MECHANICS = {
   retroversion: { label: 'Rétroversion active', desc: 'Le bassin bascule en arrière, fessiers et abdos serrés.' },
   risque_cambrure: { label: 'Risque de cambrure', desc: 'La compensation typique est de creuser le bas du dos : la consigne fait tout.' },
   extension_lombaire: { label: 'Extension lombaire', desc: 'Le bas du dos se creuse, en mobilité douce (phase "creuser" du Cat-Cow).' },
+  extension_lombaire_passive: { label: 'Extension lombaire passive', desc: 'Les bras poussent le buste vers le haut, le bas du dos se creuse en fin d’amplitude (type Cobra, Up-dog).' },
   extension_lombaire_active: { label: 'Extension lombaire pure', desc: 'Les muscles du dos soulèvent le buste ou les jambes à plat ventre (type Superman).' },
   flexion_lombaire: { label: 'Flexion lombaire', desc: 'Le bas du dos s’arrondit.' },
+  inclinaison_laterale: { label: 'Inclinaison latérale', desc: 'Le tronc se plie sur le côté (flanc, obliques).' },
   rotation_lombaire: { label: 'Rotation lombaire', desc: 'Torsion du bas du dos.' },
   anti_extension: { label: 'Anti-extension', desc: 'Le tronc résiste à la cambrure (gainage avant).' },
   anti_rotation: { label: 'Anti-rotation', desc: 'Le tronc résiste à la torsion ou à l’inclinaison.' },
@@ -50,6 +52,7 @@ export const MECHANICS = {
   elevation_bras: { label: 'Bras au-dessus de la tête', desc: 'Épaule en élévation complète.' },
   poussee: { label: 'Poussée', desc: 'Pompes et appuis qui poussent.' },
   appui_poignet: { label: 'Appui sur les mains', desc: 'Poids du corps sur les poignets.' },
+  etirement_bras: { label: 'Étirement des bras', desc: 'Épaule, triceps, biceps ou poignets étirés.' },
   etirement_cervical: { label: 'Étirement cervical', desc: 'Inclinaison de la tête.' },
 
   // Nerfs & tissus

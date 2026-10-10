@@ -870,4 +870,408 @@ export const EXTRA_ANIMATIONS = {
       { pose: { x: 0, y: 84, torso: 180, armN: [20, 10], armF: [-20, -10], legN: [6, 0, 90], legF: [-6, 0, -90], fs: { shinF: 1, thighF: 1, footF: 1 } }, hold: 0, move: 0.35 },
     ],
   },
+
+  // ═════════ Bibliothèque générale (classiques pour tous) ═════════
+
+  // Assis jambes tendues : le buste se plie depuis les hanches, les mains vont chercher les pieds.
+  'pince-assise': {
+    view: 'side',
+    base: { torso: 172, head: 170, armN: [11.2, 35.2], armF: [9.8, 31.9], legN: [90, 90, 175], legF: [90, 90, 175] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.4 },
+      { pose: { torso: 118, head: 108, armN: [32.8, 98.7], armF: [28.1, 99] }, hold: 3, move: 2.2 },
+    ],
+  },
+
+  // Debout jambes tendues : le buste descend vers les pieds, bras pendants.
+  'pince-debout': {
+    view: 'side',
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.4 },
+      { pose: { x: -15.4, torso: 55, head: 30, armN: [-39.8, 47.6], armF: [41.3, -46.2], legN: [12, 12, 90], legF: [12, 12, 90] }, hold: 3, move: 2.2 },
+    ],
+  },
+
+  // Debout, jambe proche croisée devant : le buste descend vers les pieds.
+  'pince-debout-croisee': {
+    view: 'side',
+    base: { legN: [-6, -6, 90], legF: [6, 6, 90] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.4 },
+      { pose: { x: -15.4, torso: 55, head: 30, armN: [-39.8, 47.6], armF: [41.3, -46.2], legN: [9, 9, 90], legF: [15, 15, 90] }, hold: 3, move: 2.2 },
+    ],
+  },
+
+  // Allongé sur le dos, sangle sous le pied : la jambe tendue monte vers la verticale, l’autre reste au sol.
+  'ischio-sangle': {
+    view: 'side',
+    props: [{ type: 'band', from: 'handN', to: 'toeN' }],
+    base: { torso: -90, head: -90, armN: [150, 120], armF: [146, 118], legN: [140, 140, 230], legF: [90, 90, 180] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.4 },
+      { pose: { armN: [168, 150], armF: [164, 148], legN: [174, 174, 262] }, hold: 3, move: 2.2 },
+    ],
+  },
+
+  // Debout, talon posé sur une chaise, jambe tendue : le buste se penche, les mains vont vers le pied.
+  'ischio-pied-sureleve': {
+    view: 'side',
+    props: [{ type: 'box', x1: 56, x2: 92, top: -44 }],
+    base: { armN: [10, 14], armF: [6, 10], legN: [65.6, 65.6, 165], legF: [-3, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.4 },
+      { pose: { torso: 128, head: 118, armN: [21.3, 19.3], armF: [18.3, 16.3] }, hold: 3, move: 2.2 },
+    ],
+  },
+
+  // Vue de face, assis plantes de pieds collées : les genoux descendent vers le sol.
+  'papillon': {
+    view: 'front',
+    base: { torso: 180, armN: [-8, -14], legN: [122, -53.4, 180], fs: { torso: 1, thighN: 0.8, thighF: 0.8, shinN: 1, shinF: 1, footN: 0.3, footF: 0.3 } },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.6 },
+      { pose: { legN: [98, -73.3, 180], fs: { torso: 0.9, shinN: 1, shinF: 1 } }, hold: 3, move: 2.4 },
+    ],
+  },
+
+  // À plat ventre, mains sous les épaules : les bras poussent doucement le buste vers le haut, hanches au sol.
+  'cobra': {
+    view: 'side',
+    base: { torso: 92, head: 96, armN: [-101.6, 60.3], armF: [-111.7, 48], legN: [-90, -90, -20], legF: [-90, -90, -20] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.4 },
+      { pose: { torso: 120, head: 128, armN: [-49.1, 62.1], armF: [-52.9, 58.5] }, hold: 2.8, move: 2.2 },
+    ],
+  },
+
+  // Vu de dessus, allongé sur le côté : la main du dessus ramène le talon vers la fesse, la hanche avance.
+  'quadri-allonge': {
+    view: 'side',
+    ground: false,
+    hipHeight: 0,
+    props: [{ type: 'mat', x1: -90, y1: -22, x2: 95, y2: 30 }],
+    base: { torso: -90, head: -90, armN: [100, 80], armF: [-90, -90], legN: [86, -55, -140], legF: [90, 90, 180] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.2 },
+      { pose: { armN: [72.1, 74.3], legN: [80, -75.5, -150] }, hold: 3, move: 2.2 },
+    ],
+  },
+
+  // Vue de face : un bras tendu passe devant la poitrine, l’autre avant-bras le ramène vers soi.
+  'epaule-croise': {
+    view: 'front',
+    base: { armN: [8, 8], armF: [-8, -8], legN: [4, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.6, move: 1.8 },
+      { pose: { armN: [-88, -90], armF: [22, 158], fs: { upperN: 0.8, foreN: 0.8 } }, hold: 3, move: 1.8 },
+    ],
+  },
+
+  // Vue de face : coude plié derrière la tête, l’autre main pousse doucement le coude.
+  'triceps-tete': {
+    view: 'front',
+    base: { armN: [8, 8], armF: [-8, -8], legN: [4, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.5, move: 1.6 },
+      { pose: { armN: [180, 180] }, hold: 0.2, move: 1.2 },
+      { pose: { head: 186, armN: [192, -20], armF: [189.7, 85.3] }, hold: 3, move: 1.8 },
+    ],
+  },
+
+  // À genoux, mains au sol (doigts vers les genoux) : les fesses reculent doucement, mains fixes.
+  'poignets': {
+    view: 'side',
+    base: { torso: 108, head: 70, armN: [0, 0], armF: [0, 0], legN: [4, -90, -90], legF: [4, -90, -90] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.2 },
+      { pose: { x: -8, torso: 104, head: 78, armN: [7.5, 7.5], armF: [7.5, 7.5], legN: [16.8, -90, -90], legF: [16.8, -90, -90] }, hold: 2.6, move: 2 },
+    ],
+  },
+
+  // De profil, mains croisées derrière la tête : le menton descend doucement vers la poitrine.
+  'nuque': {
+    view: 'side',
+    base: { armN: [-87.9, 134.9], armF: [-91.9, 133.7], legN: [3, 0, 90], legF: [-3, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2.2 },
+      { pose: { head: 145, armN: [239, 100.4], armF: [235.1, 99.4] }, hold: 3, move: 2 },
+    ],
+  },
+
+  // Vue de face : un bras passe au-dessus de la tête et le buste s’incline de l’autre côté, bassin fixe.
+  'lateral-debout': {
+    view: 'front',
+    base: { pelvis: 180, armN: [8, 8], armF: [-20, 30], legN: [7, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.6, move: 1.8 },
+      { pose: { torso: 198, head: 202, armN: [196, 222], armF: [-34, 20] }, hold: 3, move: 2 },
+    ],
+  },
+
+  // De profil, main au mur derrière soi, bras tendu : on s’avance doucement pour étirer l’avant du bras.
+  'biceps-mur': {
+    view: 'side',
+    props: [{ type: 'wall', x: -58 }],
+    base: { armN: [-80, -80], armF: [6, 10], legN: [8, 0, 90], legF: [-6, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.8, move: 2 },
+      { pose: { x: -3, torso: 172, head: 170, armN: [-92, -92] }, hold: 3, move: 2 },
+    ],
+  },
+
+  // Squat poids du corps : les fesses descendent en arrière, bras devant pour l’équilibre.
+  'squat': {
+    view: 'side',
+    base: { armN: [12, 18], armF: [8, 14], legN: [0, 0, 90], legF: [0, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1.6 },
+      { pose: { x: -22, torso: 150, head: 162, armN: [88, 92], armF: [84, 88], legN: [77.9, -21.4, 90], legF: [76, -22, 90] }, hold: 0.6, move: 1.2 },
+    ],
+  },
+
+  // Grand pas en avant, genou arrière près du sol, puis on repousse pour revenir.
+  'fentes-avant': {
+    view: 'side',
+    base: { armN: [-20, 40], armF: [-24, 36] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1.4 },
+      { pose: { x: 30, torso: 176, legN: [85.7, -7.8, 90], legF: [-29.7, -95, 50] }, hold: 0.5, move: 1.4 },
+    ],
+  },
+
+  // Sur le dos, pieds au sol : le bassin monte en serrant les fessiers, puis redescend.
+  'pont-fessier': {
+    view: 'side',
+    base: { torso: -90, head: -90, armN: [90, 90], armF: [90, 90], legN: [140, 0, 90], legF: [140, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1.2 },
+      { pose: { x: -5.9, torso: -62, head: -70, armN: [72, 90], armF: [72, 90], legN: [97, -12, 90], legF: [97, -12, 90] }, hold: 1.2, move: 1.6 },
+    ],
+  },
+
+  // Haut du dos sur une chaise, kettlebell sur les hanches : le bassin monte jusqu’à l’horizontale.
+  'hip-thrust-kb': {
+    view: 'side',
+    props: [{ type: 'box', x1: -78, x2: -36, top: -33 }, { type: 'weight', at: 'hip', r: 7, dy: -11 }],
+    base: { y: 12, x: 0, torso: -128, head: -118, armN: [88.8, 34.8], armF: [88.8, 34.8], legN: [132.1, 19.2, 90], legF: [132.1, 19.2, 90] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1.2 },
+      { pose: { y: 40.2, x: 10.5, torso: -93, head: -110, armN: [105.3, 85.7], armF: [105.3, 85.7], legN: [87.4, -13.6, 90], legF: [87.4, -13.6, 90] }, hold: 1.2, move: 1.8 },
+    ],
+  },
+
+  // Debout : montée sur la pointe des pieds, on tient, puis on redescend lentement.
+  'mollets-debout': {
+    view: 'side',
+    base: { armN: [6, 8], armF: [-6, -4], legN: [2, 0, 90], legF: [-2, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 0.8 },
+      { pose: { legN: [2, 0, 45], legF: [-2, 0, 45] }, hold: 0.8, move: 1.6 },
+    ],
+  },
+
+  // À plat ventre : bras, poitrine et jambes décollent ensemble, puis se reposent.
+  'superman': {
+    view: 'side',
+    base: { torso: 90, head: 94, armN: [93, 93], armF: [93, 93], legN: [-90, -90, -20], legF: [-90, -90, -20], fs: { upperN: 1, foreN: 1, upperF: 1, foreF: 1 } },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1.4 },
+      { pose: { torso: 98, head: 100, armN: [104, 102], armF: [102, 100], legN: [-97, -97, -25], legF: [-97, -97, -25] }, hold: 1.4, move: 1.6 },
+    ],
+  },
+
+  // Sur le dos, genoux pliés, mains aux tempes : les épaules décollent en enroulant le haut du dos.
+  'crunch': {
+    view: 'side',
+    base: { torso: -90, head: -90, armN: [-38.3, 178.2], armF: [-27.8, -172.6], legN: [140, 0, 90], legF: [140, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 1 },
+      { pose: { torso: -114, head: -124, armN: [-69.8, 152.2], armF: [-61.2, 156.3] }, hold: 0.8, move: 1.6 },
+    ],
+  },
+
+  // Sur le dos, mains aux tempes : un genou monte vers la poitrine pendant que l’autre jambe se tend, en alternance.
+  'bicycle-crunch': {
+    view: 'side',
+    base: { torso: -112, head: -122, armN: [-69.8, 152.2], armF: [-61.2, 156.3], legN: [200, 110, 200], legF: [104, 104, 190] },
+    keys: [
+      { pose: {  }, hold: 0.2, move: 0.8 },
+      { pose: { legN: [104, 104, 190], legF: [200, 110, 200] }, hold: 0.2, move: 0.8 },
+    ],
+  },
+
+  // Sur le dos, jambes tendues : elles montent à la verticale puis redescendent sans toucher le sol.
+  'leg-raises': {
+    view: 'side',
+    base: { torso: -90, head: -90, armN: [88, 90], armF: [86, 90], legN: [100, 100, 190], legF: [100, 100, 190] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 1.4 },
+      { pose: { legN: [178, 178, 268], legF: [178, 178, 268] }, hold: 0.4, move: 2 },
+    ],
+  },
+
+  // Vue de face, assis buste incliné, genoux pliés : les mains jointes vont toucher le sol d’un côté puis de l’autre.
+  'russian-twist': {
+    view: 'front',
+    base: { torso: 180, legN: [150, 10, 90], fs: { torso: 0.9, thighN: 0.5, thighF: 0.5, shinN: 0.8, shinF: 0.8, footN: 0.4, footF: 0.4 } },
+    keys: [
+      { pose: { torso: 166, armN: [36.7, -25.3], armF: [61.3, 14.4] }, hold: 0.2, move: 0.7 },
+      { pose: { torso: 194, armN: [-58.3, -22.8], armF: [-33.5, 29.5] }, hold: 0.2, move: 0.7 },
+    ],
+  },
+
+  // En planche bras tendus : un genou vient vers la poitrine, puis l’autre, en alternance rapide.
+  'mountain-climbers': {
+    view: 'side',
+    base: { y: 39, torso: 114, head: 108, armN: [0, 0], armF: [0, 0], legN: [-66, -66, 60], legF: [-66, -66, 60] },
+    keys: [
+      { pose: { legN: [55, -95, 0] }, hold: 0.1, move: 0.3 },
+      { pose: { legF: [55, -95, 0] }, hold: 0.1, move: 0.3 },
+    ],
+  },
+
+  // En planche bras tendus : une main touche l’épaule opposée, puis l’autre, bassin immobile.
+  'shoulder-taps': {
+    view: 'side',
+    base: { y: 39, torso: 114, head: 108, armN: [0, 0], armF: [0, 0], legN: [-66, -66, 60], legF: [-66, -66, 60] },
+    keys: [
+      { pose: {  }, hold: 0.2, move: 0.5 },
+      { pose: { armN: [-95.3, 62.2] }, hold: 0.3, move: 0.5 },
+      { pose: {  }, hold: 0.2, move: 0.5 },
+      { pose: { armF: [-95.3, 62.2] }, hold: 0.3, move: 0.5 },
+    ],
+  },
+
+  // Mains sur une chaise, corps gainé : la poitrine descend vers la chaise, puis on repousse.
+  'pompes-inclinees': {
+    view: 'side',
+    props: [{ type: 'box', x1: 18.1, x2: 52.1, top: -40 }],
+    base: { y: 62.7, torso: 137, head: 131, armN: [0, 0], armF: [0, 0], legN: [-43, -43, 60], legF: [-43, -43, 60] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 1.6 },
+      { pose: { y: 47.8, x: 12.3, torso: 122, head: 116, armN: [12.9, -84.2], armF: [12.9, -84.2], legN: [-58, -58, 60], legF: [-58, -58, 60] }, hold: 0.3, move: 1 },
+    ],
+  },
+
+  // Mains au bord d’une chaise derrière soi, pieds devant : les coudes plient pour descendre, puis on remonte.
+  'dips-chaise': {
+    view: 'side',
+    props: [{ type: 'box', x1: -46, x2: -10, top: -40 }],
+    base: { y: 50, x: -2, torso: 178, head: 180, armN: [-13, -10.9], armF: [-13, -10.9], legN: [64.5, 33.2, 90], legF: [64.5, 33.2, 90] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 1.6 },
+      { pose: { y: 28, armN: [-67.5, 31.5], armF: [-67.5, 31.5], legN: [101.2, 27.7, 90], legF: [101.2, 27.7, 90] }, hold: 0.3, move: 1 },
+    ],
+  },
+
+  // Sur le dos, genoux pliés, épaules décollées : une main glisse vers le talon du même côté, puis l’autre.
+  'heel-touches': {
+    view: 'side',
+    base: { torso: -110, head: -122, armN: [70, 80], armF: [70, 80], legN: [140, 0, 90], legF: [140, 0, 90] },
+    keys: [
+      { pose: { armN: [74, 75.8] }, hold: 0.2, move: 0.6 },
+      { pose: { armF: [74, 75.8] }, hold: 0.2, move: 0.6 },
+    ],
+  },
+
+  // Sur le dos, bras et jambes tendus décollés du sol, bas du dos plaqué : on tient.
+  'hollow-hold': {
+    view: 'side',
+    base: { torso: -100, head: -108, armN: [-100, -100], armF: [-102, -102], legN: [104, 104, 194], legF: [104, 104, 194] },
+    keys: [
+      { pose: {  }, hold: 1.6, move: 1 },
+      { pose: { torso: -102, legN: [106, 106, 196], legF: [106, 106, 196] }, hold: 1.6, move: 1 },
+    ],
+  },
+
+  // Sur le dos, jambes tendues à la verticale : les épaules décollent, les mains vont vers les pointes de pieds.
+  'toe-touch-crunch': {
+    view: 'side',
+    base: { torso: -90, head: -90, armN: [160, 160], armF: [156, 156], legN: [180, 180, 270], legF: [180, 180, 270] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 1 },
+      { pose: { torso: -122, head: -140, armN: [179.7, 110.6], armF: [185.1, 106.4] }, hold: 0.5, move: 1.6 },
+    ],
+  },
+
+  // Sur le dos, mains sous les fesses, jambes tendues un peu décollées : petits battements en ciseaux.
+  'flutter-kicks': {
+    view: 'side',
+    base: { torso: -90, head: -96, armN: [88, 90], armF: [86, 90], legN: [104, 104, 194], legF: [116, 116, 206] },
+    keys: [
+      { pose: {  }, hold: 0, move: 0.3 },
+      { pose: { legN: [116, 116, 206], legF: [104, 104, 194] }, hold: 0, move: 0.3 },
+    ],
+  },
+
+  // Assis, mains au sol derrière, buste incliné : les genoux viennent vers la poitrine puis les jambes s’allongent sans toucher le sol.
+  'sit-in': {
+    view: 'side',
+    base: { torso: 208, head: 196, armN: [-12, -12], armF: [-16, -16], legN: [104, 104, 190], legF: [104, 104, 190] },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 1 },
+      { pose: { torso: 200, legN: [158, 30, 120], legF: [158, 30, 120] }, hold: 0.3, move: 1.6 },
+    ],
+  },
+
+  // Planche sur les avant-bras : un genou vient vers le coude du même côté, puis l’autre.
+  'plank-genou-coude': {
+    view: 'side',
+    base: { y: 26, torso: 98, head: 96, armN: [0, 90], armF: [0, 90], legN: [-82, -82, 0], legF: [-82, -82, 0] },
+    keys: [
+      { pose: {  }, hold: 0.2, move: 0.7 },
+      { pose: { legN: [40, -110, -30] }, hold: 0.4, move: 0.7 },
+      { pose: {  }, hold: 0.2, move: 0.7 },
+      { pose: { legF: [40, -110, -30] }, hold: 0.4, move: 0.7 },
+    ],
+  },
+
+  // Vue de face, gainage sur un coude : la hanche descend vers le sol sans le toucher, puis remonte.
+  'gainage-lateral-dynamique': {
+    view: 'front',
+    base: { torso: -105, head: -100, armN: [0, 0], armF: [-20, 40], legN: [75, 75, 165], legF: [75, 75, 165], fs: { foreN: 0.3, footN: 0.4, footF: 0.4 } },
+    keys: [
+      { pose: {  }, hold: 0.2, move: 0.9 },
+      { pose: { torso: -113, head: -106, legN: [82, 82, 172], legF: [82, 82, 172] }, hold: 0.2, move: 0.9 },
+      { pose: {  }, hold: 0.2, move: 0.9 },
+      { pose: { torso: -99, head: -96, legN: [69, 69, 159], legF: [69, 69, 159] }, hold: 0.3, move: 0.9 },
+    ],
+  },
+
+  // Descente en squat, puis saut le plus haut possible, et réception souple dans le squat suivant.
+  'squat-saute': {
+    view: 'side',
+    base: { armN: [12, 18], armF: [8, 14], legN: [0, 0, 90], legF: [0, 0, 90] },
+    keys: [
+      { pose: { y: 79.5 }, hold: 0.1, move: 0.7 },
+      { pose: { y: 48.1, x: -22, torso: 150, head: 162, armN: [-40, -20], armF: [-44, -24], legN: [77.9, -21.4, 90], legF: [76, -22, 90] }, hold: 0.2, move: 0.3 },
+      { pose: { y: 101.5, armN: [170, 175], armF: [166, 172], legN: [0, 0, 30], legF: [-4, -4, 30] }, hold: 0.1, move: 0.4 },
+      { pose: { y: 79.5 }, hold: 0.1, move: 0.4 },
+    ],
+  },
+
+  // Vue de face : saut jambes écartées et bras en l’air, puis retour pieds joints bras le long du corps.
+  'jumping-jacks': {
+    view: 'front',
+    base: { armN: [10, 6], legN: [3, 0, 90] },
+    keys: [
+      { pose: { y: 79.4 }, hold: 0.1, move: 0.2 },
+      { pose: { y: 86.4, armN: [90, 95], legN: [9, 0, 120] }, hold: 0, move: 0.2 },
+      { pose: { y: 78.2, armN: [165, 172], legN: [15, 0, 90] }, hold: 0.1, move: 0.2 },
+      { pose: { y: 86.4, armN: [90, 95], legN: [9, 0, 120] }, hold: 0, move: 0.2 },
+    ],
+  },
+
+  // Mains au sol, pieds en arrière en planche, retour accroupi, puis saut bras en l’air.
+  'burpees': {
+    view: 'side',
+    base: { armN: [6, 8], armF: [-6, -4], legN: [2, 0, 90], legF: [-2, 0, 90] },
+    keys: [
+      { pose: { y: 79.5 }, hold: 0.1, move: 0.5 },
+      { pose: { y: 30.3, x: -10, torso: 125, head: 120, armN: [10, 4], armF: [8, 2], legN: [118, -30, 90], legF: [116, -32, 90] }, hold: 0.1, move: 0.4 },
+      { pose: { y: 39.1, x: -30, torso: 114, head: 108, armN: [0, 0], armF: [0, 0], legN: [-66, -66, 60], legF: [-66, -66, 60] }, hold: 0.2, move: 0.4 },
+      { pose: { y: 30.3, x: -10, torso: 125, head: 120, armN: [10, 4], armF: [8, 2], legN: [118, -30, 90], legF: [116, -32, 90] }, hold: 0.1, move: 0.4 },
+      { pose: { y: 99.5, armN: [172, 176], armF: [168, 174], legN: [0, 0, 30], legF: [-4, -4, 30] }, hold: 0.1, move: 0.4 },
+    ],
+  },
 }
