@@ -11,9 +11,12 @@ const DRIFT = [
 ]
 const KEYS = Object.keys(TONES)
 
+// Fond fixe à la plus grande hauteur d'écran (lvh) : sur iPhone, en app installée, la fenêtre s'arrête
+// parfois avant le bas de l'écran ; le fond descend quand même jusqu'en bas, sans rallonger la page.
+// Ne pas mettre de background sur <html> : celui du <body> passerait alors par-dessus ce fond (z-index négatif).
 export default function Ambient({ tone = 'rest', intensity = 0.3 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 -bottom-24 -z-10 overflow-hidden bg-ink">
+    <div className="pointer-events-none fixed inset-x-0 top-0 h-lvh min-h-full -z-10 overflow-hidden bg-ink">
       <motion.div className="absolute inset-0" animate={{ opacity: intensity }} transition={{ duration: 1.6 }}>
         {DRIFT.map((d) => (
           <motion.div

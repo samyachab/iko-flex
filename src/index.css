@@ -11,19 +11,6 @@ body,
 #root {
   height: 100%;
 }
-html {
-  background: var(--color-ink);
-}
-
-/* App installée sur l'écran d'accueil (iOS) : "100 %" s'arrête parfois avant le bas de l'écran et laisse
-   une bande vide. On prend la plus grande hauteur d'écran (lvh), barre d'accueil comprise. */
-@media (display-mode: standalone) {
-  html,
-  body,
-  #root {
-    height: 100lvh;
-  }
-}
 
 body {
   background: var(--color-ink);
