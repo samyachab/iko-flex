@@ -1,14 +1,19 @@
 // Tableau lisible des tags biomécaniques, par routine et par zone, avec le verdict pour un profil.
-// Usage : node scripts/tags-table.mjs [profil]  -> écrit scripts/tags-table.out.md
+// Usage : node scripts/tags-table.mjs [profil, général par défaut]  -> écrit scripts/tags-table.out.md
 import fs from 'node:fs'
 
 globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} }
 const { EXERCISES, GROUPS } = await import('../src/data/exercises.js')
 const { MECHANICS } = await import('../src/data/mechanics.js')
-const { PROFILES } = await import('../src/data/profiles.js')
-const { assess, resolveProfile } = await import('../src/lib/profile.js')
+const { addProfiles, allProfiles, assess, resolveProfile } = await import('../src/lib/profile.js')
+// Profils personnels locaux (hors git), s'ils existent sur cet ordinateur
+try {
+  addProfiles((await import('../src/data/profiles.local.js')).LOCAL_PROFILES)
+} catch {
+  // pas de profil local : seulement le général et les fictifs
+}
 
-const profile = PROFILES[process.argv[2] ?? 'samy']
+const profile = allProfiles()[process.argv[2] ?? 'general']
 const rules = resolveProfile(profile)
 const out = 'scripts/tags-table.out.md'
 

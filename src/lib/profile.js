@@ -12,10 +12,20 @@ import { EXERCISES } from '../data/exercises.js'
 
 const KEY = 'iko-flex:profile'
 
+// Profils connus : le général et les fictifs (code public) + ceux chargés à part
+// (profiles.local.js aujourd'hui, le coffre-fort demain)
+const profiles = { ...PROFILES }
+const cache = new Map()
+export const allProfiles = () => profiles
+export function addProfiles(more = {}) {
+  Object.assign(profiles, more)
+  cache.clear()
+}
+
 export function getProfileId() {
   try {
     const id = localStorage.getItem(KEY)
-    return PROFILES[id] ? id : DEFAULT_PROFILE
+    return profiles[id] ? id : DEFAULT_PROFILE
   } catch {
     return DEFAULT_PROFILE
   }
@@ -82,10 +92,9 @@ export function resolveProfile(profile) {
   }
 }
 
-const cache = new Map()
 // Règles du profil actif (calculées une fois par profil)
 export function currentRules(id = getProfileId()) {
-  if (!cache.has(id)) cache.set(id, resolveProfile(PROFILES[id]))
+  if (!cache.has(id)) cache.set(id, resolveProfile(profiles[id] ?? profiles[DEFAULT_PROFILE]))
   return cache.get(id)
 }
 

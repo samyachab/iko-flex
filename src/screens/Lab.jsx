@@ -7,8 +7,7 @@ import { EXTRA_ANIMATIONS } from '../data/animations-extra.js'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
 import VoicePicker from '../components/VoicePicker.jsx'
 import { experience, getLevel } from '../lib/progress.js'
-import { PROFILES } from '../data/profiles.js'
-import { currentRules, getProfileId, profileReport, setProfileId } from '../lib/profile.js'
+import { allProfiles, currentRules, getProfileId, profileReport, setProfileId } from '../lib/profile.js'
 
 // Profil actif : ce que le filtre écarte, adapte et impose (les vrais profils viendront avec la connexion)
 function ProfilePanel() {
@@ -22,7 +21,7 @@ function ProfilePanel() {
     <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 text-sm">
       <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Profil actif</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        {Object.values(PROFILES).map((p) => (
+        {Object.values(allProfiles()).map((p) => (
           <button
             key={p.id}
             onClick={() => pick(p.id)}

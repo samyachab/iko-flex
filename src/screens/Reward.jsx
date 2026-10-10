@@ -3,6 +3,7 @@ import { animate, motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import Blob from '../components/Blob.jsx'
 import { buildDebrief } from '../lib/debrief.js'
+import { currentRules } from '../lib/profile.js'
 import { beep, speak } from '../lib/audio.js'
 import { PHRASES } from '../lib/phrases.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
@@ -10,6 +11,7 @@ import { TONES, gradient, rise } from '../lib/theme.js'
 export default function Reward({ routine, result, minRatio, onDone }) {
   const { valid, ratio, streak } = result
   const debrief = useMemo(() => buildDebrief(routine.exercises), [routine])
+  const runner = currentRules().profile.sport === 'course' // les transferts "sur la piste" parlent du 800 m
   const t = TONES[valid ? routine.key : 'rest']
   const minutes = Math.round(routine.totalSeconds / 60)
   const [shown, setShown] = useState(valid ? Math.max(0, streak - 1) : streak)
@@ -84,7 +86,7 @@ export default function Reward({ routine, result, minRatio, onDone }) {
         {...rise(1.05)}
         className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.05] p-6"
       >
-        <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Le debrief 800m</p>
+        <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">{runner ? 'Le debrief 800m' : 'Le debrief'}</p>
         <p className="font-display mt-3 text-[1.35rem] leading-snug">
           Tu as travaillé{' '}
           {debrief.zoneList.map((z, k) => (
@@ -97,15 +99,19 @@ export default function Reward({ routine, result, minRatio, onDone }) {
           ))}
         </p>
 
-        <p className="mt-6 text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Sur la piste</p>
-        <ul className="mt-3 space-y-3">
-          {debrief.transfers.map((line, k) => (
-            <motion.li key={k} {...rise(1.3 + k * 0.18)} className="flex gap-3 text-sm leading-relaxed text-white/75">
-              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: gradient(t) }} />
-              {line}
-            </motion.li>
-          ))}
-        </ul>
+        {runner && (
+          <>
+            <p className="mt-6 text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Sur la piste</p>
+            <ul className="mt-3 space-y-3">
+              {debrief.transfers.map((line, k) => (
+                <motion.li key={k} {...rise(1.3 + k * 0.18)} className="flex gap-3 text-sm leading-relaxed text-white/75">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: gradient(t) }} />
+                  {line}
+                </motion.li>
+              ))}
+            </ul>
+          </>
+        )}
       </motion.section>
 
       <motion.button

@@ -109,7 +109,7 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
 
       <p className="mt-2 text-xs leading-relaxed text-white/40">
         {routineKey === 'souplesse'
-          ? 'Plus la séance est longue, plus il y a d’exercices, et les étirements clés (psoas, quadriceps, pectoraux, soléaire) sont tenus plus longtemps, jusqu’à 2 min par côté.'
+          ? 'Plus la séance est longue, plus il y a d’exercices, et les étirements clés de ton profil sont tenus plus longtemps, jusqu’à 2 min par côté.'
           : 'Plus la séance est longue, plus il y a d’exercices dans le circuit, puis chaque effort s’allonge de quelques secondes.'}
       </p>
 

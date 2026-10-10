@@ -4,7 +4,6 @@
 //   posture_issues, pain_points : clés de CONDITIONS
 //   sport  : clé de SPORTS
 //   keys   : exercices clés, allongés en priorité quand la séance est longue
-//   plan   : (optionnel) poids des zones par routine, remplace celui de ROUTINES
 //   rules  : exceptions du coach, appliquées après les conditions
 //     exclude_tags  : mécaniques en plus à éviter
 //     force_include : mécaniques imposées, { mécanique: N } = toutes les N séances
@@ -12,41 +11,12 @@
 //     favor         : { mécanique: poids } en plus de celui des conditions et du sport
 //     overrides     : par exercice { exclude, include (même si une condition l'exclut), replace_by, warning }
 //
-// ⚠ Ce fichier part dans le code public de l'appli : uniquement des profils fictifs ou le tien.
-// Les profils de vrais amis (données de santé) iront en base sécurisée, pas ici.
+//   plan   : (optionnel) { souplesse: {...}, renfo: {...} } remplace le poids des zones de ROUTINES
+//
+// ⚠ Ce fichier part dans le code public de l'appli : uniquement le profil général et des profils fictifs.
+// Les vrais profils (données de santé) vont dans le coffre-fort ; en attendant, en local dans profiles.local.js.
 
 export const PROFILES = {
-  // Bilan complet : bilans/samy.md (local, hors git)
-  samy: {
-    id: 'samy',
-    name: 'Samy',
-    sport: 'course',
-    posture_issues: [
-      'hyperlordose',
-      'psoas_raide',
-      'hanches_raides',
-      'epaules_enroulees',
-      'epaules_raides',
-      'epaules_crispees',
-      'dorsiflexion_limitee',
-      'prevention_tibiale',
-    ],
-    pain_points: [],
-    keys: ['lunge-psoas', 'couch-stretch', 'pectoral-porte', 'soleaire'],
-    rules: {
-      exclude_tags: [],
-      // Évaluation du coach pour le 800 m (bilans/samy.md, section 5) : anti-rotation une séance sur 2,
-      // pliométrie une sur 3, travail sur une jambe privilégié
-      force_include: { anti_rotation: 2, impact: 3 },
-      favor: { unipodal: 1 },
-      overrides: {
-        // Gardé à ta demande : surtout un étirement des mollets, ischios en second
-        'chien-tete-en-bas': { include: true, warning: 'Pour toi : dos long, genoux légèrement fléchis si ça tire derrière les cuisses.' },
-        'arm-drive': { warning: 'Pour toi : épaules basses et relâchées, loin des oreilles.' },
-      },
-    },
-  },
-
   // Formulaire, première question "routine générale" : toute la bibliothèque, sans personnalisation
   general: {
     id: 'general',
@@ -85,4 +55,4 @@ export const PROFILES = {
   },
 }
 
-export const DEFAULT_PROFILE = 'samy'
+export const DEFAULT_PROFILE = 'general'

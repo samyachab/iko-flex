@@ -12,8 +12,8 @@ export const ROUTINES = {
     work: 45,
     sideWork: 45, // exercices unilatéraux : 45 s par côté minimum
     rest: 10,
-    // Poids de chaque zone dans la séance : priorité psoas/hanches
-    plan: { hanche: 3, posterieure: 2, epaules: 2, cheville: 2, dos: 1, roller: 1 },
+    // Poids de chaque zone dans la séance (équilibré ; un profil peut le remplacer : profile.plan)
+    plan: { hanche: 2, posterieure: 2, epaules: 2, cheville: 2, dos: 1, roller: 1 },
     // Chaque séance touche au moins un exercice par zone ; si le temps manque, zones prises dans cet ordre
     // (ordre de base, ensuite ajusté par la rotation : une zone pas travaillée depuis longtemps remonte)
     coverage: ['posterieure', 'epaules', 'hanche', 'cheville', 'dos', 'roller'],
@@ -163,7 +163,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
     if (ex) take(g, ex)
   }
   // Complément : alternance des zones selon leur poids dans le plan
-  const slots = slotOrder(config.plan)
+  const slots = slotOrder(rules.profile.plan?.[key] ?? config.plan)
   for (const g of Object.keys(byGroup)) if (!slots.includes(g)) slots.push(g)
   const left = () => Object.values(byGroup).reduce((n, l) => n + l.length, 0)
   for (let i = 0, misses = 0; left() && misses < slots.length; i++) {

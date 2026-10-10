@@ -21,8 +21,13 @@ globalThis.Date = class extends RealDate {
   }
 }
 
-const { PROFILES } = await import('../src/data/profiles.js')
-const { needsFor, profileReport, resolveProfile } =await import('../src/lib/profile.js')
+const { addProfiles, allProfiles, needsFor, profileReport, resolveProfile } = await import('../src/lib/profile.js')
+// Profils personnels locaux (hors git), s'ils existent sur cet ordinateur
+try {
+  addProfiles((await import('../src/data/profiles.local.js')).LOCAL_PROFILES)
+} catch {
+  // pas de profil local : seulement le général et les fictifs
+}
 const { buildRoutine } = await import('../src/lib/routine.js')
 const { getSettings } = await import('../src/lib/settings.js')
 const { recordSession } = await import('../src/lib/rotation.js')
@@ -31,7 +36,7 @@ const [only, minutesArg] = process.argv.slice(2)
 const minutes = Number(minutesArg) || 12
 const SESSIONS = 20
 
-for (const profile of Object.values(PROFILES)) {
+for (const profile of Object.values(allProfiles())) {
   if (only && profile.id !== only) continue
   store.clear()
   const rules = resolveProfile(profile)
