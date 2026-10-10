@@ -1,0 +1,158 @@
+// Le coffre-fort : compte, fiche, réglages et historique de la personne connectée (Supabase).
+// L'appli continue de lire ses données locales (LocalStorage) ; ce module les remplit à la connexion
+// et recopie en ligne ce qui change. Sans compte ("continuer sans compte"), tout reste sur l'appareil.
+import { supabase } from './supabase.js'
+import { EXERCISES } from '../data/exercises.js'
+import { addProfiles, setProfileId } from './profile.js'
+import { getSettings, onSettingsSaved, saveSettings } from './settings.js'
+import { getHistory, mergeHistory } from './streaks.js'
+import { mergeRotation } from './rotation.js'
+
+const GUEST_KEY = 'iko-flex:guest'
+// Données personnelles effacées de l'appareil à la déconnexion (téléphone prêté, partagé...)
+const PERSONAL_KEYS = ['iko-flex:settings', 'iko-flex:streaks', 'iko-flex:rotation', 'iko-flex:profile', GUEST_KEY]
+
+const byId = Object.fromEntries(EXERCISES.map((e) => [e.id, e]))
+// Jour local (pas celui du serveur, en UTC) : une séance à 0 h 30 compte pour le bon jour
+const today = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+let userId = null
+
+export const isGuest = () => {
+  try {
+    return localStorage.getItem(GUEST_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+export function continueAsGuest() {
+  try {
+    localStorage.setItem(GUEST_KEY, '1')
+  } catch {
+    // stockage indisponible : invité pour cette visite
+  }
+}
+
+// Messages Supabase -> phrases claires
+function frenchError(error) {
+  const m = error?.message ?? ''
+  if (/invalid login credentials/i.test(m)) return 'Email ou mot de passe incorrect.'
+  if (/already registered|already exists/i.test(m)) return 'Un compte existe déjà avec cet email : connecte-toi.'
+  if (/password/i.test(m) && /least|short|weak/i.test(m)) return 'Mot de passe trop court : 8 caractères minimum.'
+  if (/email/i.test(m) && /invalid/i.test(m)) return 'Cet email n’a pas l’air valide.'
+  if (/signups? not allowed|disabled/i.test(m)) return 'Les inscriptions sont fermées pour le moment.'
+  if (/fetch|network/i.test(m)) return 'Pas de connexion internet.'
+  return 'Ça n’a pas marché, réessaie dans un instant.'
+}
+
+export async function signIn(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+  if (error) return { error: frenchError(error) }
+  return { user: data.user }
+}
+
+export async function signUp(email, password, name) {
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: { data: { name: name.trim() } },
+  })
+  if (error) return { error: frenchError(error) }
+  if (!data.session) return { error: 'Compte créé, mais la connexion directe est désactivée : préviens Samy.' }
+  return { user: data.user }
+}
+
+export async function signOut() {
+  await supabase.auth.signOut()
+  userId = null
+  try {
+    for (const k of PERSONAL_KEYS) localStorage.removeItem(k)
+  } catch {
+    // rien à effacer
+  }
+}
+
+// À l'ouverture : session existante ? Si oui, on remplit l'appareil depuis le coffre.
+// Renvoie { user, name, personalized } ou null (pas connecté).
+export async function bootstrap() {
+  const { data } = await supabase.auth.getSession()
+  const user = data.session?.user
+  if (!user) return null
+  userId = user.id
+  try {
+    const [profile] = await Promise.all([loadProfile(user), syncSettings(), syncHistory()])
+    return { user, ...profile }
+  } catch {
+    // hors ligne : on garde ce qui est déjà sur l'appareil
+    return { user, name: user.user_metadata?.name ?? null, personalized: false, offline: true }
+  }
+}
+
+// Fiche : validée par le coach -> profil perso ; sinon routine générale
+async function loadProfile(user) {
+  const { data, error } = await supabase.from('profiles').select('name, status, data').eq('id', user.id).maybeSingle()
+  if (error) throw error
+  const personalized = data?.status === 'active' && Object.keys(data.data ?? {}).length > 0
+  if (personalized) {
+    addProfiles({ [user.id]: { ...data.data, id: user.id, name: data.name ?? 'Moi' } })
+    setProfileId(user.id)
+  } else setProfileId('general')
+  return { name: data?.name ?? user.user_metadata?.name ?? null, personalized }
+}
+
+// Réglages : ceux du coffre gagnent ; s'il est vide (premier appareil), on y envoie ceux du téléphone
+async function syncSettings() {
+  const { data, error } = await supabase.from('user_settings').select('settings').eq('user_id', userId).maybeSingle()
+  if (error) throw error
+  const remote = data?.settings ?? {}
+  if (Object.keys(remote).length) {
+    saveSettings({ ...getSettings(), ...remote }, { silent: true })
+  } else await pushSettings(getSettings())
+}
+
+let settingsTimer = null
+async function pushSettings(settings) {
+  if (!userId) return
+  await supabase.from('user_settings').upsert({ user_id: userId, settings })
+}
+// Chaque changement de réglage part en ligne (regroupé sur 1 s)
+onSettingsSaved((settings) => {
+  if (!userId) return
+  clearTimeout(settingsTimer)
+  settingsTimer = setTimeout(() => pushSettings(settings).catch(() => {}), 1000)
+})
+
+// Historique : séances de l'appareil absentes du coffre -> envoyées ; séances du coffre -> ajoutées ici
+async function syncHistory() {
+  const { data: rows, error } = await supabase.from('sessions').select('routine, done_on, exercises').order('done_on')
+  if (error) throw error
+  const known = new Set(rows.map((r) => `${r.done_on}|${r.routine}`))
+  const missing = Object.entries(getHistory()).flatMap(([day, types]) =>
+    types.filter((t) => !known.has(`${day}|${t}`)).map((routine) => ({ routine, done_on: day, exercises: [] })),
+  )
+  if (missing.length) await supabase.from('sessions').insert(missing)
+
+  const days = {}
+  const rotation = { souplesse: { zones: {}, exercises: {} }, renfo: { zones: {}, exercises: {} } }
+  for (const r of rows) {
+    ;(days[r.done_on] ??= []).push(r.routine)
+    const rot = rotation[r.routine]
+    for (const id of r.exercises) {
+      rot.exercises[id] = r.done_on
+      if (byId[id]) rot.zones[byId[id].group] = r.done_on
+    }
+  }
+  mergeHistory(days)
+  for (const [key, rot] of Object.entries(rotation)) mergeRotation(key, rot)
+}
+
+// Séance validée : une ligne dans le coffre (si hors ligne, elle repartira à la prochaine ouverture)
+export function pushSession(routine, exercises) {
+  if (!userId) return
+  supabase
+    .from('sessions')
+    .insert({ routine, done_on: today(), exercises: [...new Set(exercises.map((e) => e.id))] })
+    .then(() => {}, () => {})
+}

@@ -9,3 +9,4 @@ scripts/pose-sheet.out.html
 scripts/tags-table.out.md
 bilans/
 src/data/profiles.local.js
+supabase/*.local.sql

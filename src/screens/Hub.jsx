@@ -11,28 +11,30 @@ const CARDS = {
 }
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
-function greeting() {
+// Avec le prénom du compte : "Bonjour Léa."
+function greeting(name) {
   const h = new Date().getHours()
-  if (h < 5) return 'Encore debout ?'
-  if (h < 12) return 'Bonjour.'
-  if (h < 18) return 'Salut.'
-  return 'Bonsoir.'
+  const who = name ? ` ${name}` : ''
+  if (h < 5) return `Encore debout${who} ?`
+  if (h < 12) return `Bonjour${who}.`
+  if (h < 18) return `Salut${who}.`
+  return `Bonsoir${who}.`
 }
 
-const snapshot = () => ({ streaks: getStreaks(), calendar: getCalendar(), greeting: greeting() })
+const snapshot = (name) => ({ streaks: getStreaks(), calendar: getCalendar(), greeting: greeting(name) })
 
 // Relit l'historique quand l'app revient au premier plan (ex : laissée ouverte après minuit).
-function useHubData() {
-  const [data, setData] = useState(snapshot)
+function useHubData(name) {
+  const [data, setData] = useState(() => snapshot(name))
   useEffect(() => {
-    const refresh = () => document.visibilityState === 'visible' && setData(snapshot())
+    const refresh = () => document.visibilityState === 'visible' && setData(snapshot(name))
     document.addEventListener('visibilitychange', refresh)
     window.addEventListener('focus', refresh)
     return () => {
       document.removeEventListener('visibilitychange', refresh)
       window.removeEventListener('focus', refresh)
     }
-  }, [])
+  }, [name])
   return data
 }
 
@@ -161,9 +163,9 @@ function useLongPress(callback, ms = 800) {
   return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onPointerCancel: cancel, onContextMenu: (e) => e.preventDefault() }
 }
 
-export default function Hub({ onLaunch, onOpenLab, onOpenSettings }) {
+export default function Hub({ name, onLaunch, onOpenLab, onOpenSettings }) {
   const longPress = useLongPress(onOpenLab)
-  const { streaks, calendar, greeting } = useHubData()
+  const { streaks, calendar, greeting } = useHubData(name)
 
   return (
     <div className="safe-top safe-bottom flex h-full flex-col overflow-y-auto px-6 [--sb:1rem] [--st:0.75rem]">

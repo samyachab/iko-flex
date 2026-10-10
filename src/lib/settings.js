@@ -31,7 +31,12 @@ export function getSettings() {
   }
 }
 
-export function saveSettings(settings) {
+// Prévenu à chaque enregistrement (le coffre-fort s'y abonne pour sauvegarder les réglages en ligne)
+const listeners = new Set()
+export const onSettingsSaved = (fn) => listeners.add(fn)
+
+export function saveSettings(settings, { silent = false } = {}) {
+  if (!silent) for (const fn of listeners) fn(settings)
   try {
     localStorage.setItem(KEY, JSON.stringify(settings))
   } catch {

@@ -204,7 +204,39 @@ function EquipmentSettings({ settings, update, delay }) {
   )
 }
 
-export default function Settings({ onBack }) {
+// Compte : qui est connecté, fiche perso ou routine générale, déconnexion
+function AccountSettings({ account, onLogout, onLogin, delay }) {
+  return (
+    <motion.section {...rise(delay)} className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5">
+      <h2 className="font-display text-3xl font-medium">Mon compte</h2>
+      {account ? (
+        <>
+          <p className="mt-2 text-sm text-white/70">{account.user.email}</p>
+          <p className="mt-1 text-xs leading-relaxed text-white/40">
+            {account.personalized
+              ? 'Fiche personnalisée active : tes séances suivent ton bilan.'
+              : 'Routine générale. Ta fiche personnalisée apparaîtra ici quand elle sera validée.'}
+            {account.offline && ' (hors ligne : dernières données de ce téléphone)'}
+          </p>
+          <button onClick={onLogout} className="mt-4 rounded-full border border-white/15 px-4 py-2 text-sm text-white/70">
+            Me déconnecter
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-xs leading-relaxed text-white/40">
+            Sans compte : routine générale, tout reste sur ce téléphone.
+          </p>
+          <button onClick={onLogin} className="mt-4 rounded-full border border-white/15 px-4 py-2 text-sm text-white/70">
+            Créer un compte ou me connecter
+          </button>
+        </>
+      )}
+    </motion.section>
+  )
+}
+
+export default function Settings({ account, onLogout, onLogin, onBack }) {
   const [settings, setSettings] = useState(getSettings)
   const update = (next) => {
     setSettings(next)
@@ -220,7 +252,7 @@ export default function Settings({ onBack }) {
         Réglages
       </motion.h1>
       <motion.p {...rise(0.1)} className="mt-1 text-sm text-white/45">
-        Enregistrés automatiquement sur ce téléphone.
+        {account ? 'Enregistrés automatiquement sur ton compte.' : 'Enregistrés automatiquement sur ce téléphone.'}
       </motion.p>
       <div className="mt-6 flex flex-col gap-5">
         <EquipmentSettings settings={settings} update={update} delay={0.15} />
@@ -229,6 +261,7 @@ export default function Settings({ onBack }) {
         <motion.div {...rise(0.29)}>
           <VoicePicker />
         </motion.div>
+        <AccountSettings account={account} onLogout={onLogout} onLogin={onLogin} delay={0.33} />
       </div>
     </div>
   )

@@ -28,6 +28,22 @@ export function getRotation(key) {
   return { zones: r.zones ?? {}, exercises: r.exercises ?? {} }
 }
 
+// Fusionne une mémoire venue du coffre-fort : on garde la date la plus récente
+export function mergeRotation(key, { zones = {}, exercises = {} }) {
+  const all = load()
+  const r = (all[key] ??= { zones: {}, exercises: {} })
+  const keepLatest = (into, from) => {
+    for (const [k, d] of Object.entries(from)) if (!into[k] || d > into[k]) into[k] = d
+  }
+  keepLatest((r.zones ??= {}), zones)
+  keepLatest((r.exercises ??= {}), exercises)
+  try {
+    localStorage.setItem(KEY, JSON.stringify(all))
+  } catch {
+    // stockage indisponible
+  }
+}
+
 // À appeler quand une séance est validée : zones et exercices faits aujourd'hui
 export function recordSession(key, exercises) {
   const all = load()

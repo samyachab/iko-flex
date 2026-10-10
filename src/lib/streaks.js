@@ -106,6 +106,13 @@ export function requestPersistence() {
   navigator.storage?.persist?.().catch(() => {})
 }
 
+// Ajoute des jours venus du coffre-fort (autre appareil) : { 'YYYY-MM-DD': ['souplesse'] }
+export function mergeHistory(days) {
+  const data = load()
+  for (const [k, types] of Object.entries(days)) data.days[k] = [...new Set([...(data.days[k] ?? []), ...types])]
+  save(data)
+}
+
 // Historique brut (jours -> types de séances validées), pour la progression automatique
 export function getHistory() {
   return load().days
