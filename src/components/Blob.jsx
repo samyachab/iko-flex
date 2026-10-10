@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
 import { TONES, gradient, SHAPES } from '../lib/theme.js'
 
-// Forme organique qui se déforme en continu. `speed` < 1 = plus vif.
+// Forme organique qui se déforme en continu. `speed` < 1 = plus vif. `palette` remplace la tonalité (avatars).
 // Perf : le halo est un élément séparé (dégradé radial statique) au lieu d'un box-shadow
 // animé, sinon chaque frame de morphing redessine l'ombre.
-export default function Blob({ tone = 'souplesse', size = 120, speed = 1, className = '', children }) {
-  const t = TONES[tone]
+export default function Blob({ tone = 'souplesse', palette, size = 120, speed = 1, className = '', children }) {
+  const t = palette ?? TONES[tone]
   return (
     <div className={`relative flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
       <div

@@ -5,6 +5,16 @@ export const TONES = {
   rest: { a: '#EDE7DD', b: '#BDB5A9', c: '#8F887E', glow: 'rgba(237,231,221,0.18)' },
 }
 
+// Avatars du profil : mêmes dégradés "Souffle", quelques teintes en plus
+export const AVATARS = {
+  aurore: { label: 'Aurore', ...TONES.souplesse },
+  lagon: { label: 'Lagon', ...TONES.renfo },
+  sable: { label: 'Sable', ...TONES.rest },
+  braise: { label: 'Braise', a: '#FFD36E', b: '#FF8A4C', c: '#E0455B', glow: 'rgba(255,138,76,0.35)' },
+  foret: { label: 'Forêt', a: '#C8F28B', b: '#5FD39A', c: '#2E9E8F', glow: 'rgba(95,211,154,0.35)' },
+  nuit: { label: 'Nuit', a: '#B9A6FF', b: '#7C6CF2', c: '#4B4FD8', glow: 'rgba(124,108,242,0.35)' },
+}
+
 export const gradient = (t, angle = 135) => `linear-gradient(${angle}deg, ${t.a}, ${t.b} 55%, ${t.c})`
 
 // Formes de morphing des blobs (border-radius à 8 valeurs)

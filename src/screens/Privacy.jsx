@@ -37,7 +37,10 @@ const SECTIONS = [
   },
   {
     title: 'Qui les voit',
-    body: ['Toi, et Samy en tant que coach, pour valider et ajuster ta fiche. Personne d’autre.'],
+    body: [
+      'Toi, et Samy en tant que coach, pour ajuster ta fiche. Personne d’autre.',
+      'Si tu rejoins le classement entre amis (c’est un choix, réversible) : les autres participants voient ton pseudo, ton avatar, ta série et tes jours actifs de la semaine. Jamais ta fiche ni tes exercices.',
+    ],
   },
   {
     title: 'Combien de temps',

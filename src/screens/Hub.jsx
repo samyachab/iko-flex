@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import { getCalendar, getStreaks } from '../lib/streaks.js'
 import { routineInfo } from '../lib/routine.js'
-import { TONES, gradient, rise } from '../lib/theme.js'
+import { AVATARS, TONES, gradient, rise } from '../lib/theme.js'
 
 const CARDS = {
   souplesse: { title: 'Souplesse', zones: 'psoas · hanches · épaules · chevilles' },
@@ -163,7 +163,8 @@ function useLongPress(callback, ms = 800) {
   return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onPointerCancel: cancel, onContextMenu: (e) => e.preventDefault() }
 }
 
-export default function Hub({ name, badge = 0, onLaunch, onOpenLab, onOpenSettings }) {
+export default function Hub({ name, player, badge = 0, onLaunch, onOpenLab, onOpenSettings, onOpenProfile }) {
+  const initial = (player?.display_name ?? name ?? '').trim().charAt(0).toUpperCase()
   const longPress = useLongPress(onOpenLab)
   const { streaks, calendar, greeting } = useHubData(name)
 
@@ -174,13 +175,37 @@ export default function Hub({ name, badge = 0, onLaunch, onOpenLab, onOpenSettin
         <motion.div {...rise(0)} {...longPress} className="select-none p-1 -m-1" style={{ WebkitTouchCallout: 'none' }}>
           <img src="/logo-wordmark.png" alt="Iko Flex" className="pointer-events-none h-8 w-auto" draggable={false} />
         </motion.div>
+        {/* Réglages, et juste en dessous le profil (avatar ; badge = nouveaux inscrits pour le coach) */}
+        <div className="flex flex-col items-center gap-2">
         <motion.button
           {...rise(0.05)}
           whileTap={{ scale: 0.9, rotate: 30 }}
           onClick={onOpenSettings}
-          aria-label={badge ? `Réglages, ${badge} nouvel inscrit${badge > 1 ? 's' : ''}` : 'Réglages'}
+          aria-label="Réglages"
           className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05]"
         >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white/70">
+            <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+            <circle cx="16" cy="7" r="2" />
+            <circle cx="10" cy="17" r="2" />
+          </svg>
+        </motion.button>
+        <motion.button
+          {...rise(0.08)}
+          whileTap={{ scale: 0.9 }}
+          onClick={onOpenProfile}
+          aria-label={badge ? `Profil, ${badge} nouvel inscrit${badge > 1 ? 's' : ''}` : 'Profil'}
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10"
+          style={{ background: player ? gradient(AVATARS[player.avatar] ?? AVATARS.aurore) : 'rgba(255,255,255,0.05)' }}
+        >
+          {player && initial ? (
+            <span className="font-display text-base font-semibold text-ink">{initial}</span>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white/70">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+            </svg>
+          )}
           {badge > 0 && (
             <span
               className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.65rem] font-bold text-ink"
@@ -189,12 +214,8 @@ export default function Hub({ name, badge = 0, onLaunch, onOpenLab, onOpenSettin
               {badge}
             </span>
           )}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white/70">
-            <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-            <circle cx="16" cy="7" r="2" />
-            <circle cx="10" cy="17" r="2" />
-          </svg>
         </motion.button>
+        </div>
       </div>
       <motion.h1 {...rise(0.08)} className="font-display mt-4 text-[2rem] font-light leading-[1.06] tracking-tight">
         {greeting}

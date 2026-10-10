@@ -281,3 +281,28 @@ export async function submitIntake({ mode, answers, proposal, redFlags }) {
   if (error) return { error: frenchError(error) }
   return { ok: true }
 }
+
+// ───────── Profil public et classement entre amis ─────────
+
+// Pseudo, avatar, participation au classement (null si jamais réglé)
+export async function getPlayer() {
+  if (!userId) return null
+  const { data } = await supabase.from('players').select('display_name, avatar, share').eq('user_id', userId).maybeSingle()
+  return data
+}
+
+export async function savePlayer(player) {
+  if (!userId) return { error: 'Connecte-toi d’abord.' }
+  const { error } = await supabase
+    .from('players')
+    .upsert({ user_id: userId, ...player, updated_at: new Date().toISOString() })
+  if (error) return { error: frenchError(error) }
+  return { ok: true }
+}
+
+// Classement (vide tant qu'on n'y participe pas soi-même)
+export async function getLeaderboard() {
+  const { data, error } = await supabase.rpc('leaderboard', { p_today: today() })
+  if (error) return { error: frenchError(error) }
+  return { rows: data }
+}

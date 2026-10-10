@@ -10,7 +10,8 @@ import Login from './screens/Login.jsx'
 import Privacy from './screens/Privacy.jsx'
 import Coach from './screens/Coach.jsx'
 import Onboarding from './screens/Onboarding.jsx'
-import { bootstrap, continueAsGuest, countNewSignups, isGuest, pushSession, signOut } from './lib/cloud.js'
+import Profile from './screens/Profile.jsx'
+import { bootstrap, continueAsGuest, countNewSignups, getPlayer, isGuest, pushSession, signOut } from './lib/cloud.js'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
 import { recordSession } from './lib/rotation.js'
@@ -23,6 +24,7 @@ export default function App() {
   const [screen, setScreen] = useState(() => (window.location.hash === '#lab' ? 'lab' : 'loading'))
   const [account, setAccount] = useState(null) // { user, name, personalized } quand connecté
   const [newSignups, setNewSignups] = useState(0) // coach : inscrits depuis sa dernière visite
+  const [player, setPlayer] = useState(null) // pseudo + avatar (bouton profil de l'accueil)
 
   // Ouverture : session existante -> fiche et historique depuis le coffre ; sinon écran de connexion
   const open = async () => {
@@ -30,6 +32,7 @@ export default function App() {
     // Échec de lecture : on ouvre quand même l'accueil avec les données du téléphone
     setAccount(acct?.failed ? null : acct)
     if (acct?.coach) countNewSignups().then(setNewSignups)
+    if (acct && !acct.failed) getPlayer().then(setPlayer)
     setScreen((s) => (s === 'lab' ? s : acct?.needsOnboarding ? 'onboarding' : acct || isGuest() ? 'hub' : 'login'))
   }
   useEffect(() => {
@@ -38,6 +41,7 @@ export default function App() {
   const logout = async () => {
     await signOut()
     setAccount(null)
+    setPlayer(null)
     setScreen('login')
   }
   // Fiche du coach modifiée par lui-même : on la recharge sans changer d'écran
@@ -48,6 +52,7 @@ export default function App() {
   // Compte supprimé (déjà effacé du coffre et de l'appareil)
   const deleted = () => {
     setAccount(null)
+    setPlayer(null)
     setScreen('login')
   }
   // Page confidentialité : retour à l'écran d'où on vient
@@ -110,10 +115,22 @@ export default function App() {
                 }}
               />
             )}
-            {screen === 'hub' && <Hub name={account?.name} badge={newSignups} onLaunch={launch} onOpenLab={() => setScreen('lab')} onOpenSettings={() => setScreen('settings')} />}
+            {screen === 'hub' && <Hub
+                name={account?.name}
+                player={player}
+                badge={newSignups}
+                onLaunch={launch}
+                onOpenLab={() => setScreen('lab')}
+                onOpenSettings={() => setScreen('settings')}
+                onOpenProfile={() => setScreen('profile')}
+              />}
             {screen === 'settings' && (
-              <Settings
+              <Settings account={account} onBack={() => setScreen('hub')} />
+            )}
+            {screen === 'profile' && (
+              <Profile
                 account={account}
+                onPlayerChange={setPlayer}
                 onLogout={logout}
                 onDeleted={deleted}
                 onPrivacy={openPrivacy}
@@ -137,7 +154,7 @@ export default function App() {
                 }}
               />
             )}
-            {screen === 'coach' && <Coach account={account} onOwnProfileSaved={refreshAccount} onBack={() => setScreen('settings')} />}
+            {screen === 'coach' && <Coach account={account} onOwnProfileSaved={refreshAccount} onBack={() => setScreen('profile')} />}
             {screen === 'lab' && (
               <Lab
                 onBack={() => {
