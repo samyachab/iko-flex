@@ -41,6 +41,28 @@ function Chip({ on, onClick, children, color = '#8BF1DA', disabled }) {
   )
 }
 
+// Questionnaire d'accueil tel que la personne l'a rempli : son texte, ses signaux d'alerte, la date
+function IntakeCard({ intake }) {
+  const a = intake.answers ?? {}
+  const sent = new Date(intake.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  return (
+    <motion.section {...rise(0.1)} className={card}>
+      <p className={label}>Questionnaire · {sent}</p>
+      <p className="mt-2 text-sm text-white/65">
+        {intake.mode === 'general' ? 'A choisi la routine générale.' : `Sur-mesure · ${a.how === 'text' ? 'texte' : a.how === 'guide' ? 'guidé' : 'texte + guidé'}`}
+        {a.consent === false && ' · a refusé les questions de santé'}
+      </p>
+      {intake.red_flags && (
+        <p className="mt-3 text-sm text-[#FFC29A]">⚕ Signaux d’alerte cochés : conseiller un kiné ou un médecin avant d’entraîner la zone.</p>
+      )}
+      {a.text?.trim() && (
+        <blockquote className="mt-3 select-text border-l-2 border-white/20 pl-3 text-sm italic leading-relaxed text-white/80">« {a.text.trim()} »</blockquote>
+      )}
+      <p className="mt-3 text-xs text-white/40">La fiche ci-dessous a été préremplie à partir de ces réponses : vérifie, ajuste, puis passe en « Personnalisée ».</p>
+    </motion.section>
+  )
+}
+
 // Fiche d'une personne : conditions, sport, exercices clés, règles avancées, avec aperçu en direct
 function AthleteEditor({ athlete, onBack, onSaved }) {
   const d = athlete.data ?? {}
@@ -90,6 +112,7 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
       </motion.p>
 
       <div className="mt-6 flex flex-col gap-5">
+        {athlete.intake && <IntakeCard intake={athlete.intake} />}
         <motion.section {...rise(0.12)} className={card}>
           <p className={label}>Séances</p>
           <div className="mt-3 flex flex-wrap gap-2">
