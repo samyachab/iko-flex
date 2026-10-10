@@ -1,35 +1,26 @@
-// Photo de profil : recadrée en carré au centre et réduite sur le téléphone avant l'envoi
-// (quelques dizaines de Ko au lieu de plusieurs Mo ; les métadonnées de la photo, dont la position GPS,
-// ne sont pas conservées car l'image est redessinée).
-const SIZE = 320
+// Photo de profil : chargée, recadrée par la personne (PhotoCropper), puis redessinée en carré de 320 px.
+// Redessiner l'image supprime ses métadonnées, dont la position GPS. Quelques dizaines de Ko au lieu de Mo.
+export const OUTPUT = 320
 
-export async function squarePhoto(file) {
+export function loadImage(file) {
   const url = URL.createObjectURL(file)
-  try {
-    const img = await new Promise((resolve, reject) => {
-      const i = new Image()
-      i.onload = () => resolve(i)
-      i.onerror = () => reject(new Error('image illisible'))
-      i.src = url
-    })
-    const side = Math.min(img.naturalWidth, img.naturalHeight)
-    const canvas = document.createElement('canvas')
-    canvas.width = canvas.height = SIZE
-    canvas.getContext('2d').drawImage(
-      img,
-      (img.naturalWidth - side) / 2,
-      (img.naturalHeight - side) / 2,
-      side,
-      side,
-      0,
-      0,
-      SIZE,
-      SIZE,
-    )
-    return await new Promise((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('conversion impossible'))), 'image/jpeg', 0.85),
-    )
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve({ img, url })
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('image illisible'))
+    }
+    img.src = url
+  })
+}
+
+// Découpe le carré (sx, sy, side) de l'image d'origine et le réduit en JPEG
+export function cropToBlob(img, sx, sy, side) {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = OUTPUT
+  canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, OUTPUT, OUTPUT)
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('conversion impossible'))), 'image/jpeg', 0.85),
+  )
 }

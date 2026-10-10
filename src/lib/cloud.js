@@ -7,7 +7,6 @@ import { addProfiles, setProfileId } from './profile.js'
 import { getSettings, onSettingsSaved, saveSettings } from './settings.js'
 import { getHistory, mergeHistory } from './streaks.js'
 import { mergeRotation } from './rotation.js'
-import { squarePhoto } from './image.js'
 
 const GUEST_KEY = 'iko-flex:guest'
 // Données personnelles effacées de l'appareil à la déconnexion (téléphone prêté, partagé...)
@@ -301,15 +300,10 @@ export async function getPlayer() {
 
 const BUCKET = 'avatars'
 
-// Recadre, réduit et envoie la photo ; supprime l'ancienne. Renvoie le chemin à enregistrer dans players.
-export async function uploadPhoto(file, previousPath) {
+// Envoie la photo déjà recadrée (components/PhotoCropper.jsx) ; supprime l'ancienne.
+// Renvoie le chemin à enregistrer dans players.
+export async function uploadPhoto(blob, previousPath) {
   if (!userId) return { error: 'Connecte-toi d’abord.' }
-  let blob
-  try {
-    blob = await squarePhoto(file)
-  } catch {
-    return { error: 'Cette image ne peut pas être lue. Essaie une autre photo.' }
-  }
   const path = `${userId}/${Date.now()}.jpg`
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' })
   if (error) return { error: frenchError(error) }

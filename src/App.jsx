@@ -27,9 +27,9 @@ export default function App() {
   const [player, setPlayer] = useState(null) // pseudo + avatar (bouton profil de l'accueil)
   const [playerPhoto, setPlayerPhoto] = useState(null) // lien temporaire de la photo de profil
   useEffect(() => {
-    if (!player?.photo_path) return setPlayerPhoto(null)
+    if (player?.avatar !== 'photo' || !player.photo_path) return setPlayerPhoto(null)
     photoUrls([player.photo_path]).then((u) => setPlayerPhoto(u[player.photo_path] ?? null))
-  }, [player?.photo_path])
+  }, [player?.photo_path, player?.avatar])
 
   // Ouverture : session existante -> fiche et historique depuis le coffre ; sinon écran de connexion
   const open = async () => {

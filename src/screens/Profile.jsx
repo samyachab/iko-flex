@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import AccountCard from '../components/AccountCard.jsx'
+import PhotoCropper from '../components/PhotoCropper.jsx'
 import { getLeaderboard, getPlayer, photoUrls, removePhoto, savePlayer, uploadPhoto } from '../lib/cloud.js'
 import { getStreaks } from '../lib/streaks.js'
 import { AVATARS, SHAPES, TONES, gradient, rise } from '../lib/theme.js'
@@ -110,7 +111,7 @@ function Leaderboard({ player, onJoin, onLeave }) {
             className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${r.is_me ? 'bg-white/[0.09]' : ''}`}
           >
             <span className={`w-6 text-center font-display text-lg ${i < 3 ? 'text-white' : 'text-white/40'}`}>{i + 1}</span>
-            <Avatar name={r.display_name} avatar={r.avatar} photo={photos[r.photo_path]} size={34} />
+            <Avatar name={r.display_name} avatar={r.avatar} photo={r.avatar === 'photo' ? photos[r.photo_path] : null} size={34} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white/85">
               {r.display_name}
               {r.is_me && <span className="ml-1 font-normal text-white/40">(toi)</span>}
@@ -131,42 +132,87 @@ function Leaderboard({ player, onJoin, onLeave }) {
   )
 }
 
-// Personnaliser : photo de profil et pseudo
-function Customize({ player, photo, fallbackName, onSave, onPhoto, onRemovePhoto }) {
+// Personnaliser : au choix une couleur ou une photo (recadrée), et le pseudo
+function Customize({ player, photo, fallbackName, onSave, onColor, onUsePhoto, onPhoto, onRemovePhoto }) {
   const [name, setName] = useState(player?.display_name ?? fallbackName ?? '')
-  const [busy, setBusy] = useState(false)
+  const [tab, setTab] = useState(player?.avatar === 'photo' ? 'photo' : 'color')
+  const [file, setFile] = useState(null) // photo choisie, en cours de recadrage
   const input = useRef(null)
   const changed = name.trim() !== (player?.display_name ?? '')
-  const pick = async (e) => {
-    const file = e.target.files?.[0]
+  const usingPhoto = player?.avatar === 'photo' && photo
+  const color = player?.avatar && player.avatar !== 'photo' ? player.avatar : null
+
+  const pick = (e) => {
+    const f = e.target.files?.[0]
     e.target.value = ''
-    if (!file) return
-    setBusy(true)
-    await onPhoto(file)
-    setBusy(false)
+    if (f) setFile(f)
   }
+
   return (
     <motion.section {...rise(0.18)} className={card}>
-      <p className={label}>Personnaliser</p>
-      <div className="mt-4 flex items-center gap-4">
-        <Avatar name={name || fallbackName} avatar={player?.avatar} photo={photo} size={64} />
-        <div className="flex flex-col items-start gap-2">
-          <button
-            onClick={() => input.current?.click()}
-            disabled={busy}
-            className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 disabled:opacity-50"
-          >
-            {busy ? 'Envoi…' : photo ? 'Changer de photo' : 'Ajouter une photo'}
-          </button>
-          {photo && !busy && (
-            <button onClick={onRemovePhoto} className="text-xs text-white/40 underline underline-offset-4">
-              Retirer la photo
+      <div className="flex items-center justify-between gap-3">
+        <p className={label}>Personnaliser</p>
+        <div className="flex gap-1 rounded-full bg-white/[0.06] p-1 text-xs">
+          {[
+            ['color', 'Couleur'],
+            ['photo', 'Photo'],
+          ].map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`rounded-full px-3 py-1 font-semibold ${tab === k ? 'bg-white/15 text-white' : 'text-white/45'}`}
+            >
+              {l}
             </button>
-          )}
+          ))}
         </div>
-        <input ref={input} type="file" accept="image/*" onChange={pick} className="hidden" />
       </div>
-      <label className="mt-3 block">
+
+      {tab === 'color' && (
+        <div className="mt-4 flex flex-wrap gap-3">
+          {Object.entries(AVATARS).map(([k, a]) => (
+            <button
+              key={k}
+              onClick={() => onColor(k)}
+              aria-label={a.label}
+              aria-pressed={!usingPhoto && (color ?? 'aurore') === k}
+              className={`rounded-full p-1 ${!usingPhoto && (color ?? 'aurore') === k ? 'ring-2 ring-white/70' : ''}`}
+            >
+              <span className="block h-10 w-10 rounded-full" style={{ background: gradient(a) }} />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === 'photo' && (
+        <div className="mt-4 flex items-center gap-4">
+          {photo ? (
+            <Avatar name={name || fallbackName} photo={photo} size={64} />
+          ) : (
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-dashed border-white/20 text-2xl text-white/30">
+              +
+            </div>
+          )}
+          <div className="flex flex-col items-start gap-2">
+            <button onClick={() => input.current?.click()} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80">
+              {photo ? 'Changer de photo' : 'Choisir une photo'}
+            </button>
+            {photo && !usingPhoto && (
+              <button onClick={onUsePhoto} className="text-sm font-semibold" style={{ color: TONES.souplesse.a }}>
+                Utiliser cette photo
+              </button>
+            )}
+            {photo && (
+              <button onClick={onRemovePhoto} className="text-xs text-white/40 underline underline-offset-4">
+                Supprimer la photo
+              </button>
+            )}
+          </div>
+          <input ref={input} type="file" accept="image/*" onChange={pick} className="hidden" />
+        </div>
+      )}
+
+      <label className="mt-5 block">
         <span className="text-xs text-white/45">Pseudo</span>
         <input
           value={name}
@@ -179,13 +225,24 @@ function Customize({ player, photo, fallbackName, onSave, onPhoto, onRemovePhoto
         whileTap={{ scale: 0.97 }}
         disabled={!changed || !name.trim()}
         onClick={() => onSave({ display_name: name.trim() })}
-        className="mt-5 w-full rounded-full border border-white/15 py-3 text-sm font-semibold text-white/80 disabled:opacity-30"
+        className="mt-4 w-full rounded-full border border-white/15 py-3 text-sm font-semibold text-white/80 disabled:opacity-30"
       >
         Enregistrer le pseudo
       </motion.button>
       <p className="mt-3 text-xs leading-relaxed text-white/35">
-        Ta photo est visible par toi, ton coach, et les amis du classement si tu y participes.
+        Ta photo n’est visible que par toi, ton coach, et les amis du classement si tu y participes et que tu l’affiches.
       </p>
+
+      {file && (
+        <PhotoCropper
+          file={file}
+          onCancel={() => setFile(null)}
+          onDone={async (blob) => {
+            await onPhoto(blob)
+            setFile(null)
+          }}
+        />
+      )}
     </motion.section>
   )
 }
@@ -220,15 +277,17 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
     setPlayer(next)
     onPlayerChange?.(next)
   }
-  const changePhoto = async (file) => {
-    const res = await uploadPhoto(file, player?.photo_path)
+  // Photo recadrée : envoyée puis affichée tout de suite à la place de la couleur
+  const changePhoto = async (blob) => {
+    const res = await uploadPhoto(blob, player?.photo_path)
     if (res.error) return setMessage(res.error)
-    await update({ photo_path: res.path })
+    await update({ photo_path: res.path, avatar: 'photo' })
   }
   const deletePhoto = async () => {
     await removePhoto(player?.photo_path)
-    await update({ photo_path: null })
+    await update({ photo_path: null, avatar: player?.avatar === 'photo' ? 'aurore' : player?.avatar ?? 'aurore' })
   }
+  const shownPhoto = player?.avatar === 'photo' ? photo : null
 
   const shown = player?.display_name ?? account?.name ?? 'Invité'
 
@@ -239,7 +298,7 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
       </motion.button>
 
       <motion.div {...rise(0.05)} className="mt-6 flex items-center gap-4">
-        <Avatar name={shown} avatar={player?.avatar} photo={photo} size={72} />
+        <Avatar name={shown} avatar={player?.avatar} photo={shownPhoto} size={72} />
         <div>
           <h1 className="font-display text-4xl font-light tracking-tight">{shown}</h1>
           <p className="mt-1 text-sm text-white/45">
@@ -258,6 +317,8 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
                 photo={photo}
                 fallbackName={account.name}
                 onSave={update}
+                onColor={(k) => update({ avatar: k })}
+                onUsePhoto={() => update({ avatar: 'photo' })}
                 onPhoto={changePhoto}
                 onRemovePhoto={deletePhoto}
               />
