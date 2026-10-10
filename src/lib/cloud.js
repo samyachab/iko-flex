@@ -232,16 +232,41 @@ export async function listAthletes() {
   return { athletes: data }
 }
 
-// Enregistre la fiche d'une personne (statut + contenu) ; seul un coach y est autorisé (RLS)
+// Enregistre la fiche d'une personne (statut + contenu) ; seul un coach y est autorisé (RLS).
+// Une fiche touchée par le coach n'est plus écrasée si la personne refait son questionnaire.
 export async function saveAthlete(id, { status, data }) {
-  const { error } = await supabase.from('profiles').update({ status, data }).eq('id', id)
+  const { error } = await supabase
+    .from('profiles')
+    .update({ status, data, coach_edited_at: new Date().toISOString() })
+    .eq('id', id)
   if (error) return { error: frenchError(error) }
   return { ok: true }
 }
 
+// Nouveaux inscrits depuis la dernière visite du coach dans son espace (mémorisé sur l'appareil)
+const COACH_SEEN_KEY = 'iko-flex:coach-seen'
+export async function countNewSignups() {
+  const res = await listAthletes()
+  if (res.error) return 0
+  let seen = null
+  try {
+    seen = localStorage.getItem(COACH_SEEN_KEY)
+  } catch {
+    // stockage indisponible : tout le monde compte comme nouveau
+  }
+  return res.athletes.filter((a) => !seen || a.joined_at > seen).length
+}
+export function markSignupsSeen() {
+  try {
+    localStorage.setItem(COACH_SEEN_KEY, new Date().toISOString())
+  } catch {
+    // stockage indisponible
+  }
+}
+
 // ───────── Questionnaire d'accueil ─────────
 
-// Envoie les réponses ; en sur-mesure, le coffre prépare une fiche "à valider" pour le coach
+// Envoie les réponses ; en sur-mesure, le coffre active tout de suite la fiche proposée (le coach peut l'ajuster)
 export async function submitIntake({ mode, answers, proposal, redFlags }) {
   if (!userId) return { error: 'Connecte-toi pour envoyer ton questionnaire.' }
   const { error } = await supabase.from('intakes').upsert({

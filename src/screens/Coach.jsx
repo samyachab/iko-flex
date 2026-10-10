@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { CONDITIONS, SPORTS } from '../data/conditions.js'
 import { EXERCISES } from '../data/exercises.js'
 import { profileReport, resolveProfile } from '../lib/profile.js'
-import { listAthletes, saveAthlete } from '../lib/cloud.js'
+import { listAthletes, markSignupsSeen, saveAthlete } from '../lib/cloud.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
 
 const STATUS = {
@@ -58,7 +58,7 @@ function IntakeCard({ intake }) {
       {a.text?.trim() && (
         <blockquote className="mt-3 select-text border-l-2 border-white/20 pl-3 text-sm italic leading-relaxed text-white/80">« {a.text.trim()} »</blockquote>
       )}
-      <p className="mt-3 text-xs text-white/40">La fiche ci-dessous a été préremplie à partir de ces réponses : vérifie, ajuste, puis passe en « Personnalisée ».</p>
+      <p className="mt-3 text-xs text-white/40">La fiche ci-dessous vient de ces réponses et s’applique déjà. Ajuste-la si besoin : une fois modifiée par toi, un nouveau questionnaire ne l’écrasera plus.</p>
     </motion.section>
   )
 }
@@ -263,6 +263,7 @@ export default function Coach({ account, onBack, onOwnProfileSaved }) {
   }
   useEffect(() => {
     load()
+    markSignupsSeen()
   }, [])
 
   if (selected) {

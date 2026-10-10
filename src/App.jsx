@@ -10,7 +10,7 @@ import Login from './screens/Login.jsx'
 import Privacy from './screens/Privacy.jsx'
 import Coach from './screens/Coach.jsx'
 import Onboarding from './screens/Onboarding.jsx'
-import { bootstrap, continueAsGuest, isGuest, pushSession, signOut } from './lib/cloud.js'
+import { bootstrap, continueAsGuest, countNewSignups, isGuest, pushSession, signOut } from './lib/cloud.js'
 import { buildRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
 import { recordSession } from './lib/rotation.js'
@@ -22,12 +22,14 @@ const MIN_RATIO = 0.7
 export default function App() {
   const [screen, setScreen] = useState(() => (window.location.hash === '#lab' ? 'lab' : 'loading'))
   const [account, setAccount] = useState(null) // { user, name, personalized } quand connecté
+  const [newSignups, setNewSignups] = useState(0) // coach : inscrits depuis sa dernière visite
 
   // Ouverture : session existante -> fiche et historique depuis le coffre ; sinon écran de connexion
   const open = async () => {
     const acct = await bootstrap()
     // Échec de lecture : on ouvre quand même l'accueil avec les données du téléphone
     setAccount(acct?.failed ? null : acct)
+    if (acct?.coach) countNewSignups().then(setNewSignups)
     setScreen((s) => (s === 'lab' ? s : acct?.needsOnboarding ? 'onboarding' : acct || isGuest() ? 'hub' : 'login'))
   }
   useEffect(() => {
@@ -108,14 +110,18 @@ export default function App() {
                 }}
               />
             )}
-            {screen === 'hub' && <Hub name={account?.name} onLaunch={launch} onOpenLab={() => setScreen('lab')} onOpenSettings={() => setScreen('settings')} />}
+            {screen === 'hub' && <Hub name={account?.name} badge={newSignups} onLaunch={launch} onOpenLab={() => setScreen('lab')} onOpenSettings={() => setScreen('settings')} />}
             {screen === 'settings' && (
               <Settings
                 account={account}
                 onLogout={logout}
                 onDeleted={deleted}
                 onPrivacy={openPrivacy}
-                onCoach={() => setScreen('coach')}
+                newSignups={newSignups}
+                onCoach={() => {
+                  setNewSignups(0)
+                  setScreen('coach')
+                }}
                 onOnboarding={() => setScreen('onboarding')}
                 onLogin={() => setScreen('login')}
                 onBack={() => setScreen('hub')}

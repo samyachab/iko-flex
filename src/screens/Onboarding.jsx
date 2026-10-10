@@ -302,7 +302,7 @@ export default function Onboarding({ name, onDone }) {
           {phase === 'recap' && (
             <>
               <h1 className="font-display text-[2.1rem] font-light leading-tight tracking-tight">C’est tout bon.</h1>
-              <p className="mt-3 text-base leading-relaxed text-white/55">Voilà ce que ton coach va recevoir pour construire ta fiche.</p>
+              <p className="mt-3 text-base leading-relaxed text-white/55">Voilà ta fiche. Ton coach pourra encore l’ajuster.</p>
               <div className="mt-6 min-h-0 flex-1 overflow-y-auto pb-4">
                 <Recap
                   answers={answers}
@@ -320,7 +320,7 @@ export default function Onboarding({ name, onDone }) {
                 className="w-full shrink-0 rounded-full py-4 text-base font-bold text-ink disabled:opacity-60"
                 style={{ background: gradient(t, 90) }}
               >
-                {busy ? '…' : 'Envoyer à mon coach'}
+                {busy ? '…' : 'Créer ma routine'}
               </motion.button>
             </>
           )}
@@ -334,9 +334,9 @@ export default function Onboarding({ name, onDone }) {
                 animate={{ scale: 1, opacity: 1, borderRadius: SHAPES }}
                 transition={{ scale: { type: 'spring', stiffness: 160, damping: 14 }, borderRadius: { duration: 9, repeat: Infinity } }}
               />
-              <h1 className="font-display mt-8 text-[2.1rem] font-light leading-tight">C’est envoyé !</h1>
+              <h1 className="font-display mt-8 text-[2.1rem] font-light leading-tight">C’est prêt !</h1>
               <p className="mt-3 max-w-xs text-base leading-relaxed text-white/55">
-                Ton coach prépare ta fiche. En attendant, ta routine générale t’attend, avec tes durées et ton matériel.
+                Tes séances suivent maintenant ta fiche, avec tes durées et ton matériel. Ton coach pourra l’affiner.
               </p>
               <motion.button
                 whileTap={{ scale: 0.97 }}

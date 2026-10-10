@@ -163,7 +163,7 @@ function useLongPress(callback, ms = 800) {
   return { onPointerDown: start, onPointerUp: cancel, onPointerLeave: cancel, onPointerCancel: cancel, onContextMenu: (e) => e.preventDefault() }
 }
 
-export default function Hub({ name, onLaunch, onOpenLab, onOpenSettings }) {
+export default function Hub({ name, badge = 0, onLaunch, onOpenLab, onOpenSettings }) {
   const longPress = useLongPress(onOpenLab)
   const { streaks, calendar, greeting } = useHubData(name)
 
@@ -178,9 +178,17 @@ export default function Hub({ name, onLaunch, onOpenLab, onOpenSettings }) {
           {...rise(0.05)}
           whileTap={{ scale: 0.9, rotate: 30 }}
           onClick={onOpenSettings}
-          aria-label="Réglages"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05]"
+          aria-label={badge ? `Réglages, ${badge} nouvel inscrit${badge > 1 ? 's' : ''}` : 'Réglages'}
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05]"
         >
+          {badge > 0 && (
+            <span
+              className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.65rem] font-bold text-ink"
+              style={{ background: '#8BF1DA' }}
+            >
+              {badge}
+            </span>
+          )}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-white/70">
             <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
             <circle cx="16" cy="7" r="2" />

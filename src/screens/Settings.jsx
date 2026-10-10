@@ -206,7 +206,7 @@ function EquipmentSettings({ settings, update, delay }) {
 }
 
 // Compte : qui est connecté, fiche perso ou routine générale, déconnexion
-function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onOnboarding, delay }) {
+function AccountSettings({ account, newSignups, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onOnboarding, delay }) {
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(null) // 'export' | 'delete'
   const [message, setMessage] = useState(null)
@@ -251,7 +251,7 @@ function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onC
               className="mt-4 w-full rounded-full py-3 text-sm font-bold text-ink"
               style={{ background: gradient(TONES.renfo, 90) }}
             >
-              Espace coach
+              Espace coach{newSignups > 0 ? ` · ${newSignups} nouvel${newSignups > 1 ? 's' : ''} inscrit${newSignups > 1 ? 's' : ''}` : ''}
             </button>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
@@ -311,7 +311,7 @@ function AccountSettings({ account, onLogout, onLogin, onDeleted, onPrivacy, onC
   )
 }
 
-export default function Settings({ account, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onOnboarding, onBack }) {
+export default function Settings({ account, newSignups, onLogout, onLogin, onDeleted, onPrivacy, onCoach, onOnboarding, onBack }) {
   const [settings, setSettings] = useState(getSettings)
   const update = (next) => {
     setSettings(next)
@@ -338,6 +338,7 @@ export default function Settings({ account, onLogout, onLogin, onDeleted, onPriv
         </motion.div>
         <AccountSettings
           account={account}
+          newSignups={newSignups}
           onLogout={onLogout}
           onLogin={onLogin}
           onDeleted={onDeleted}
