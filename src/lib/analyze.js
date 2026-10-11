@@ -25,7 +25,7 @@ const RULES = [
   ['epicondylite', /epicondyl|tennis elbow|coude/],
   ['coiffe_rotateurs', /coiffe|sus.?epineux|(lever|monter) (le|les) bras.{0,20}(mal|douleur)|(mal|douleur).{0,25}(lever|monter) (le|les) bras/],
   ['femoro_patellaire', /femoro|autour de la rotule|rotule|(escalier|marche).{0,30}genou|genou.{0,30}(escalier|marche|assis longtemps)/],
-  ['achille_insertion', /(arriere|derriere) du talon|insertion|haglund/],
+  ['achille_insertion', /(arriere|derriere) (du|le) talon|insertion|haglund/],
   ['fracture_fatigue', /fracture de fatigue|fissure|point precis.{0,20}os/],
   ['cervicalgie', /nuque|cervical|torticolis|mal au cou/],
   ['douleur_epaule', /(mal|douleur|tendinite|douloureu).{0,25}epaule|epaule.{0,20}(mal|douleur|douloureu)|coiffe des rotateurs/],
