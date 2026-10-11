@@ -1,0 +1,64 @@
+# Sauvegarde nocturne de la base de production, chiffrée avant de quitter la machine.
+#   secret   SUPABASE_DB_URL        : chaîne de connexion « Session pooler » (Supabase > Connect), avec mot de passe
+#   variable BACKUP_AGE_PUBLIC_KEY  : clé publique age (age1...). La clé privée n'est jamais dans ce workflow.
+# Résultat : un artefact chiffré gardé 30 jours (Actions > Sauvegarde > artefact iko-flex-backup).
+# Pas inclus : les photos de profil (bucket avatars), qui ne sont pas indispensables.
+# Restauration : docs/exploitation.md, testée chaque mois par restore-test.yml.
+name: Sauvegarde
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Export (rôles, schéma, données)
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          test -n "$DB_URL" || { echo "Secret SUPABASE_DB_URL manquant"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/backup"
+          supabase db dump --db-url "$DB_URL" -f "$RUNNER_TEMP/backup/roles.sql" --role-only
+          supabase db dump --db-url "$DB_URL" -f "$RUNNER_TEMP/backup/schema.sql"
+          supabase db dump --db-url "$DB_URL" -f "$RUNNER_TEMP/backup/data.sql" --use-copy --data-only
+
+      - name: Chiffrement
+        env:
+          AGE_PUBLIC_KEY: ${{ vars.BACKUP_AGE_PUBLIC_KEY }}
+        run: |
+          test -n "$AGE_PUBLIC_KEY" || { echo "Variable BACKUP_AGE_PUBLIC_KEY manquante"; exit 1; }
+          sudo apt-get install -y -qq age > /dev/null
+          mkdir -p out
+          tar czf - -C "$RUNNER_TEMP/backup" . | age -r "$AGE_PUBLIC_KEY" > "out/iko-flex-$(date -u +%F).tar.gz.age"
+          rm -rf "$RUNNER_TEMP/backup"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iko-flex-backup
+          path: out/*.age
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Alerte Telegram
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -fsS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            --data-urlencode chat_id="$CHAT" \
+            --data-urlencode text="Sauvegarde Iko Flex ratée. Détail : $RUN"

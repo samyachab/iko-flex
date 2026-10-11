@@ -1,0 +1,31 @@
+# À chaque push et pull request : dépendances vulnérables, tests du moteur, build de production.
+# Vercel lance aussi les tests (npm run build = vitest run && vite build) : un test rouge = pas de déploiement.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Dépendances de l'appli sans faille connue (high ou critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Tests et build
+        run: npm run build

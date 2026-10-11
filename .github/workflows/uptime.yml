@@ -1,0 +1,45 @@
+# Sonde de disponibilité toutes les 15 minutes : le site répond et la base Supabase répond.
+# En cas d'échec : alerte Telegram (secrets TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID), et GitHub envoie
+# aussi un e-mail d'échec. GitHub peut décaler un cron de quelques minutes et désactive les crons
+# d'un dépôt sans activité depuis 60 jours (un push les réactive). Voir docs/exploitation.md.
+name: Disponibilité
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SITE_URL: https://iko-flex.vercel.app/
+  SUPABASE_URL: https://lmbszpivshkdjllkfyjy.supabase.co
+  # Clé publique de l'appli (déjà dans le code public, filtrée par RLS)
+  SUPABASE_KEY: sb_publishable_X-svPWL3mdcd-I5wxt11QQ_xxZTNpOm
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Site
+        run: curl -fsS --retry 2 --retry-delay 20 --retry-all-errors --max-time 20 "$SITE_URL" | grep -q '<title>Iko Flex'
+
+      - name: Base de données
+        run: |
+          answer=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors --max-time 20 -X POST \
+            -H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json" -d '{}' \
+            "$SUPABASE_URL/rest/v1/rpc/health")
+          test "$answer" = '"ok"'
+
+      - name: Alerte Telegram
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -fsS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            --data-urlencode chat_id="$CHAT" \
+            --data-urlencode text="Iko Flex ne répond plus (site ou base). Détail : $RUN"

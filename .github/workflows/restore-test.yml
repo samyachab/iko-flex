@@ -1,0 +1,79 @@
+# Test de restauration, chaque 1er du mois (et à la demande) : la dernière sauvegarde est déchiffrée et
+# restaurée dans une base Supabase locale, jetable, sur la machine GitHub. Rien n'est écrit en production
+# ni en staging. Le journal ne montre que des nombres de lignes, jamais de données.
+#   secret BACKUP_AGE_KEY : clé privée age (AGE-SECRET-KEY-...), la paire de BACKUP_AGE_PUBLIC_KEY
+name: Test de restauration
+
+on:
+  schedule:
+    - cron: '0 4 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Dernière sauvegarde réussie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow backup.yml --status success --limit 1 --json databaseId -q '.[0].databaseId')
+          test -n "$run_id" || { echo "Aucune sauvegarde réussie"; exit 1; }
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" -n iko-flex-backup -D "$RUNNER_TEMP/dl"
+          ls -la "$RUNNER_TEMP/dl"
+
+      - name: Déchiffrement
+        env:
+          AGE_KEY: ${{ secrets.BACKUP_AGE_KEY }}
+        run: |
+          test -n "$AGE_KEY" || { echo "Secret BACKUP_AGE_KEY manquant"; exit 1; }
+          sudo apt-get install -y -qq age > /dev/null
+          mkdir -p "$RUNNER_TEMP/restore"
+          printf '%s\n' "$AGE_KEY" > "$RUNNER_TEMP/key.txt"
+          age -d -i "$RUNNER_TEMP/key.txt" "$RUNNER_TEMP"/dl/*.age | tar xzf - -C "$RUNNER_TEMP/restore"
+          rm "$RUNNER_TEMP/key.txt"
+
+      - name: Base locale vide
+        run: |
+          # Sans les migrations : on restaure le schéma de la sauvegarde, pas celui du dépôt
+          mv supabase/migrations "$RUNNER_TEMP/migrations"
+          supabase start
+
+      - name: Restauration
+        run: |
+          cd "$RUNNER_TEMP/restore"
+          { cat roles.sql schema.sql; echo 'SET session_replication_role = replica;'; cat data.sql; } \
+            | docker exec -i supabase_db_iko-flex psql -U postgres -d postgres --single-transaction -v ON_ERROR_STOP=1 -q -f - > /dev/null
+
+      - name: Contrôle
+        run: |
+          q() { docker exec supabase_db_iko-flex psql -U postgres -d postgres -tAc "$1"; }
+          for t in auth.users public.profiles public.sessions public.user_settings public.intakes public.players; do
+            echo "$t : $(q "select count(*) from $t") lignes"
+          done
+          test "$(q 'select count(*) from public.profiles')" -gt 0
+          test "$(q 'select count(*) from auth.users')" -gt 0
+          echo "COUNT=$(q 'select count(*) from public.profiles')" >> "$GITHUB_ENV"
+
+      - name: Message Telegram
+        if: always()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STATUS: ${{ job.status }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$STATUS" = success ]; then text="Test de restauration Iko Flex réussi : $COUNT fiches restaurées."
+          else text="Test de restauration Iko Flex raté. Détail : $RUN"; fi
+          curl -fsS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            --data-urlencode chat_id="$CHAT" --data-urlencode text="$text"
