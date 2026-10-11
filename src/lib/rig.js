@@ -145,6 +145,10 @@ export function frame(anim, s) {
   }
   // Les accessoires fixes (box, mur, banc) doivent rester dans le cadre
   for (const pr of anim.props ?? []) {
+    if (pr.type === 'wedge') {
+      minX = Math.min(minX, pr.x1)
+      maxX = Math.max(maxX, pr.x2)
+    }
     if (pr.type === 'box' || pr.type === 'table') {
       minX = Math.min(minX, pr.x1)
       maxX = Math.max(maxX, pr.x2)

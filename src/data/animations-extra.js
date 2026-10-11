@@ -1276,6 +1276,7 @@ export const EXTRA_ANIMATIONS = {
       { pose: { y: 99.5, armN: [172, 176], armF: [168, 174], legN: [0, 0, 30], legF: [-4, -4, 30] }, hold: 0.1, move: 0.4 },
     ],
   },
+
   // ═════════ Tendons (excentrique, isométrie) & glissement nerveux ═════════
 
   // Allongé sur le dos, cuisse tenue vers la poitrine : la jambe se tend pointe tirée, puis se replie, en rythme.
@@ -1298,25 +1299,27 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Sur une jambe au bord d’une marche, genou légèrement plié : le talon descend lentement sous la marche.
+  // Sur le bord d’une marche : montée sur la pointe des deux pieds, un pied se lève, le talon de l’autre descend lentement sous la marche genou plié, puis on remonte à deux pieds.
   'alfredson-genou-plie': {
     view: 'side',
-    props: [{ type: 'box', x1: -40, x2: 6, top: -20 }, { type: 'wall', x: 46 }],
-    base: { x: -5, y: 99.2, legN: [17.1, -14.8, 55], torso: 176, armN: [72, 88], armF: [8, 10], legF: [-6, -70, -15] },
+    props: [{ type: 'box', x1: -70, x2: 6, top: -30 }, { type: 'wall', x: 50 }],
+    base: { torso: 178, armN: [70, 86], armF: [66, 84] },
     keys: [
-      { pose: {  }, hold: 0.4, move: 3 },
-      { pose: { x: -5.3, y: 87.1, legN: [17.1, -14.8, 122], armN: [68, 84] }, hold: 0.3, move: 1 },
+      { pose: { x: -5, y: 111.9, legN: [5.1, -2.2, 55], legF: [3.1, -4.2, 55] }, hold: 0.3, move: 0.5 },
+      { pose: { x: -5, y: 111.9, legN: [5.1, -2.2, 55], legF: [-8, -78, -20] }, hold: 0.2, move: 3 },
+      { pose: { x: -5.1, y: 96, legN: [19.1, -16.8, 124], legF: [-8, -78, -20] }, hold: 0.3, move: 0.5 },
+      { pose: { x: -5.1, y: 96, legN: [19.1, -16.8, 124], legF: [17.1, -18.8, 124] }, hold: 0.2, move: 1 },
     ],
   },
 
-  // Talon posé sur un livre, descente lente sur une jambe, genou vers l’avant, l’autre jambe tendue devant.
+  // Sur un plan incliné (talons plus hauts que les pointes) : descente lente sur une jambe, genou vers l’avant, l’autre pied décollé.
   'squat-incline-unipodal': {
     view: 'side',
-    props: [{ type: 'box', x1: -10, x2: 6, top: -8 }],
-    base: { y: 85, armN: [40, 70], armF: [36, 66], legN: [6.5, -6.8, 65], legF: [30, 10, 90] },
+    props: [{ type: 'wedge', x1: -16, x2: 24, h: 11 }],
+    base: { y: 83.7, x: -2, armN: [20, 40], armF: [16, 36], legN: [6.5, -6.8, 74], legF: [24, -30, 70] },
     keys: [
       { pose: {  }, hold: 0.4, move: 3 },
-      { pose: { x: -10, y: 52, torso: 166, head: 172, armN: [80, 86], armF: [76, 82], legN: [67.3, -44.1, 65], legF: [72, 60, 150] }, hold: 0.3, move: 1.2 },
+      { pose: { x: -14, y: 54, torso: 164, head: 172, armN: [82, 88], armF: [78, 84], legN: [65.5, -38.8, 74], legF: [85, 40, 110] }, hold: 0.3, move: 1.2 },
     ],
   },
 
@@ -1345,7 +1348,7 @@ export const EXTRA_ANIMATIONS = {
   // À genoux, chevilles bloquées sous un canapé : le corps bascule vers l’avant d’un bloc en freinant, les mains se préparent.
   'nordic-sol': {
     view: 'side',
-    props: [{ type: 'box', x1: -80, x2: -44, top: -16 }],
+    props: [{ type: 'box', x1: -60, x2: -26, top: -15 }],
     base: { x: 0, torso: 180, head: 184, legN: [0, -90, -90], legF: [0, -90, -90], armN: [20, 40], armF: [16, 36] },
     keys: [
       { pose: {  }, hold: 0.4, move: 3 },
@@ -1364,16 +1367,14 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Vu de dessus, assis jambes tendues, élastique accroché du côté intérieur : le pied pousse vers l’extérieur, puis revient lentement.
+  // Vue de face, assis jambes tendues vers nous, élastique accroché côté intérieur : un pied pousse vers l’extérieur, puis revient lentement.
   'eversion-elastique': {
     view: 'front',
-    ground: false,
-    hipHeight: 0,
-    props: [{ type: 'mat', x1: -70, y1: -40, x2: 70, y2: 96 }, { type: 'band', from: 'toeN', to: [-40, 84] }],
-    base: { torso: 180, head: 180, armN: [40, 30], legN: [2, 0, 0], legF: [-2, 0, 0], fs: { torso: 0.3, head: 0.2, upperN: 0.6, foreN: 0.6, upperF: 0.6, foreF: 0.6, footN: 0.4, footF: 0.4 } },
+    props: [{ type: 'band', from: 'toeN', to: [-26, -20] }],
+    base: { torso: 180, head: 180, armN: [22, 16], legN: [18, 0, 180], legF: [-18, 0, 180], fs: { torso: 0.9, thighN: 0.2, shinN: 0.2, thighF: 0.2, shinF: 0.2, footN: 0.9, footF: 0.9 } },
     keys: [
       { pose: {  }, hold: 0.3, move: 0.8 },
-      { pose: { legN: [2, 0, 70], fs: { footN: 0.9 } }, hold: 0.6, move: 1.4 },
+      { pose: { legN: [18, 0, 118] }, hold: 0.6, move: 1.4 },
     ],
   },
 }

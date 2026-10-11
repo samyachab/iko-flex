@@ -31,6 +31,7 @@ function cell(anim, pose) {
     if (p.type === 'wall' && p.x != null) s += `<line x1="${p.x}" x2="${p.x}" y1="0" y2="${p.top ?? -200}" stroke="#aaa" stroke-width="3"/>`
     if (p.type === 'box' || p.type === 'table') s += `<rect x="${p.x1}" y="${p.top}" width="${p.x2 - p.x1}" height="${-p.top}" fill="#ccc"/>`
     if (p.type === 'mat') s += `<rect x="${p.x1}" y="${p.y1}" width="${p.x2 - p.x1}" height="${p.y2 - p.y1}" fill="#ddd"/>`
+    if (p.type === 'wedge') s += `<path d="M${p.x1} 0 L${p.x1} ${-p.h} L${p.x2} 0 Z" fill="#ccc"/>`
     if (p.type === 'cone') s += `<path d="M${p.x - 6} 0 L${p.x} ${-(p.h ?? 11)} L${p.x + 6} 0 Z" fill="#d80"/>`
     if (p.type === 'roller') {
       if (p.r && p.at) {

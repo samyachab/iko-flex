@@ -199,6 +199,8 @@ export default function Figure({ id, paused = false, color: colorProp, className
   const mat = anim.props?.find((p) => p.type === 'mat')
   const floorRollers = anim.props?.filter((p) => p.type === 'roller' && !p.at) ?? []
   const cones = anim.props?.filter((p) => p.type === 'cone') ?? []
+  // Plan incliné (planche de squat décliné) : haut côté talons (x1), bas côté pointes (x2)
+  const wedges = anim.props?.filter((p) => p.type === 'wedge') ?? []
 
   return (
     <svg viewBox={`${vb.x} ${vb.y} ${vb.size} ${vb.size}`} className={className} aria-hidden="true">
@@ -276,6 +278,9 @@ export default function Figure({ id, paused = false, color: colorProp, className
           <rect key={k} x={r.x1} y={r.y1} width={r.x2 - r.x1} height={r.y2 - r.y1} rx={(r.x2 - r.x1) / 2} fill={color} fillOpacity="0.14" stroke={color} strokeOpacity="0.3" strokeWidth="2" />
         ),
       )}
+      {wedges.map((w, k) => (
+        <path key={k} d={`M${w.x1} 0 L${w.x1} ${-w.h} L${w.x2} 0 Z`} fill={color} fillOpacity="0.14" stroke={color} strokeOpacity="0.3" strokeWidth="2" strokeLinejoin="round" />
+      ))}
       {cones.map((c, k) => (
         <path key={k} d={`M${c.x - 6} 0 L${c.x} ${-(c.h ?? 11)} L${c.x + 6} 0 Z`} fill={color} fillOpacity="0.3" strokeLinejoin="round" stroke={color} strokeOpacity="0.3" strokeWidth="2" />
       ))}
