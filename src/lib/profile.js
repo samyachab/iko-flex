@@ -51,6 +51,7 @@ export function resolveProfile(profile) {
     (c) => CONDITIONS[c],
   )
   const avoid = new Map() // mécanique -> conditions qui l'interdisent
+  const avoidIds = new Map() // exercice -> conditions qui l'interdisent (cas précis, ex. tendon d'Achille au talon)
   const adapt = new Map() // mécanique -> consignes en plus
   const favor = new Map() // mécanique -> poids
   const needs = new Map() // mécanique -> toutes les N séances (la plus fréquente gagne)
@@ -64,6 +65,7 @@ export function resolveProfile(profile) {
   for (const id of conditions) {
     const c = CONDITIONS[id]
     for (const m of c.avoid ?? []) push(avoid, m, c.label)
+    for (const id of c.avoidIds ?? []) push(avoidIds, id, c.label)
     for (const [m, text] of Object.entries(c.adapt ?? {})) push(adapt, m, text)
     addFavor(c.favor)
     addNeeds(c.needs)
@@ -83,6 +85,7 @@ export function resolveProfile(profile) {
     profile,
     conditions,
     avoid,
+    avoidIds,
     adapt,
     favor,
     needs,
@@ -108,7 +111,8 @@ export function assess(ex, rules = currentRules()) {
   for (const c of ex.contraindications ?? []) {
     if (rules.conditions.includes(c)) blockedBy.push(`contre-indiqué : ${CONDITIONS[c].label}`)
   }
-  for (const m of mech) if (rules.avoid.has(m)) blockedBy.push(`${MECHANICS[m].label} (${rules.avoid.get(m).join(', ')})`)
+  for (const m of mech) if (rules.avoid.has(m)) blockedBy.push(`${MECHANICS[m]?.label ?? m} (${rules.avoid.get(m).join(', ')})`)
+  if (rules.avoidIds.has(ex.id)) blockedBy.push(`déconseillé : ${rules.avoidIds.get(ex.id).join(', ')}`)
   if (o.exclude) blockedBy.push('retiré par le coach')
   if (rules.replaced.has(ex.id)) blockedBy.push(`remplacé par ${rules.replaced.get(ex.id)}`)
 

@@ -15,12 +15,23 @@ const normalize = (text) =>
 const RULES = [
   // Douleurs
   ['sciatique', /sciatique|descend (dans|le long de) (la|ma) jambe|irradie|nerf sciatique/],
-  ['lombalgie', /bas du dos|lombaire|lombalgie|lumbago|mal au dos|dos bloque|hernie/],
-  ['cervicalgie', /nuque|cervical|torticolis|mal au cou/],
+  ['lombalgie_flexion', /(dos|lombaire).{0,40}(penche|assis|ramass|lacer|hernie)|(penche|assis|ramass).{0,40}(dos|lombaire)|hernie/],
+  ['lombalgie_extension', /(dos|lombaire).{0,40}(debout|cambr|pietin)|(debout|cambr|pietin).{0,40}(dos|lombaire)/],
+  ['lombalgie', /bas du dos|lombaire|lombalgie|lumbago|mal au dos|dos bloque/],
+  ['piriforme', /piriforme|pyramidal|fond de la fesse|fesse.{0,25}(profond|descend)/],
+  ['ischio_proximal', /sous la fesse|(assis|chaise).{0,30}ischio|ischio.{0,30}(assis|haut|attache)/],
+  ['tendinopathie_fessiere', /(cote|exterieur) de la hanche|trochanter|bursite|moyen fessier.{0,20}(mal|douleur|tendin)/],
+  ['pubalgie', /pubalgie|pubis|aine|adducteur.{0,20}(mal|douleur|tendin|bless)/],
+  ['epicondylite', /epicondyl|tennis elbow|coude/],
+  ['coiffe_rotateurs', /coiffe|sus.?epineux|(lever|monter) (le|les) bras.{0,20}(mal|douleur)|(mal|douleur).{0,25}(lever|monter) (le|les) bras/],
+  ['femoro_patellaire', /femoro|autour de la rotule|rotule|(escalier|marche).{0,30}genou|genou.{0,30}(escalier|marche|assis longtemps)/],
+  ['achille_insertion', /(arriere|derriere) du talon|insertion|haglund/],
+  ['fracture_fatigue', /fracture de fatigue|fissure|point precis.{0,20}os/],
+  ['cervicalgie', /nuque|cervical|torticolis|mal au cou/],
   ['douleur_epaule', /(mal|douleur|tendinite|douloureu).{0,25}epaule|epaule.{0,20}(mal|douleur|douloureu)|coiffe des rotateurs/],
   ['douleur_poignet', /poignet/],
   ['douleur_hanche', /(mal|douleur|pince|pincement).{0,25}hanche|hanche.{0,20}(mal|douleur|pince)|conflit de hanche/],
-  ['tendinite_rotulienne', /rotule|rotulien/],
+  ['tendinite_rotulienne', /sous la rotule|rotulien|tendon (de la |sous la )?rotule|genou du sauteur/],
   ['tfl', /\btfl\b|bandelette|essuie.?glace|exterieur (de la|du) (cuisse|genou)/],
   ['douleur_genou', /genou/],
   ['periostite_tibiale', /periostite|tibia/],
@@ -41,6 +52,8 @@ const RULES = [
   ['mollets_raides', /mollets?.{0,15}(raide|tendu|dur)|crampe/],
   ['dorsiflexion_limitee', /chevilles?.{0,15}(raide|bloquee)|dorsiflexion/],
   ['genoux_en_x', /genoux? en x|genoux qui rentrent|valgus/],
+  ['genou_recurvatum', /recurvatum|genoux? (en arriere|qui partent en arriere|en hyperextension)/],
+  ['pieds_creux', /pieds? creux|voute (tres )?haute/],
   ['pieds_plats', /pieds? plat|affaiss|pronation/],
   ['scoliose', /scoliose/],
   ['hypermobilite', /hypermobil|hyperlax|trop souple/],
@@ -84,7 +97,18 @@ export function analyzeText(text = '') {
     }
   }
   // Rotule ou TFL déjà trouvés : « genou » seul n'ajoute pas une douleur au genou générique
-  if (conditions.has('tendinite_rotulienne') || conditions.has('tfl')) conditions.delete('douleur_genou')
+  if (['tendinite_rotulienne', 'tfl', 'femoro_patellaire'].some((c) => conditions.has(c))) conditions.delete('douleur_genou')
+  // Une douleur de dos précisée (en se penchant / debout) remplace la lombalgie générique
+  if (conditions.has('lombalgie_flexion') || conditions.has('lombalgie_extension')) conditions.delete('lombalgie')
+  // Talon (insertion) précisé : pas de "milieu du tendon" en double
+  if (conditions.has('achille_insertion')) conditions.delete('tendinite_achille')
+  // Arrière du talon = tendon ; « sous le pied » seulement = fasciite
+  if (conditions.has('achille_insertion') && !/sous (le|mon) pied|plante/.test(t)) conditions.delete('fasciite_plantaire')
+  // Côté de la hanche = tendons fessiers, pas le pincement à l'avant
+  if (conditions.has('tendinopathie_fessiere') && !/(devant|avant|pli) de la hanche|pince/.test(t)) conditions.delete('douleur_hanche')
+  // « Sous la rotule » = tendon ; « autour », escaliers = fémoro-patellaire
+  if (conditions.has('tendinite_rotulienne') && !/autour de la rotule|escalier|femoro/.test(t)) conditions.delete('femoro_patellaire')
+  if (conditions.has('femoro_patellaire') && !/sous la rotule|rotulien|tendon|sauteur/.test(t)) conditions.delete('tendinite_rotulienne')
   const sport = SPORT_RULES.find(([, re]) => re.test(t))?.[0] ?? null
   return { conditions: [...conditions], sport }
 }

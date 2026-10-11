@@ -154,6 +154,19 @@ export default function Onboarding({ name, onDone }) {
     if (i + 1 < list.length) setIndex(i + 1)
     else setPhase('recap')
   }
+  // Passer la question : rien n'est ajouté à la fiche
+  const skip = () => next({ ...answers, [step.id]: answers[step.id] ?? (step.type === 'multi' ? [] : step.type === 'text' ? '' : '?') })
+  // Passer d'un coup tous les tests restants (« la flemme » est une réponse valable)
+  const skipTests = () => {
+    const nextAnswers = { ...answers }
+    const list = visibleSteps(nextAnswers)
+    for (const s of list) if (s.test && nextAnswers[s.id] === undefined) nextAnswers[s.id] = '?'
+    setAnswers(nextAnswers)
+    const after = list.findIndex((s, k) => k > list.findIndex((x) => x.id === step.id) && !s.test)
+    if (after >= 0) setIndex(after)
+    else setPhase('recap')
+  }
+
   const back = () => {
     if (phase === 'recap') return setPhase('questions')
     setIndex(Math.max(0, index - 1))
@@ -231,7 +244,10 @@ export default function Onboarding({ name, onDone }) {
             />
           </div>
           {phase === 'questions' && !['mode', 'how'].includes(step.id) && step.type !== 'consent' ? (
-            <button onClick={() => next({ ...answers, [step.id]: answers[step.id] ?? (step.type === 'multi' ? [] : step.type === 'text' ? '' : '?') })} className="shrink-0 text-sm text-white/45">
+            <button
+              onClick={skip}
+              className="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-sm font-semibold text-white/70"
+            >
               Passer
             </button>
           ) : (
@@ -252,7 +268,16 @@ export default function Onboarding({ name, onDone }) {
           {phase === 'questions' && (
             <>
               {step.id === 'mode' && name && <p className="text-sm text-white/45">Bienvenue {name}.</p>}
-              {step.test && <p className="text-[0.65rem] font-bold uppercase tracking-[0.3em]" style={{ color: t.a }}>Petit test · 10 secondes</p>}
+              {step.test && (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.3em]" style={{ color: t.a }}>
+                    Petit test · 10 secondes · facultatif
+                  </p>
+                  <button onClick={skipTests} className="shrink-0 text-xs text-white/45 underline underline-offset-4">
+                    Passer tous les tests
+                  </button>
+                </div>
+              )}
               <h1 className="font-display mt-2 text-[2.1rem] font-light leading-tight tracking-tight">{step.title}</h1>
               {step.subtitle && <p className="mt-3 text-base leading-relaxed text-white/55">{step.subtitle}</p>}
 

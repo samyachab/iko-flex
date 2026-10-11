@@ -55,6 +55,12 @@ export const MECHANICS = {
   etirement_bras: { label: 'Étirement des bras', desc: 'Épaule, triceps, biceps ou poignets étirés.' },
   etirement_cervical: { label: 'Étirement cervical', desc: 'Inclinaison de la tête.' },
 
+  // Type de contraction (clé pour les tendons)
+  isometrique: { label: 'Isométrique', desc: 'Contraction tenue sans bouger : calme la douleur d’un tendon irrité.' },
+  excentrique: { label: 'Excentrique', desc: 'Le muscle freine en s’allongeant (descente lente) : remodèle le tendon.' },
+  adduction_hanche: { label: 'Jambe croisée (hanche en adduction)', desc: 'La cuisse passe devant l’autre : comprime les tendons fessiers sur le côté de la hanche.' },
+  adducteurs_renfo: { label: 'Renfo adducteurs', desc: 'Serrer les cuisses contre une résistance (type Copenhague).' },
+
   // Nerfs & tissus
   neurodynamique: { label: 'Glissement nerveux', desc: 'Le nerf coulisse sans être tenu en tension (flossing).' },
   tension_neurale: { label: 'Tension nerveuse', desc: 'Jambe tendue et hanche fléchie : le nerf sciatique est mis en tension.' },

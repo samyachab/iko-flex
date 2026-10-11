@@ -3,7 +3,14 @@
 //   adapt : l'exercice reste, avec une consigne en plus pour cette personne
 //   favor : poids ajouté à l'exercice (il revient plus souvent)
 //   needs : { mécanique: N } -> un exercice de cette mécanique toutes les N séances (1 = chaque séance)
+//   avoidIds : exercices précis à écarter quand la mécanique seule ne suffit pas
 //   refer : condition qui demande l'avis d'un pro (kiné, médecin) avant de s'entraîner seul
+//
+// Principes pour les tendons (tendinopathies) :
+//   - pas d'étirement en force ni de position qui comprime le tendon irrité ;
+//   - l'isométrique calme la douleur, puis le travail lent et lourd (excentrique) remodèle le tendon ;
+//   - repère de douleur : 3/10 maximum pendant l'effort, et pas pire le lendemain matin ;
+//   - les impacts reviennent en dernier.
 // Le profil d'une personne ne stocke que ses conditions : les règles en découlent (lib/profile.js).
 // kind : 'posture' (profile.posture_issues), 'douleur' (profile.pain_points), 'objectif' (profile.goals).
 // Un besoin sans exercice pour le couvrir s'affiche « exercice à créer » dans l'espace coach.
@@ -137,6 +144,24 @@ export const CONDITIONS = {
     kind: 'posture',
     favor: { psoas_etirement: 1, quadri_etirement: 1, ischio_actif: 1, adducteurs_etirement: 1, rotation_hanche: 1, ouverture_pectorale: 1, dorsiflexion: 1, extension_thoracique: 1, ischio_passif: 1 },
   },
+  genou_recurvatum: {
+    label: 'Genoux qui partent en arrière (hyperextension)',
+    kind: 'posture',
+    adapt: {
+      unipodal: 'Pour toi : genou légèrement fléchi, jamais verrouillé.',
+      ischio_passif: 'Pour toi : genoux légèrement fléchis.',
+      flexion_genou_chargee: 'Pour toi : remonte sans verrouiller le genou.',
+    },
+    favor: { ischio_renfo: 2, mollet_renfo: 1, unipodal: 1 },
+    needs: { ischio_renfo: 2 },
+  },
+  pieds_creux: {
+    label: 'Pieds creux (voûte très haute, chevilles raides)',
+    kind: 'posture',
+    adapt: { impact: 'Pour toi : réception souple, amortis avec les genoux.' },
+    favor: { dorsiflexion: 2, compression_roller: 1, mollet_renfo: 1 },
+    needs: { dorsiflexion: 1 },
+  },
   hypermobilite: {
     label: 'Très souple, articulations laxes (hypermobilité)',
     kind: 'posture',
@@ -219,21 +244,150 @@ export const CONDITIONS = {
     favor: { fessier_renfo: 1, abducteurs_renfo: 1 },
   },
   tendinite_rotulienne: {
-    label: 'Tendinite rotulienne (devant du genou)',
+    label: 'Tendinopathie rotulienne (juste sous la rotule)',
     kind: 'douleur',
-    avoid: ['impact'],
-    adapt: { flexion_genou_chargee: 'Pour toi : descente lente, sans douleur au-dessus de 3/10.' },
-    favor: { fessier_renfo: 1, quadri_etirement: 1 },
-  },
-  tendinite_achille: {
-    label: 'Tendon d’Achille douloureux',
-    kind: 'douleur',
+    // Tendon du "sauteur" : on calme avec des maintiens (chaise, fente tenue), on évite la flexion profonde
+    // chargée et les sauts, puis on recharge progressivement
     avoid: ['impact'],
     adapt: {
-      mollet_renfo: 'Pour toi : descente très lente, sans douleur au-dessus de 3/10.',
+      flexion_genou_chargee: 'Pour toi : descente lente (3 s), douleur 3/10 maximum, et pas pire demain matin.',
+      flexion_genou_profonde: 'Pour toi : amplitude réduite, sans douleur sous la rotule.',
+      isometrique: 'Pour toi : 30 à 45 s, ça doit calmer la douleur, pas la réveiller.',
+    },
+    favor: { isometrique: 2, fessier_renfo: 1, quadri_etirement: 1 },
+    needs: { isometrique: 1 },
+  },
+  femoro_patellaire: {
+    label: 'Douleur autour de la rotule (escaliers, assis longtemps)',
+    kind: 'douleur',
+    // Syndrome fémoro-patellaire : la rotule frotte mal ; on renforce hanche et cuisse en amplitude confortable
+    avoid: ['impact', 'flexion_genou_profonde'],
+    adapt: {
+      flexion_genou_chargee: 'Pour toi : descends seulement jusqu’à 60-90°, genou dans l’axe du pied.',
+      appui_genou: 'Pour toi : un coussin sous le genou.',
+    },
+    favor: { abducteurs_renfo: 2, fessier_renfo: 2, isometrique: 1, quadri_etirement: 1 },
+    needs: { abducteurs_renfo: 1 },
+  },
+  tendinite_achille: {
+    label: 'Tendon d’Achille douloureux (milieu du tendon)',
+    kind: 'douleur',
+    // Corps du tendon : le travail excentrique et lent (descente sur une marche) est le traitement de base
+    avoid: ['impact'],
+    adapt: {
+      mollet_renfo: 'Pour toi : descente très lente, douleur 3/10 maximum, et pas pire demain matin.',
+      excentrique: 'Pour toi : 3 secondes pour descendre, remonte avec les deux pieds.',
       dorsiflexion: 'Pour toi : étirement doux, jamais en force.',
     },
-    favor: { mollet_renfo: 2 },
+    favor: { excentrique: 2, mollet_renfo: 2, isometrique: 1 },
+    needs: { mollet_renfo: 1 },
+  },
+  achille_insertion: {
+    label: 'Douleur au talon, là où s’attache le tendon d’Achille',
+    kind: 'douleur',
+    // Insertion du tendon : la flexion de cheville en fin d'amplitude l'écrase contre l'os -> ni étirement
+    // du mollet, ni descente sous le niveau du pied
+    avoid: ['impact'],
+    avoidIds: ['extension-jumeaux', 'jumeaux', 'soleaire', 'chien-tete-en-bas', 'knee-to-wall', 'fente-iso-soleaire', 'prying-squat'],
+    adapt: {
+      mollet_renfo: 'Pour toi : sur sol plat, ne descends jamais le talon sous le niveau du pied.',
+      dorsiflexion: 'Pour toi : amplitude réduite, talon un peu surélevé si besoin.',
+    },
+    favor: { mollet_renfo: 2, isometrique: 1 },
+    needs: { mollet_renfo: 1 },
+  },
+  tendinopathie_fessiere: {
+    label: 'Douleur sur le côté de la hanche (couché dessus, jambes croisées)',
+    kind: 'douleur',
+    // Tendons du moyen fessier : écrasés quand la cuisse passe devant l'autre -> pas de jambe croisée,
+    // pas d'étirement fessier croisé ni de rouleau sur le côté ; renfo latéral sans compression
+    avoid: ['adduction_hanche'],
+    adapt: {
+      unipodal: 'Pour toi : bassin bien horizontal, la hanche ne part pas sur le côté.',
+      adducteurs_etirement: 'Pour toi : amplitude douce.',
+    },
+    favor: { abducteurs_renfo: 2, isometrique: 2, fessier_renfo: 1 },
+    needs: { abducteurs_renfo: 1 },
+  },
+  ischio_proximal: {
+    label: 'Douleur sous la fesse, surtout assis (haut des ischios)',
+    kind: 'douleur',
+    // Attache haute des ischios : écrasée hanche très fléchie + jambe tendue -> pas d'étirement des ischios,
+    // pas de mise en tension ; pont et maintiens d'abord, amplitude courte
+    avoid: ['ischio_passif', 'tension_neurale'],
+    adapt: {
+      flexion_hanche_profonde: 'Pour toi : amplitude réduite, pas de tiraillement sous la fesse.',
+      ischio_renfo: 'Pour toi : amplitude courte au début, douleur 3/10 maximum.',
+    },
+    favor: { isometrique: 2, fessier_renfo: 2, ischio_renfo: 1 },
+    needs: { fessier_renfo: 1 },
+  },
+  pubalgie: {
+    label: 'Douleur à l’aine ou au pubis',
+    kind: 'douleur',
+    refer: true,
+    // Adducteurs et pubis : on n'étire pas l'adducteur irrité, on renforce adducteurs et tronc progressivement
+    avoid: ['impact', 'adducteurs_etirement'],
+    adapt: { flexion_genou_chargee: 'Pour toi : pas de grand écart latéral, pieds dans l’axe.' },
+    favor: { adducteurs_renfo: 2, isometrique: 1, anti_rotation: 2, anti_extension: 1 },
+    needs: { adducteurs_renfo: 1 },
+  },
+  epicondylite: {
+    label: 'Douleur au coude (extérieur, en serrant ou en portant)',
+    kind: 'douleur',
+    // Tendons de l'avant-bras : pas d'appui prolongé sur les mains en extension de poignet
+    avoid: ['appui_poignet'],
+    adapt: { poussee: 'Pour toi : poignets neutres, poings fermés si besoin.', etirement_bras: 'Pour toi : très doux.' },
+    favor: { retraction_scapulaire: 1, isometrique: 1 },
+  },
+  coiffe_rotateurs: {
+    label: 'Douleur à l’épaule quand le bras monte',
+    kind: 'douleur',
+    // Coiffe des rotateurs : on évite le bras haut chargé et les poussées lourdes, on renforce les omoplates
+    avoid: ['poussee'],
+    avoidIds: ['dips-chaise', 'burpees'],
+    adapt: { elevation_bras: 'Pour toi : monte seulement jusqu’à la hauteur des épaules, sans douleur.' },
+    favor: { retraction_scapulaire: 2, extension_thoracique: 1, isometrique: 1 },
+    needs: { retraction_scapulaire: 1 },
+  },
+  lombalgie_flexion: {
+    label: 'Mal au dos en me penchant ou assis longtemps',
+    kind: 'douleur',
+    refer: true,
+    // Dos qui supporte mal la flexion (souvent discal) : on évite d'arrondir le bas du dos, surtout en charge,
+    // on privilégie le gainage et une extension douce
+    avoid: ['flexion_lombaire', 'ischio_passif', 'jambes_tendues_levees'],
+    adapt: { flexion_hanche_profonde: 'Pour toi : dos neutre, n’arrondis pas le bas du dos.', charge_axiale: 'Pour toi : charge légère, dos neutre.' },
+    favor: { anti_extension: 2, anti_rotation: 2, extension_lombaire: 1, fessier_renfo: 1 },
+  },
+  lombalgie_extension: {
+    label: 'Mal au dos debout longtemps ou cambré',
+    kind: 'douleur',
+    refer: true,
+    // Dos qui supporte mal l'extension (facettes, souvent avec hyperlordose) : pas de cambrure,
+    // rétroversion et gainage, arrondir doucement soulage
+    avoid: ['extension_lombaire_active', 'extension_lombaire_passive', 'jambes_tendues_levees'],
+    adapt: { risque_cambrure: 'Pour toi : rétroversion, ventre rentré, jamais de cambrure.', extension_lombaire: 'Pour toi : creuse à peine.' },
+    favor: { retroversion: 2, anti_extension: 2, flexion_lombaire: 1, psoas_etirement: 1 },
+    needs: { retroversion: 1 },
+  },
+  fracture_fatigue: {
+    label: 'Douleur précise sur un os qui augmente en courant (fracture de fatigue ?)',
+    kind: 'douleur',
+    refer: true,
+    avoid: ['impact', 'charge_axiale', 'unipodal'],
+    favor: { anti_extension: 1, retraction_scapulaire: 1, isometrique: 1 },
+  },
+  piriforme: {
+    label: 'Douleur profonde dans la fesse qui peut descendre (piriforme)',
+    kind: 'douleur',
+    // Le nerf sciatique passe sous le piriforme : glissement nerveux doux, pas de compression prolongée
+    adapt: {
+      adduction_hanche: 'Pour toi : étirement doux, jamais jusqu’au fourmillement.',
+      tension_neurale: 'Pour toi : arrête si ça descend dans la jambe.',
+    },
+    favor: { neurodynamique: 2, fessier_renfo: 1, abducteurs_renfo: 1 },
+    needs: { neurodynamique: 2 },
   },
   fasciite_plantaire: {
     label: 'Douleur sous le pied (fasciite plantaire)',

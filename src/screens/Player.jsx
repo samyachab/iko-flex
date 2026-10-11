@@ -241,6 +241,7 @@ export default function Player({ routine, onFinish, onQuit }) {
   const pausedLeft = useRef(0)
   const startedAt = useRef(Date.now()) // début de l'étape (séries à ton rythme)
   const workedMs = useRef(0) // temps d'effort réellement fait (pour la règle des 70 %)
+  const counted = useRef({}) // effort compté par étape, retiré si on revient sur cette étape
   const step = steps[i]
   const tone = TONES[routine.key]
   const total = steps[steps.length - 1].w + 1 // une pastille par effort (séries d'un même exercice regroupées)
@@ -268,11 +269,14 @@ export default function Player({ routine, onFinish, onQuit }) {
   // L'horloge de l'étape suivante est posée AVANT le re-render,
   // pour que l'anneau de l'orbe parte directement avec la bonne durée.
   const advance = (withSound = true) => {
+    let done = 0
     if (step.phase === 'work' && step.reps) {
       // Série à ton rythme : comptée entière si elle a duré au moins 5 s (évite de valider en passant)
       const elapsed = Date.now() - startedAt.current
-      workedMs.current += elapsed >= 5000 ? step.duration * 1000 : elapsed
-    } else if (step.phase === 'work') workedMs.current += step.duration * 1000 - leftMs()
+      done = elapsed >= 5000 ? step.duration * 1000 : elapsed
+    } else if (step.phase === 'work') done = step.duration * 1000 - leftMs()
+    workedMs.current += done
+    counted.current[i] = done
     if (withSound && step.phase === 'work') beep.workEnd()
     if (i === steps.length - 1) {
       onFinish({ workedMs: workedMs.current, plannedMs })
@@ -285,6 +289,22 @@ export default function Player({ routine, onFinish, onQuit }) {
     setPaused(false)
     startedAt.current = Date.now()
     setI(i + 1)
+  }
+
+  // Retour à l'étape précédente (on la refait en entier ; son effort déjà compté est retiré)
+  const goBack = () => {
+    if (i === 0) return
+    const target = i - 1
+    workedMs.current -= counted.current[target] ?? 0
+    delete counted.current[target]
+    stopSpeech()
+    const prev = steps[target]
+    endAt.current = Date.now() + prev.duration * 1000
+    lastSec.current = prev.duration
+    setRemaining(prev.duration)
+    setPaused(false)
+    startedAt.current = Date.now()
+    setI(target)
   }
 
   // Début de chaque étape : annonce vocale + signal sonore
@@ -333,7 +353,8 @@ export default function Player({ routine, onFinish, onQuit }) {
     onQuit()
   }
 
-  // Glisser franchement à l'horizontale (> 70 px, peu de vertical) = passer à l'étape suivante
+  // Glisser franchement à l'horizontale (> 70 px, peu de vertical) : vers la gauche = étape suivante,
+  // vers la droite = étape précédente
   const swipeFrom = useRef(null)
   const swipe = {
     start: (e) => (swipeFrom.current = { x: e.clientX, y: e.clientY }),
@@ -344,7 +365,10 @@ export default function Player({ routine, onFinish, onQuit }) {
       if (!from) return
       const dx = e.clientX - from.x
       const dy = e.clientY - from.y
-      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) advance(false)
+      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) {
+        if (dx < 0) advance(false)
+        else goBack()
+      }
     },
   }
 
@@ -538,16 +562,25 @@ export default function Player({ routine, onFinish, onQuit }) {
           {step.set === step.sets && step.side !== 1 ? 'Exercice terminé ✓' : 'Série terminée ✓'}
         </motion.button>
       )}
+      {repMode && (
+        <button onClick={goBack} disabled={i === 0} className="mt-2 shrink-0 self-center px-3 py-1.5 text-xs text-white/35 disabled:opacity-0">
+          ‹ Étape précédente
+        </button>
+      )}
 
       {/* Contrôles discrets : l'essentiel se fait au geste (toucher l'orbe = pause, glisser = passer) */}
       {!repMode && (
         <div className="mt-3 flex shrink-0 items-center justify-center gap-5 text-xs text-white/35">
+          <button onClick={goBack} disabled={i === 0} className="px-2 py-1.5 disabled:opacity-0">
+            ‹ Retour
+          </button>
+          <span className="h-3 w-px bg-white/15" />
           <button onClick={togglePause} className="px-2 py-1.5">
             {paused ? '▶ Reprendre' : 'Toucher l’orbe : pause'}
           </button>
           <span className="h-3 w-px bg-white/15" />
           <button onClick={() => advance(false)} className="px-2 py-1.5">
-            Glisser : passer ›
+            Passer ›
           </button>
         </div>
       )}
