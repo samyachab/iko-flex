@@ -24,9 +24,9 @@ export const TENDON_PROGRAMS = {
   tendinite_rotulienne: {
     tendon: 'tendon rotulien',
     phases: [
-      { ...CALM, exercises: [{ id: 'chaise', ...ISO }, { id: 'fente-iso', ...ISO_SIDE }] },
-      { ...BUILD, exercises: [{ id: 'squat' }, { id: 'fentes-bulgares' }, { id: 'step-ups' }, { id: 'chaise', sets: 2, amount: 45, rest: 45 }] },
-      { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'squat-saute', sets: 2 }, { id: 'pogo', sets: 2 }, { id: 'fentes-bulgares' }] },
+      { ...CALM, exercises: [{ id: 'spanish-squat', ...ISO }, { id: 'chaise', ...ISO }, { id: 'fente-iso', ...ISO_SIDE }] },
+      { ...BUILD, exercises: [{ id: 'squat-incline-unipodal' }, { id: 'spanish-squat', sets: 3, amount: 45, rest: 45 }, { id: 'fentes-bulgares' }, { id: 'squat' }] },
+      { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'drop-squat-stanish' }, { id: 'squat-saute', sets: 2 }, { id: 'pogo', sets: 2 }] },
     ],
   },
   femoro_patellaire: {
@@ -40,11 +40,11 @@ export const TENDON_PROGRAMS = {
   tendinite_achille: {
     tendon: 'tendon d’Achille',
     phases: [
-      { ...CALM, exercises: [{ id: 'fente-iso-soleaire', ...ISO_SIDE }, { id: 'soleaire-assis' }] },
+      { ...CALM, exercises: [{ id: 'mollet-iso', ...ISO_SIDE }, { id: 'fente-iso-soleaire', ...ISO_SIDE }, { id: 'soleaire-assis' }] },
       {
         ...BUILD,
         note: 'Descente lente sur la marche (excentrique) : 3 s pour descendre, remonte avec les deux pieds. Douleur 3/10 maximum.',
-        exercises: [{ id: 'extension-jumeaux' }, { id: 'soleaire-assis' }, { id: 'mollets-debout' }],
+        exercises: [{ id: 'extension-jumeaux' }, { id: 'alfredson-genou-plie' }, { id: 'soleaire-assis' }],
       },
       { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'pogo', sets: 2 }, { id: 'cloche-pied', sets: 2 }, { id: 'extension-jumeaux' }] },
     ],
@@ -55,8 +55,7 @@ export const TENDON_PROGRAMS = {
       {
         ...CALM,
         note: 'Sur sol plat : monte sur la pointe et tiens. Jamais le talon sous le niveau du pied.',
-        exercises: [{ id: 'mollets-debout' }, { id: 'soleaire-assis' }],
-        missing: 'Maintien sur la pointe des pieds, sol plat (isométrique mollet)',
+        exercises: [{ id: 'mollet-iso', ...ISO_SIDE }, { id: 'mollets-debout' }, { id: 'soleaire-assis' }],
       },
       { ...BUILD, note: 'Lent et lourd, toujours sur sol plat : 3 s pour monter, 3 s pour descendre.', exercises: [{ id: 'soleaire-assis' }, { id: 'mollets-debout' }] },
       { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'pogo', sets: 2 }, { id: 'mollets-debout' }] },
@@ -80,7 +79,7 @@ export const TENDON_PROGRAMS = {
         missing: 'Pont tenu sur les talons, genoux peu fléchis (isométrique ischios)',
       },
       { ...BUILD, note: 'Charge progressive, amplitude qui s’ouvre petit à petit. 3/10 maximum.', exercises: [{ id: 'pont-1-jambe' }, { id: 'sl-rdl' }, { id: 'hip-thrust-kb' }] },
-      { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'sl-rdl' }, { id: 'step-ups' }, { id: 'skater-jumps', sets: 2 }] },
+      { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'nordic-sol' }, { id: 'sl-rdl' }, { id: 'skater-jumps', sets: 2 }] },
     ],
   },
   coiffe_rotateurs: {
@@ -108,14 +107,14 @@ export const TENDON_PROGRAMS = {
     tendon: 'aine (adducteurs)',
     phases: [
       { ...CALM, exercises: [{ id: 'pallof-press' }, { id: 'gainage-lateral', ...ISO_SIDE }], missing: 'Serrer un ballon entre les genoux, tenu (isométrique adducteurs)' },
-      { ...BUILD, exercises: [{ id: 'pallof-press' }, { id: 'gainage-lateral-dynamique' }, { id: 'monster-walks' }], missing: 'Planche latérale Copenhague (renfo adducteurs)' },
+      { ...BUILD, exercises: [{ id: 'copenhague' }, { id: 'pallof-press' }, { id: 'gainage-lateral-dynamique' }] },
       { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'skater-jumps', sets: 2 }, { id: 'horloge' }, { id: 'pallof-press' }] },
     ],
   },
   fasciite_plantaire: {
     tendon: 'voûte plantaire',
     phases: [
-      { ...CALM, note: 'Montée lente sur la pointe, orteils relevés si possible. 3/10 maximum.', exercises: [{ id: 'mollets-debout' }, { id: 'soleaire-assis' }] },
+      { ...CALM, note: 'Montée lente sur la pointe, orteils relevés si possible. 3/10 maximum.', exercises: [{ id: 'mollet-iso', ...ISO_SIDE }, { id: 'mollets-debout' }, { id: 'soleaire-assis' }] },
       { ...BUILD, exercises: [{ id: 'extension-jumeaux' }, { id: 'soleaire-assis' }, { id: 'mollets-debout' }] },
       { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'pogo', sets: 2 }, { id: 'extension-jumeaux' }] },
     ],

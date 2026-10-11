@@ -85,7 +85,7 @@ export const CONDITIONS = {
     kind: 'posture',
     // Pas de douleur actuelle : on garde les impacts, on renforce et on soigne l'amorti
     adapt: { impact: 'Pour toi : réception silencieuse sur l’avant du pied, chevilles souples.' },
-    favor: { tibial_renfo: 2, flexion_plantaire_etirement: 1, mollet_renfo: 1, dorsiflexion: 1 },
+    favor: { tibial_renfo: 2, eversion_renfo: 2, flexion_plantaire_etirement: 1, mollet_renfo: 1, dorsiflexion: 1 },
     needs: { tibial_renfo: 2 },
   },
 
@@ -191,7 +191,7 @@ export const CONDITIONS = {
     label: 'Périostite tibiale',
     kind: 'douleur',
     avoid: ['impact'],
-    favor: { tibial_renfo: 2, mollet_renfo: 1, dorsiflexion: 1 },
+    favor: { tibial_renfo: 2, eversion_renfo: 1, mollet_renfo: 1, dorsiflexion: 1 },
     needs: { tibial_renfo: 1 },
   },
   tfl: {
@@ -400,8 +400,8 @@ export const CONDITIONS = {
     label: 'Cheville fragile (entorses à répétition)',
     kind: 'douleur',
     adapt: { impact: 'Pour toi : sauts bas et contrôlés, réception stable.' },
-    favor: { unipodal: 2, mollet_renfo: 1, tibial_renfo: 1 },
-    needs: { unipodal: 2 },
+    favor: { unipodal: 2, eversion_renfo: 2, mollet_renfo: 1, tibial_renfo: 1 },
+    needs: { unipodal: 2, eversion_renfo: 2 },
   },
   cervicalgie: {
     label: 'Douleur à la nuque',

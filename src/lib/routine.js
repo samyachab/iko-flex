@@ -220,7 +220,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
 
 // Séance « Mon tendon » : les exercices de la phase en cours de chaque programme tendon, dosés pour la phase
 // (ex. 4 x 45 s de maintien en phase « Calmer »). Même rendu que le renfo (couleurs, série, historique).
-const TENDON_MAX_PER_PROGRAM = 3
+const TENDON_MAX_PER_PROGRAM = 2 // 2 exercices par tendon : une séance de 10 à 12 minutes
 export function buildTendonRoutine(settings = getSettings(), rules = currentRules()) {
   const config = ROUTINES.renfo
   const chosen = settings.renfo.level
