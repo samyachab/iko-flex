@@ -1080,20 +1080,20 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Sur le dos, genoux pliés, mains aux tempes : les épaules décollent en enroulant le haut du dos.
+  // Sur le dos, genoux pliés, mains derrière la tête : les épaules décollent en enroulant le haut du dos.
   'crunch': {
     view: 'side',
-    base: { torso: -90, head: -90, armN: [-38.3, 178.2], armF: [-27.8, -172.6], legN: [140, 0, 90], legF: [140, 0, 90] },
+    base: { torso: -90, head: -90, armN: [-160, -6.3], armF: [-166, -11.9], fs: { foreN: 1, foreF: 1 }, legN: [140, 0, 90], legF: [140, 0, 90] },
     keys: [
       { pose: {  }, hold: 0.3, move: 1 },
-      { pose: { torso: -114, head: -124, armN: [-69.8, 152.2], armF: [-61.2, 156.3] }, hold: 0.8, move: 1.6 },
+      { pose: { torso: -114, head: -124, armN: [-184, -30.5], armF: [-190, -36.5], fs: { foreN: 0.9, foreF: 0.9 } }, hold: 0.8, move: 1.6 },
     ],
   },
 
-  // Sur le dos, mains aux tempes : un genou monte vers la poitrine pendant que l’autre jambe se tend, en alternance.
+  // Sur le dos, mains derrière la tête, épaules décollées : un genou monte vers la poitrine pendant que l’autre jambe se tend, en alternance.
   'bicycle-crunch': {
     view: 'side',
-    base: { torso: -112, head: -122, armN: [-69.8, 152.2], armF: [-61.2, 156.3], legN: [200, 110, 200], legF: [104, 104, 190] },
+    base: { torso: -112, head: -122, armN: [-182, -28.5], armF: [-188, -34.5], fs: { foreN: 0.9, foreF: 0.9 }, legN: [200, 110, 200], legF: [104, 104, 190] },
     keys: [
       { pose: {  }, hold: 0.2, move: 0.8 },
       { pose: { legN: [104, 104, 190], legF: [200, 110, 200] }, hold: 0.2, move: 0.8 },
@@ -1110,13 +1110,15 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Vue de face, assis buste incliné, genoux pliés : les mains jointes vont toucher le sol d’un côté puis de l’autre.
+  // Vue de face, assis buste incliné, genoux pliés : les mains jointes vont toucher le sol d’un côté, reviennent devant la poitrine, puis vont de l’autre côté.
   'russian-twist': {
     view: 'front',
     base: { torso: 180, legN: [150, 10, 90], fs: { torso: 0.9, thighN: 0.5, thighF: 0.5, shinN: 0.8, shinF: 0.8, footN: 0.4, footF: 0.4 } },
     keys: [
-      { pose: { torso: 166, armN: [36.7, -25.3], armF: [61.3, 14.4] }, hold: 0.2, move: 0.7 },
-      { pose: { torso: 194, armN: [-58.3, -22.8], armF: [-33.5, 29.5] }, hold: 0.2, move: 0.7 },
+      { pose: { torso: 180, armN: [29.8, -94.9], armF: [-29.8, 94.9] }, hold: 0.1, move: 0.5 },
+      { pose: { torso: 168, armN: [-15.6, 36.4], armF: [29.5, 48] }, hold: 0.2, move: 0.5 },
+      { pose: { torso: 180, armN: [29.8, -94.9], armF: [-29.8, 94.9] }, hold: 0.1, move: 0.5 },
+      { pose: { torso: 192, armN: [-29.5, -48], armF: [15.6, -36.4] }, hold: 0.2, move: 0.5 },
     ],
   },
 
@@ -1142,14 +1144,14 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Mains sur une chaise, corps gainé : la poitrine descend vers la chaise, puis on repousse.
+  // Mains sur une chaise, corps gainé : la poitrine descend vers le bord de la chaise, coudes vers l’arrière, puis on repousse.
   'pompes-inclinees': {
     view: 'side',
     props: [{ type: 'box', x1: 18.1, x2: 52.1, top: -40 }],
     base: { y: 62.7, torso: 137, head: 131, armN: [0, 0], armF: [0, 0], legN: [-43, -43, 60], legF: [-43, -43, 60] },
     keys: [
       { pose: {  }, hold: 0.3, move: 1.6 },
-      { pose: { y: 47.8, x: 12.3, torso: 122, head: 116, armN: [12.9, -84.2], armF: [12.9, -84.2], legN: [-58, -58, 60], legF: [-58, -58, 60] }, hold: 0.3, move: 1 },
+      { pose: { y: 45.6, x: 13.6, torso: 120, head: 114, armN: [-90.4, 11.1], armF: [-90.4, 11.1], legN: [-60, -60, 60], legF: [-60, -60, 60] }, hold: 0.3, move: 1 },
     ],
   },
 
@@ -1164,13 +1166,13 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Sur le dos, genoux pliés, épaules décollées : une main glisse vers le talon du même côté, puis l’autre.
+  // Sur le dos, genoux pliés, épaules décollées : le buste se plie sur le côté et la main va toucher le talon, puis de l’autre côté.
   'heel-touches': {
     view: 'side',
-    base: { torso: -110, head: -122, armN: [70, 80], armF: [70, 80], legN: [140, 0, 90], legF: [140, 0, 90] },
+    base: { torso: -110, head: -122, armN: [74.5, 74.5], armF: [74.5, 74.5], legN: [140, 0, 90], legF: [140, 0, 90] },
     keys: [
-      { pose: { armN: [74, 75.8] }, hold: 0.2, move: 0.6 },
-      { pose: { armF: [74, 75.8] }, hold: 0.2, move: 0.6 },
+      { pose: { torso: -108, fs: { upperN: 1.3, foreN: 1.3, upperF: 0.7, foreF: 0.7 } }, hold: 0.2, move: 0.6 },
+      { pose: { torso: -112, fs: { upperN: 0.7, foreN: 0.7, upperF: 1.3, foreF: 1.3 } }, hold: 0.2, move: 0.6 },
     ],
   },
 
@@ -1184,13 +1186,13 @@ export const EXTRA_ANIMATIONS = {
     ],
   },
 
-  // Sur le dos, jambes tendues à la verticale : les épaules décollent, les mains vont vers les pointes de pieds.
+  // Sur le dos, jambes tendues à la verticale : les épaules décollent, les bras tendus vont vers les pointes de pieds.
   'toe-touch-crunch': {
     view: 'side',
-    base: { torso: -90, head: -90, armN: [160, 160], armF: [156, 156], legN: [180, 180, 270], legF: [180, 180, 270] },
+    base: { torso: -90, head: -90, armN: [166, 166], armF: [162, 162], legN: [180, 180, 270], legF: [180, 180, 270] },
     keys: [
       { pose: {  }, hold: 0.3, move: 1 },
-      { pose: { torso: -122, head: -140, armN: [179.7, 110.6], armF: [185.1, 106.4] }, hold: 0.5, move: 1.6 },
+      { pose: { torso: -122, head: -142, armN: [146.5, 146.5], armF: [143.5, 143.5] }, hold: 0.5, move: 1.6 },
     ],
   },
 
@@ -1274,7 +1276,6 @@ export const EXTRA_ANIMATIONS = {
       { pose: { y: 99.5, armN: [172, 176], armF: [168, 174], legN: [0, 0, 30], legF: [-4, -4, 30] }, hold: 0.1, move: 0.4 },
     ],
   },
-
   // ═════════ Tendons (excentrique, isométrie) & glissement nerveux ═════════
 
   // Allongé sur le dos, cuisse tenue vers la poitrine : la jambe se tend pointe tirée, puis se replie, en rythme.
