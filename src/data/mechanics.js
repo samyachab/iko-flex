@@ -40,6 +40,7 @@ export const MECHANICS = {
   dorsiflexion: { label: 'Dorsiflexion', desc: 'Genou qui avance au-dessus du pied, talon au sol.' },
   flexion_plantaire_etirement: { label: 'Étirement dessus du pied', desc: 'Pointe tendue, tibial antérieur étiré.' },
   mollet_renfo: { label: 'Renfo mollets', desc: 'Montées sur pointe, mollets et soléaires.' },
+  eversion_renfo: { label: 'Renfo fibulaires', desc: 'Le pied pousse vers l’extérieur contre une résistance (côté externe du tibia).' },
   tibial_renfo: { label: 'Renfo tibial', desc: 'Relevés de pointe, devant du tibia.' },
   unipodal: { label: 'Sur une jambe', desc: 'Équilibre sur un pied.' },
   impact: { label: 'Impacts', desc: 'Sauts et réceptions.' },

@@ -98,7 +98,11 @@ const GENERAL_IDS = new Set([
   'burpees',
 ])
 
+// Tendons & glissement nerveux, ajoutés le 12 octobre 2026
+const TENDON_IDS = new Set(['glissement-sciatique', 'drop-squat-stanish', 'alfredson-genou-plie', 'squat-incline-unipodal', 'spanish-squat', 'mollet-iso', 'nordic-sol', 'copenhague', 'eversion-elastique'])
+
 const FILTERS = {
+  tendons: { label: 'Tendons', test: (e) => TENDON_IDS.has(e.id) },
   generale: { label: 'Générale', test: (e) => GENERAL_IDS.has(e.id) },
   nouveaux: { label: 'Nouveaux', test: (e) => NEW_IDS.has(e.id) },
   souplesse: { label: 'Souplesse', test: (e) => e.theme === 'souplesse' },
@@ -109,7 +113,7 @@ const FILTERS = {
 // Page cachée (#lab) : toutes les animations en boucle, pour valider le style et les poses.
 export default function Lab({ onBack }) {
   const [paused, setPaused] = useState(false)
-  const [filter, setFilter] = useState('generale')
+  const [filter, setFilter] = useState('tendons')
   const animated = EXERCISES.filter((e) => ANIMATIONS[e.id])
   const done = animated.filter(FILTERS[filter].test)
   const todo = EXERCISES.filter((e) => !ANIMATIONS[e.id] && e.theme !== 'salle')

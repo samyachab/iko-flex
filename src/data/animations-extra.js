@@ -1274,4 +1274,105 @@ export const EXTRA_ANIMATIONS = {
       { pose: { y: 99.5, armN: [172, 176], armF: [168, 174], legN: [0, 0, 30], legF: [-4, -4, 30] }, hold: 0.1, move: 0.4 },
     ],
   },
+
+  // ═════════ Tendons (excentrique, isométrie) & glissement nerveux ═════════
+
+  // Allongé sur le dos, cuisse tenue vers la poitrine : la jambe se tend pointe tirée, puis se replie, en rythme.
+  'glissement-sciatique': {
+    view: 'side',
+    base: { torso: -90, head: -90, armN: [150, 80], armF: [146, 82], legN: [200, 112, 200], legF: [90, 90, 180] },
+    keys: [
+      { pose: { head: -98 }, hold: 0.2, move: 1.2 },
+      { pose: { head: -84, legN: [200, 172, 262] }, hold: 0.2, move: 1.2 },
+    ],
+  },
+
+  // Debout, descente rapide mais freinée en demi-squat, puis remontée normale.
+  'drop-squat-stanish': {
+    view: 'side',
+    base: { armN: [12, 18], armF: [8, 14], legN: [0, 0, 90], legF: [0, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.5, move: 0.6 },
+      { pose: { x: -14, torso: 160, head: 168, armN: [80, 86], armF: [76, 82], legN: [58, -16, 90], legF: [56, -17, 90] }, hold: 0.4, move: 1.4 },
+    ],
+  },
+
+  // Sur une jambe au bord d’une marche, genou légèrement plié : le talon descend lentement sous la marche.
+  'alfredson-genou-plie': {
+    view: 'side',
+    props: [{ type: 'box', x1: -40, x2: 6, top: -20 }, { type: 'wall', x: 46 }],
+    base: { x: -5, y: 99.2, legN: [17.1, -14.8, 55], torso: 176, armN: [72, 88], armF: [8, 10], legF: [-6, -70, -15] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 3 },
+      { pose: { x: -5.3, y: 87.1, legN: [17.1, -14.8, 122], armN: [68, 84] }, hold: 0.3, move: 1 },
+    ],
+  },
+
+  // Talon posé sur un livre, descente lente sur une jambe, genou vers l’avant, l’autre jambe tendue devant.
+  'squat-incline-unipodal': {
+    view: 'side',
+    props: [{ type: 'box', x1: -10, x2: 6, top: -8 }],
+    base: { y: 85, armN: [40, 70], armF: [36, 66], legN: [6.5, -6.8, 65], legF: [30, 10, 90] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 3 },
+      { pose: { x: -10, y: 52, torso: 166, head: 172, armN: [80, 86], armF: [76, 82], legN: [67.3, -44.1, 65], legF: [72, 60, 150] }, hold: 0.3, move: 1.2 },
+    ],
+  },
+
+  // Élastique derrière les genoux accroché devant : assis en arrière, tibias verticaux, on tient.
+  'spanish-squat': {
+    view: 'side',
+    props: [{ type: 'box', x1: 62, x2: 80, top: -40 }, { type: 'band', from: 'kneeN', to: [62, -36] }],
+    base: { armN: [12, 18], armF: [8, 14], legN: [0, 0, 90], legF: [0, 0, 90] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1.8 },
+      { pose: { x: -35.7, torso: 168, head: 172, armN: [78, 84], armF: [74, 80], legN: [70, 0, 90], legF: [70, 0, 90] }, hold: 3.2, move: 1.6 },
+    ],
+  },
+
+  // Debout sur une jambe, main au mur : le talon monte à mi-hauteur et on tient sans bouger.
+  'mollet-iso': {
+    view: 'side',
+    props: [{ type: 'wall', x: 50 }],
+    base: { armN: [64, 92], armF: [6, 8], legN: [2, 0, 90], legF: [-6, -70, -15] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 1 },
+      { pose: { legN: [2, 0, 62] }, hold: 3.4, move: 1 },
+    ],
+  },
+
+  // À genoux, chevilles bloquées sous un canapé : le corps bascule vers l’avant d’un bloc en freinant, les mains se préparent.
+  'nordic-sol': {
+    view: 'side',
+    props: [{ type: 'box', x1: -80, x2: -44, top: -16 }],
+    base: { x: 0, torso: 180, head: 184, legN: [0, -90, -90], legF: [0, -90, -90], armN: [20, 40], armF: [16, 36] },
+    keys: [
+      { pose: {  }, hold: 0.4, move: 3 },
+      { pose: { x: 31.1, torso: 125, head: 129, legN: [-55, -90, -90], legF: [-55, -90, -90], armN: [70, 76], armF: [66, 72] }, hold: 0.2, move: 1.6 },
+    ],
+  },
+
+  // Vue de face, gainage sur un coude, genou du dessus posé sur un tabouret : le bassin monte et la jambe du dessous vient serrer le tabouret.
+  'copenhague': {
+    view: 'front',
+    props: [{ type: 'box', x1: 28.6, x2: 80.6, top: -32.9 }],
+    base: { torso: -105, head: -100, armN: [0, 0], armF: [-20, 40], legN: [75, 75, 165], legF: [75, 90, 175], fs: { foreN: 0.3, footN: 0.4, footF: 0.4 } },
+    keys: [
+      { pose: { torso: -116, head: -108, legN: [100, 92, 170], legF: [91, 90, 175], fs: { foreN: 0.3, footN: 0.4, footF: 0.4, thighF: 1 } }, hold: 0.4, move: 1.6 },
+      { pose: {  }, hold: 3, move: 1.4 },
+    ],
+  },
+
+  // Vu de dessus, assis jambes tendues, élastique accroché du côté intérieur : le pied pousse vers l’extérieur, puis revient lentement.
+  'eversion-elastique': {
+    view: 'front',
+    ground: false,
+    hipHeight: 0,
+    props: [{ type: 'mat', x1: -70, y1: -40, x2: 70, y2: 96 }, { type: 'band', from: 'toeN', to: [-40, 84] }],
+    base: { torso: 180, head: 180, armN: [40, 30], legN: [2, 0, 0], legF: [-2, 0, 0], fs: { torso: 0.3, head: 0.2, upperN: 0.6, foreN: 0.6, upperF: 0.6, foreF: 0.6, footN: 0.4, footF: 0.4 } },
+    keys: [
+      { pose: {  }, hold: 0.3, move: 0.8 },
+      { pose: { legN: [2, 0, 70], fs: { footN: 0.9 } }, hold: 0.6, move: 1.4 },
+    ],
+  },
 }
