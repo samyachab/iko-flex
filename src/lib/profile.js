@@ -9,6 +9,7 @@ import { CONDITIONS, SPORTS } from '../data/conditions.js'
 import { MECHANICS } from '../data/mechanics.js'
 import { DEFAULT_PROFILE, PROFILES } from '../data/profiles.js'
 import { EXERCISES } from '../data/exercises.js'
+import { activePrograms } from './tendon.js'
 
 const KEY = 'iko-flex:profile'
 
@@ -50,6 +51,7 @@ export function resolveProfile(profile) {
   const conditions = [...(profile.posture_issues ?? []), ...(profile.pain_points ?? []), ...(profile.goals ?? [])].filter(
     (c) => CONDITIONS[c],
   )
+  const programs = activePrograms(profile, conditions) // programmes tendon (phase en cours)
   const avoid = new Map() // mécanique -> conditions qui l'interdisent
   const avoidIds = new Map() // exercice -> conditions qui l'interdisent (cas précis, ex. tendon d'Achille au talon)
   const adapt = new Map() // mécanique -> consignes en plus
@@ -64,7 +66,9 @@ export function resolveProfile(profile) {
 
   for (const id of conditions) {
     const c = CONDITIONS[id]
-    for (const m of c.avoid ?? []) push(avoid, m, c.label)
+    // Programme tendon en phase « Rebondir » : certaines mécaniques reviennent (ex. les impacts)
+    const allowed = programs.find((p) => p.cond === id)?.phase.allow ?? []
+    for (const m of c.avoid ?? []) if (!allowed.includes(m)) push(avoid, m, c.label)
     for (const id of c.avoidIds ?? []) push(avoidIds, id, c.label)
     for (const [m, text] of Object.entries(c.adapt ?? {})) push(adapt, m, text)
     addFavor(c.favor)
@@ -76,6 +80,8 @@ export function resolveProfile(profile) {
   for (const [m, text] of Object.entries(rules.adapt ?? {})) push(adapt, m, text)
   addNeeds(rules.force_include)
   addFavor(rules.favor)
+  // Exercices de la phase en cours d'un programme tendon : passent devant dans toutes les séances
+  const tendonIds = new Set(programs.flatMap((p) => p.phase.exercises.map((e) => e.id)))
 
   const overrides = rules.overrides ?? {}
   const replaced = new Map() // exercice remplacé -> remplaçant
@@ -92,12 +98,17 @@ export function resolveProfile(profile) {
     overrides,
     replaced,
     substitutes: new Set(replaced.values()),
+    programs,
+    tendonIds,
     keys: new Set(profile.keys ?? []),
     refer: conditions.filter((c) => CONDITIONS[c].refer),
   }
 }
 
 // Règles du profil actif (calculées une fois par profil)
+// À appeler quand le carnet de douleur change (la phase d'un programme tendon peut changer)
+export const refreshRules = () => cache.clear()
+
 export function currentRules(id = getProfileId()) {
   if (!cache.has(id)) cache.set(id, resolveProfile(profiles[id] ?? profiles[DEFAULT_PROFILE]))
   return cache.get(id)
@@ -117,7 +128,10 @@ export function assess(ex, rules = currentRules()) {
   if (rules.replaced.has(ex.id)) blockedBy.push(`remplacé par ${rules.replaced.get(ex.id)}`)
 
   // Un remplaçant prend la place (et la fréquence) de l'exercice remplacé
-  const score = mech.reduce((s, m) => s + (rules.favor.get(m) ?? 0), 0) + (rules.substitutes.has(ex.id) ? 4 : 0)
+  const score =
+    mech.reduce((s, m) => s + (rules.favor.get(m) ?? 0), 0) +
+    (rules.substitutes.has(ex.id) ? 4 : 0) +
+    (rules.tendonIds?.has(ex.id) ? 4 : 0)
   const notes = [...new Set(mech.flatMap((m) => rules.adapt.get(m) ?? []))]
   if (o.warning) notes.unshift(o.warning)
   return {

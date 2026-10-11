@@ -24,7 +24,7 @@ function buildSteps(routine) {
       const sides = ex.unilateral ? [1, 2] : [undefined]
       steps.push({ phase: 'rest', ex, w, sets, set: 1, side: sides[0], duration: routine.rest })
       for (let set = 1; set <= sets; set++) {
-        if (set > 1) steps.push({ phase: 'rest', ex, w, sets, set, side: sides[0], recover: true, duration: ex.prog.rest })
+        if (set > 1) steps.push({ phase: 'rest', ex, w, sets, set, side: sides[0], recover: true, duration: plan.rest ?? ex.prog.rest })
         sides.forEach((side, k) => {
           if (k > 0) steps.push({ phase: 'rest', ex, w, sets, set, side, switch: true, duration: routine.rest })
           steps.push({ ...base, phase: 'work', set, side })

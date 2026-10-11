@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import { getCalendar, getStreaks } from '../lib/streaks.js'
-import { routineInfo } from '../lib/routine.js'
+import { buildTendonRoutine, routineInfo } from '../lib/routine.js'
+import { currentRules } from '../lib/profile.js'
 import { AVATARS, TONES, gradient, rise } from '../lib/theme.js'
 
 const CARDS = {
@@ -103,6 +104,47 @@ function Calendar({ days }) {
         })}
       </div>
     </div>
+  )
+}
+
+// Programme tendon en cours : une séance courte et dédiée, en tête de l'accueil
+function TendonCard({ delay, onLaunch }) {
+  const programs = currentRules().programs ?? []
+  if (!programs.length) return null
+  const t = TONES.renfo
+  const routine = buildTendonRoutine()
+  const minutes = Math.max(1, Math.round(routine.totalSeconds / 60))
+  const launch = (e) => {
+    const orb = e.currentTarget.querySelector('[data-orb]').getBoundingClientRect()
+    onLaunch('tendon', { x: orb.left + orb.width / 2, y: orb.top + orb.height / 2 })
+  }
+  return (
+    <motion.button
+      {...rise(delay)}
+      whileTap={{ scale: 0.97, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
+      onClick={launch}
+      disabled={!routine.exercises.length}
+      className="relative flex w-full items-center justify-between overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.05] px-6 py-5 text-left disabled:opacity-50"
+    >
+      <div className="relative min-w-0">
+        <div className="font-display text-[1.8rem] font-medium leading-none tracking-tight">Séance tendon</div>
+        {programs.map((p) => (
+          <div key={p.cond} className="mt-2 text-sm font-semibold" style={{ color: t.a }}>
+            {p.program.tendon} · phase {p.index + 1}/3 « {p.phase.label} »
+          </div>
+        ))}
+        <div className="mt-1 text-xs text-white/45">
+          {minutes} min · {programs[0].phase.frequency.toLowerCase()} · douleur 3/10 maximum
+        </div>
+      </div>
+      <div data-orb className="relative shrink-0">
+        <Blob tone="renfo" size={56}>
+          <svg width="18" height="18" viewBox="0 0 24 24" className="ml-0.5 fill-ink">
+            <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
+          </svg>
+        </Blob>
+      </div>
+    </motion.button>
   )
 }
 
@@ -237,6 +279,7 @@ export default function Hub({ name, player, photo, badge = 0, onLaunch, onOpenLa
       </motion.div>
 
       <div className="mt-auto flex flex-col gap-3 pt-5">
+        <TendonCard delay={0.32} onLaunch={onLaunch} />
         <RoutineCard routineKey="souplesse" delay={0.36} onLaunch={onLaunch} />
         <RoutineCard routineKey="renfo" delay={0.44} onLaunch={onLaunch} />
       </div>

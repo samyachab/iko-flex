@@ -39,6 +39,16 @@ export const PROFILES = {
     keys: ['soleaire'],
     rules: { exclude_tags: [], force_include: {}, overrides: {} },
   },
+  'test-tendon': {
+    id: 'test-tendon',
+    name: 'Test · tendon d’Achille',
+    test: true,
+    sport: 'course',
+    posture_issues: [],
+    pain_points: ['tendinite_achille'],
+    keys: [],
+    rules: { exclude_tags: [], force_include: {}, overrides: {} },
+  },
   'test-dos-plat': {
     id: 'test-dos-plat',
     name: 'Test · dos plat + poignet',

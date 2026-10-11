@@ -83,8 +83,10 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
   } catch {
     rules = null
   }
-  const data = { sport, goals, posture_issues: issues, pain_points: pains, keys, rules: rules ?? EMPTY_RULES, ...(plan ? { plan } : {}) }
-  const report = useMemo(() => profileReport(resolveProfile(data)), [JSON.stringify(data)])
+  const data = { ...d, sport, goals, posture_issues: issues, pain_points: pains, keys, rules: rules ?? EMPTY_RULES, ...(plan ? { plan } : {}) }
+  const resolved = useMemo(() => resolveProfile(data), [JSON.stringify(data)])
+  const report = useMemo(() => profileReport(resolved), [resolved])
+  const tendons = resolved.programs ?? []
 
   const toggle = (list, setList, id) => setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
   const save = async () => {
@@ -217,6 +219,20 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
             {report.needs.length === 0 && <li className="text-white/30">Aucun</li>}
           </ul>
           <p className="mt-4 text-sm font-semibold">Consignes personnalisées : {report.adapted.length} exercices</p>
+          {tendons.length > 0 && (
+            <>
+              <p className="mt-4 text-sm font-semibold">Programme tendon</p>
+              <ul className="mt-1 space-y-1 text-xs text-white/55">
+                {tendons.map((p) => (
+                  <li key={p.cond}>
+                    {p.program.tendon} · phase {p.index + 1}/3 « {p.phase.label} » · semaine {p.week + 1}
+                    {p.phase.missing && <span className="text-[#FFC29A]"> · exercice à créer : {p.phase.missing}</span>}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-xs text-white/35">Phase forcée possible dans les règles avancées : « tendon_phase »: {'{ condition: 0, 1 ou 2 }'}.</p>
+            </>
+          )}
         </motion.section>
 
         <motion.details {...rise(0.28)} className={card}>

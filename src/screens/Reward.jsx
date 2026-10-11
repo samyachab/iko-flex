@@ -3,10 +3,44 @@ import { animate, motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import Blob from '../components/Blob.jsx'
 import { buildDebrief } from '../lib/debrief.js'
-import { currentRules } from '../lib/profile.js'
+import { currentRules, refreshRules } from '../lib/profile.js'
 import { beep, speak } from '../lib/audio.js'
 import { PHRASES } from '../lib/phrases.js'
 import { TONES, gradient, rise } from '../lib/theme.js'
+import { painAdvice, recordPain } from '../lib/tendon.js'
+
+// Après une séance tendon : la douleur ressentie, de 0 à 10. Elle règle la phase suivante.
+function PainCheck({ tendons }) {
+  const [value, setValue] = useState(null)
+  const pick = (v) => {
+    setValue(v)
+    for (const t of tendons) recordPain(t.cond, v)
+    refreshRules()
+  }
+  return (
+    <motion.section {...rise(0.9)} className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
+      <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Ton tendon</p>
+      <p className="mt-2 text-base text-white/85">Pendant la séance, la douleur était à combien ?</p>
+      <div className="mt-3 grid grid-cols-6 gap-2">
+        {Array.from({ length: 11 }, (_, v) => (
+          <button
+            key={v}
+            onClick={() => pick(v)}
+            className="rounded-full py-2 text-sm font-semibold transition-colors"
+            style={
+              value === v
+                ? { background: v >= 5 ? '#FF7F7A' : v > 3 ? '#FFC29A' : '#8BF1DA', color: '#121212' }
+                : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }
+            }
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+      {value != null && <p className="mt-3 text-sm leading-relaxed text-white/65">{painAdvice(value)}</p>}
+    </motion.section>
+  )
+}
 
 export default function Reward({ routine, result, minRatio, onDone }) {
   const { valid, ratio, streak } = result
@@ -113,6 +147,8 @@ export default function Reward({ routine, result, minRatio, onDone }) {
           </>
         )}
       </motion.section>
+
+      {routine.tendon?.length > 0 && <PainCheck tendons={routine.tendon} />}
 
       <motion.button
         {...rise(1.9)}

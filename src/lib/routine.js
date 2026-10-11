@@ -69,7 +69,7 @@ export function exerciseSeconds(ex, c, plan) {
   if (ex.prog) {
     const sides = ex.unilateral ? 2 : 1
     const set = setSeconds(ex, plan.amount)
-    return c.rest + plan.sets * sides * set + plan.sets * (sides - 1) * c.rest + (plan.sets - 1) * ex.prog.rest
+    return c.rest + plan.sets * sides * set + plan.sets * (sides - 1) * c.rest + (plan.sets - 1) * (plan.rest ?? ex.prog.rest)
   }
   const work = plan?.work ?? doseOf(ex, c)[0]
   return ex.unilateral ? 2 * (c.rest + work) : c.rest + work
@@ -216,6 +216,43 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   // Consignes propres à la personne (conditions adaptées, mot du coach), affichées dans le Player
   const notes = Object.fromEntries(picked.map((e) => [e.id, assess(e, rules).notes]).filter(([, n]) => n.length))
   return { ...config, level, exercises, plans: Object.fromEntries(plans), notes, totalSeconds }
+}
+
+// Séance « Mon tendon » : les exercices de la phase en cours de chaque programme tendon, dosés pour la phase
+// (ex. 4 x 45 s de maintien en phase « Calmer »). Même rendu que le renfo (couleurs, série, historique).
+const TENDON_MAX_PER_PROGRAM = 3
+export function buildTendonRoutine(settings = getSettings(), rules = currentRules()) {
+  const config = ROUTINES.renfo
+  const chosen = settings.renfo.level
+  const level = chosen && chosen !== 'auto' ? chosen : getLevel('renfo')
+  const exercises = []
+  const plans = {}
+  const notes = {}
+  for (const p of rules.programs ?? []) {
+    let n = 0
+    for (const item of p.phase.exercises) {
+      const ex = EXERCISES.find((e) => e.id === item.id)
+      if (!ex?.prog || exercises.includes(ex) || n >= TENDON_MAX_PER_PROGRAM) continue
+      if (!assess(ex, rules).allowed || !hasEquipment(ex, settings)) continue
+      const [sets, amount] = ex.prog.levels[level - 1]
+      plans[ex.id] = { sets: item.sets ?? sets, amount: item.amount ?? amount, baseSets: item.sets ?? sets, rest: item.rest }
+      notes[ex.id] = [`Pour ton ${p.program.tendon} : ${p.phase.note}`, ...assess(ex, rules).notes]
+      exercises.push(ex)
+      n++
+    }
+  }
+  const totalSeconds = exercises.reduce((sum, ex) => sum + exerciseSeconds(ex, config, plans[ex.id]), 0)
+  const main = rules.programs?.[0]
+  return {
+    ...config,
+    label: 'Séance tendon',
+    tendon: rules.programs?.map((p) => ({ cond: p.cond, tendon: p.program.tendon, phase: p.phase.label })),
+    level,
+    exercises,
+    plans,
+    notes,
+    totalSeconds,
+  }
 }
 
 // Aperçu (accueil, réglages) : moyenne de quelques tirages, la séance réelle varie légèrement

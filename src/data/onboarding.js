@@ -8,6 +8,7 @@
 // options[].sets : conditions ajoutées si l'option est choisie
 import { CONDITIONS } from './conditions.js'
 import { analyzeText } from '../lib/analyze.js'
+import { TENDON_PROGRAMS } from './tendons.js'
 
 // Sur-mesure : la personne écrit, se laisse guider, ou les deux
 const writes = (a) => a.consent === true && (a.how === 'text' || a.how === 'both')
@@ -300,11 +301,16 @@ export function buildProposal(answers) {
   const posture = [...new Set([...tests, ...pick('stiff'), ...kindOf('posture')])]
   // Dos creusé + ischios "raides" : c'est le paradoxe de l'hyperlordose, pas des ischios courts
   const posture_issues = posture.includes('hyperlordose') ? posture.filter((c) => c !== 'ischios_raides') : posture
+  const pains = answers.consent ? [...new Set([...pick('pains'), ...kindOf('douleur')])] : []
+  const today = new Date().toISOString().slice(0, 10)
+  // Programme tendon : il démarre le jour du questionnaire (phase « Calmer »)
+  const programs = Object.fromEntries(pains.filter((c) => TENDON_PROGRAMS[c]).map((c) => [c, today]))
   return {
+    ...(Object.keys(programs).length ? { programs } : {}),
     sport: answers.sport && answers.sport !== '?' ? answers.sport : (writes(answers) && analyzeText(answers.text).sport) || 'aucun',
     goals: [...new Set([...(Array.isArray(answers.goals) ? answers.goals : []), ...kindOf('objectif')])],
     posture_issues: answers.consent ? posture_issues : [],
-    pain_points: answers.consent ? [...new Set([...pick('pains'), ...kindOf('douleur')])] : [],
+    pain_points: pains,
     keys: [],
     rules: { exclude_tags: [], force_include: {}, overrides: {} },
   }

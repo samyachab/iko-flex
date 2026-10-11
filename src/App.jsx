@@ -12,7 +12,7 @@ import Coach from './screens/Coach.jsx'
 import Onboarding from './screens/Onboarding.jsx'
 import Profile from './screens/Profile.jsx'
 import { bootstrap, continueAsGuest, countNewSignups, getPlayer, isGuest, photoUrls, pushSession, signOut } from './lib/cloud.js'
-import { buildRoutine } from './lib/routine.js'
+import { buildRoutine, buildTendonRoutine } from './lib/routine.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
 import { recordSession } from './lib/rotation.js'
 import { unlockAudio } from './lib/audio.js'
@@ -72,8 +72,10 @@ export default function App() {
 
   const launch = (key, origin) => {
     unlockAudio()
-    setRoutine(buildRoutine(key))
-    setBloom({ key, ...origin })
+    // « tendon » : séance dédiée au programme tendon (rendu et série comme le renfo)
+    const next = key === 'tendon' ? buildTendonRoutine() : buildRoutine(key)
+    setRoutine(next)
+    setBloom({ key: next.key, ...origin })
   }
 
   // Séance validée seulement si au moins 70 % du temps d'effort a vraiment été fait
