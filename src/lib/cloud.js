@@ -140,6 +140,9 @@ async function loadProfile(user) {
 
 // Réglages : ceux du coffre gagnent ; s'il est vide (premier appareil), on y envoie ceux du téléphone
 async function syncSettings() {
+  // Un réglage modifié juste avant (ex. matériel du questionnaire) part d'abord : sinon la version du coffre,
+  // plus ancienne, l'écraserait sur le téléphone
+  await flushSettings()
   const { data, error } = await supabase.from('user_settings').select('settings').eq('user_id', userId).maybeSingle()
   if (error) throw error
   const remote = data?.settings ?? {}
@@ -149,6 +152,7 @@ async function syncSettings() {
 }
 
 let settingsTimer = null
+let pendingSettings = null
 async function pushSettings(settings) {
   if (!userId) return
   await supabase.from('user_settings').upsert({ user_id: userId, settings })
@@ -157,8 +161,16 @@ async function pushSettings(settings) {
 onSettingsSaved((settings) => {
   if (!userId) return
   clearTimeout(settingsTimer)
-  settingsTimer = setTimeout(() => pushSettings(settings).catch(() => {}), 1000)
+  pendingSettings = settings
+  settingsTimer = setTimeout(() => flushSettings().catch(() => {}), 1000)
 })
+// Envoie tout de suite le dernier réglage en attente (sans attendre la seconde de regroupement)
+export async function flushSettings() {
+  clearTimeout(settingsTimer)
+  const settings = pendingSettings
+  pendingSettings = null
+  if (settings) await pushSettings(settings)
+}
 
 // Historique : séances de l'appareil absentes du coffre -> envoyées ; séances du coffre -> ajoutées ici
 async function syncHistory() {

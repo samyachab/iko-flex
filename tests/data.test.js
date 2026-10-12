@@ -100,3 +100,13 @@ describe('profils publics', () => {
     expect(unknown(p.rules?.exclude_tags, MECHANICS)).toEqual([])
   })
 })
+
+describe('questionnaire', async () => {
+  const { visibleSteps } = await import('../src/data/onboarding.js')
+  it('routine générale : on demande quand même le matériel, et rien d’autre', () => {
+    expect(visibleSteps({ mode: 'general' }).map((s) => s.id)).toEqual(['mode', 'equipment'])
+  })
+  it('sur-mesure : le matériel fait partie du parcours', () => {
+    expect(visibleSteps({ mode: 'custom' }).map((s) => s.id)).toContain('equipment')
+  })
+})

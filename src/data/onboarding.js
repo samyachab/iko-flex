@@ -79,7 +79,8 @@ export const STEPS = [
     type: 'multi',
     title: 'Tu as quoi chez toi ?',
     subtitle: 'Rien ? Continue, il y a plein d’exercices sans matériel.',
-    when: (a) => a.mode === 'custom',
+    // Demandé dans les deux parcours : sans ça, la routine générale supposerait tout le matériel
+    when: (a) => a.mode === 'custom' || a.mode === 'general',
     options: [
       { value: 'kettlebell', label: 'Kettlebell' },
       { value: 'halteres', label: 'Haltères' },

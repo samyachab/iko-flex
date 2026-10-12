@@ -4,7 +4,7 @@ import Figure from '../components/Figure.jsx'
 import { CONDITIONS, SPORTS } from '../data/conditions.js'
 import { EQUIPMENT } from '../data/exercises.js'
 import { buildProposal, visibleSteps } from '../data/onboarding.js'
-import { submitIntake } from '../lib/cloud.js'
+import { flushSettings, submitIntake } from '../lib/cloud.js'
 import { saveZones } from '../lib/zones.js'
 import { DURATIONS, getSettings, saveSettings } from '../lib/settings.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
@@ -126,8 +126,8 @@ export default function Onboarding({ name, onDone }) {
   const next = (nextAnswers = answers) => {
     const list = visibleSteps(nextAnswers)
     const i = list.findIndex((s) => s.id === step.id)
-    if (nextAnswers.mode === 'general') return send(nextAnswers)
     if (i + 1 < list.length) setIndex(i + 1)
+    else if (nextAnswers.mode === 'general') send(nextAnswers) // routine générale : pas de récap
     else setPhase('recap')
   }
   // Passer la question : rien n'est ajouté à la fiche
@@ -171,6 +171,7 @@ export default function Onboarding({ name, onDone }) {
     if (final.equipment) s.missing = Object.keys(EQUIPMENT).filter((k) => !final.equipment.includes(k))
     if (final.level && final.level !== '?') s.renfo.level = final.level
     saveSettings(s)
+    await flushSettings().catch(() => {})
 
     // Zones sensibles et signaux d'alerte : gardés sur le téléphone, jamais envoyés
     const { pains, red_flags, ...shared } = final
