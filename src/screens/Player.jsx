@@ -1,7 +1,48 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion'
 import { GROUPS } from '../data/exercises.js'
-import { beep, preloadSpeech, speak, stopSpeech } from '../lib/audio.js'
+import { beep, isMusicMode, isVoiceMuted, preloadSpeech, setMusicMode, setVoiceMuted, speak, stopSpeech } from '../lib/audio.js'
+
+// Pastille musique, au début de la séance : ouvre l'appli de musique (liens universels : l'appli si elle
+// est installée, sinon le site), et passe le son de l'appli en mode « mélangé » pour ne pas couper la musique
+const MUSIC_APPS = [
+  { key: 'spotify', label: 'Spotify', url: 'https://open.spotify.com/' },
+  { key: 'apple', label: 'Apple Music', url: 'https://music.apple.com/' },
+  { key: 'youtube', label: 'YouTube Music', url: 'https://music.youtube.com/' },
+]
+function MusicPill() {
+  const [on, setOn] = useState(isMusicMode)
+  const open = (url) => {
+    setMusicMode(true)
+    setOn(true)
+    window.open(url, '_blank', 'noopener')
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs"
+    >
+      <span className="text-white/45">🎧 {on ? 'Avec ta musique' : 'Lance ta musique'}</span>
+      {MUSIC_APPS.map((a) => (
+        <button key={a.key} onClick={() => open(a.url)} className="rounded-full border border-white/15 px-2.5 py-1 text-white/70">
+          {a.label}
+        </button>
+      ))}
+      {on && (
+        <button
+          onClick={() => {
+            setMusicMode(false)
+            setOn(false)
+          }}
+          className="px-1 text-white/35 underline underline-offset-2"
+        >
+          sans musique
+        </button>
+      )}
+    </motion.div>
+  )
+}
 import { PHRASES, spokenName } from '../lib/phrases.js'
 import { setSeconds } from '../lib/routine.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
@@ -235,6 +276,11 @@ export default function Player({ routine, onFinish, onQuit }) {
   const [remaining, setRemaining] = useState(steps[0].duration)
   const [paused, setPaused] = useState(false)
   const [confirmQuit, setConfirmQuit] = useState(false)
+  const [muted, setMuted] = useState(isVoiceMuted)
+  const toggleMute = () => {
+    setVoiceMuted(!muted)
+    setMuted(!muted)
+  }
   const endAt = useRef(null)
   if (endAt.current === null) endAt.current = Date.now() + steps[0].duration * 1000
   const lastSec = useRef(steps[0].duration)
@@ -409,10 +455,23 @@ export default function Player({ routine, onFinish, onQuit }) {
             )
           })}
         </div>
+        <button
+          onClick={toggleMute}
+          aria-label={muted ? 'Remettre la voix du coach' : 'Couper la voix du coach'}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+            {muted ? <path d="m17 9 5 6m0-6-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}
+          </svg>
+        </button>
         <span className="w-9 text-right text-sm font-semibold tabular-nums text-white/50">
           {step.w + 1}/{total}
         </span>
       </div>
+
+      {/* Début de séance : proposer sa musique */}
+      {i === 0 && <MusicPill />}
 
       {/* Orbe + respiration */}
       <div className="relative flex flex-1 flex-col items-center justify-center">

@@ -20,13 +20,38 @@ function silentWav() {
 }
 
 // À appeler sur un geste utilisateur (iOS/Chrome bloquent l'audio sinon).
-export function unlockAudio() {
-  // iOS 16.4+ : catégorie "lecture" = le son passe même avec le bouton silencieux (bips compris)
+// Avec ta musique (Spotify, Apple Music, YouTube...) : sur iPhone, la catégorie « playback » couperait la
+// musique au premier bip. En mode musique, la catégorie « ambient » mélange le coach à la musique
+// (en contrepartie, le bouton silencieux du téléphone coupe aussi le coach).
+const MUSIC_KEY = 'iko-flex:music'
+export function isMusicMode() {
   try {
-    if (navigator.audioSession) navigator.audioSession.type = 'playback'
+    return localStorage.getItem(MUSIC_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function applyAudioSession() {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = isMusicMode() ? 'ambient' : 'playback'
   } catch {
     // non supporté
   }
+}
+export function setMusicMode(on) {
+  try {
+    if (on) localStorage.setItem(MUSIC_KEY, '1')
+    else localStorage.removeItem(MUSIC_KEY)
+  } catch {
+    // stockage indisponible
+  }
+  applyAudioSession()
+}
+
+export function unlockAudio() {
+  // iOS 16.4+ : catégorie "lecture" = le son passe même avec le bouton silencieux (bips compris),
+  // sauf en mode musique (voir plus haut)
+  applyAudioSession()
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)()
   if (ctx.state === 'suspended') ctx.resume()
   if (!clipEl) {
@@ -127,6 +152,25 @@ export function setVoice(key) {
   }
 }
 
+// Voix du coach coupée (mémorisé sur l'appareil) : les bips restent, seules les phrases se taisent
+const MUTE_KEY = 'iko-flex:voice-muted'
+export function isVoiceMuted() {
+  try {
+    return localStorage.getItem(MUTE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+export function setVoiceMuted(muted) {
+  try {
+    if (muted) localStorage.setItem(MUTE_KEY, '1')
+    else localStorage.removeItem(MUTE_KEY)
+  } catch {
+    // stockage indisponible : réglage valable pour cette séance
+  }
+  if (muted) stopSpeech()
+}
+
 const clipUrl = (voiceKey, id) => `/voice/${voiceKey}/${id}.mp3`
 const hasClip = (voiceKey, id) => recorded[voiceKey]?.has(id)
 
@@ -154,8 +198,10 @@ function speakSystem(text) {
   window.speechSynthesis.speak(u)
 }
 
-export function speak(text, voiceKey = currentVoice()) {
+// force : pour écouter une voix dans les réglages, même quand le coach est coupé
+export function speak(text, voiceKey = currentVoice(), { force = false } = {}) {
   stopSpeech()
+  if (isVoiceMuted() && !force) return
   const id = phraseId(text)
   if (!clipEl || !hasClip(voiceKey, id)) return speakSystem(text)
   if (ctx?.state === 'suspended') ctx.resume()
