@@ -16,6 +16,8 @@ permissions:
 
 jobs:
   dump:
+    # En pause (sauté, pas en échec) tant que la clé de chiffrement n'est pas configurée
+    if: ${{ vars.BACKUP_AGE_PUBLIC_KEY != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
