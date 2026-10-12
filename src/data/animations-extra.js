@@ -1279,16 +1279,6 @@ export const EXTRA_ANIMATIONS = {
 
   // ═════════ Tendons (excentrique, isométrie) & glissement nerveux ═════════
 
-  // Allongé sur le dos, cuisse tenue vers la poitrine : la jambe se tend pointe tirée, puis se replie, en rythme.
-  'glissement-sciatique': {
-    view: 'side',
-    base: { torso: -90, head: -90, armN: [150, 80], armF: [146, 82], legN: [200, 112, 200], legF: [90, 90, 180] },
-    keys: [
-      { pose: { head: -98 }, hold: 0.2, move: 1.2 },
-      { pose: { head: -84, legN: [200, 172, 262] }, hold: 0.2, move: 1.2 },
-    ],
-  },
-
   // Debout, descente rapide mais freinée en demi-squat, puis remontée normale.
   'drop-squat-stanish': {
     view: 'side',

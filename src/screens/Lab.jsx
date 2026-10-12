@@ -55,7 +55,7 @@ function ProfilePanel() {
 }
 
 // Exercices de la dernière extension (à relire en priorité)
-const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif'])
+const NEW_IDS = new Set([...Object.keys(EXTRA_ANIMATIONS), 'ischio-actif', 'open-book'])
 // Bibliothèque générale : classiques pour tous, ajoutés le 10 octobre 2026 (à relire en priorité)
 const GENERAL_IDS = new Set([
   'pince-assise',
@@ -99,7 +99,7 @@ const GENERAL_IDS = new Set([
 ])
 
 // Tendons & glissement nerveux, ajoutés le 12 octobre 2026
-const TENDON_IDS = new Set(['glissement-sciatique', 'drop-squat-stanish', 'alfredson-genou-plie', 'squat-incline-unipodal', 'spanish-squat', 'mollet-iso', 'nordic-sol', 'copenhague', 'eversion-elastique'])
+const TENDON_IDS = new Set(['drop-squat-stanish', 'alfredson-genou-plie', 'squat-incline-unipodal', 'spanish-squat', 'mollet-iso', 'nordic-sol', 'copenhague', 'eversion-elastique'])
 
 const FILTERS = {
   tendons: { label: 'Tendons', test: (e) => TENDON_IDS.has(e.id) },

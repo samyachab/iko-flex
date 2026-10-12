@@ -276,26 +276,29 @@ export const ANIMATIONS = {
     ],
   },
 
-  // Vue depuis la tête, le long de la colonne : allongé sur le côté, épaules et genoux empilés.
-  // Le bras du dessus part du bras du dessous, passe par le ciel et s'ouvre de l'autre côté
-  // comme la page d'un livre ; les épaules tournent avec lui, le bassin et les genoux ne bougent pas.
+  // Vu de dessus, allongé sur le côté, genoux pliés et empilés, tête de profil posée au sol.
+  // Le bras du dessus part du bras du dessous, monte vers le plafond (il raccourcit vu d'en haut)
+  // et s'ouvre de l'autre côté comme la page d'un livre ; le bassin et les genoux ne bougent pas.
   'open-book': {
-    view: 'front',
-    legOpacity: 0.3,
-    barWidth: 22,
+    view: 'side',
+    ground: false,
+    hipHeight: 0,
+    props: [{ type: 'mat', x1: -92, y1: -76, x2: 58, y2: 62 }],
     base: {
       torso: -90,
-      pelvis: -90,
       head: -90,
-      armN: [90, 90],
-      armF: [64, 64],
-      legN: [100, 90, 90],
-      legF: [100, 90, 90],
-      fs: { torso: 0.05, head: 0.05, thighN: 0.75, thighF: 0.75, shinN: 0.12, shinF: 0.12, footN: 0.1, footF: 0.1 },
+      armN: [178, 178],
+      armF: [182, 182],
+      legN: [180, 90, 180],
+      legF: [176, 88, 180],
     },
     keys: [
-      { pose: {}, hold: 0.8, move: 2.6 },
-      { pose: { torso: -118, armF: [296, 296] }, hold: 2.4, move: 2.4 },
+      { pose: {}, hold: 0.8, move: 1.3 },
+      { pose: { head: -96, fs: { upperN: 0.08, foreN: 0.08 } }, hold: 0, move: 0.05 },
+      { pose: { head: -96, armN: [0, 0], fs: { upperN: 0.08, foreN: 0.08 } }, hold: 0, move: 1.3 },
+      { pose: { head: -102, armN: [-8, -8] }, hold: 2.4, move: 1.3 },
+      { pose: { head: -96, armN: [0, 0], fs: { upperN: 0.08, foreN: 0.08 } }, hold: 0, move: 0.05 },
+      { pose: { head: -96, fs: { upperN: 0.08, foreN: 0.08 } }, hold: 0, move: 1.3 },
     ],
   },
 
