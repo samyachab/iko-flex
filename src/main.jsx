@@ -6,6 +6,20 @@ import { requestPersistence } from './lib/streaks.js'
 import { addProfiles } from './lib/profile.js'
 import { watchErrors } from './lib/errors.js'
 import { IS_STAGING } from './lib/supabase.js'
+import { registerSW } from 'virtual:pwa-register'
+
+// Mise à jour automatique : une appli posée sur l'écran d'accueil reste en mémoire et ne recharge
+// presque jamais la page, donc le navigateur ne cherche pas de nouvelle version. On vérifie à chaque
+// retour au premier plan ; si une version est déployée, elle s'installe et la page se recharge.
+registerSW({
+  immediate: true,
+  onRegisteredSW(swUrl, reg) {
+    if (!reg) return
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) reg.update().catch(() => {})
+    })
+  },
+})
 
 watchErrors()
 requestPersistence()
