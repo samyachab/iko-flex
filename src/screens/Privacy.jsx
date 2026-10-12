@@ -18,8 +18,8 @@ const SECTIONS = [
       'Avec un compte : ton email, ton prénom et ton mot de passe (chiffré, jamais lisible, même par Samy).',
       'Tes réglages : durées, favoris, exercices désactivés, matériel.',
       'Ton historique : les jours de séance et les exercices faits.',
-      'Si tu choisis une routine personnalisée : ta fiche (sport, posture, zones sensibles ou douleurs). Ce sont des données de santé : elles ne sont utilisées que pour construire tes séances, et seulement avec ton accord.',
-      'Si tu remplis le questionnaire sur-mesure : tes réponses et ce que tu écris. Ton texte est analysé directement sur ton téléphone (aucune intelligence artificielle externe), puis relu par ton coach.',
+      'Si tu choisis une routine sur-mesure : tes objectifs, ton sport, ton niveau et le résultat de petits tests de mobilité (par exemple « chevilles raides »). Ce sont des informations d’entraînement, pas un diagnostic.',
+      'Tes zones sensibles (ce qui te gêne) restent uniquement sur ton téléphone : elles ne sont jamais envoyées, ni à Samy ni à un serveur. Même chose pour le carnet de ressenti des séances tendon.',
       'Sans compte : rien ne quitte ton téléphone.',
     ],
   },
@@ -38,7 +38,7 @@ const SECTIONS = [
   {
     title: 'Qui les voit',
     body: [
-      'Toi, et Samy en tant que coach, pour ajuster ta fiche. Personne d’autre.',
+      'Toi, et Samy en tant que coach, pour ajuster ton programme. Personne d’autre.',
       'Si tu rejoins le classement entre amis (c’est un choix, réversible) : les autres participants voient ton pseudo, ta photo de profil, ta série et tes jours actifs de la semaine. Jamais ta fiche ni tes exercices.',
       'Ta photo de profil (si tu en ajoutes une) est recadrée et réduite sur ton téléphone, puis rangée dans un espace privé : seuls toi, ton coach et les participants du classement peuvent la voir. Elle est effacée avec ton compte.',
     ],

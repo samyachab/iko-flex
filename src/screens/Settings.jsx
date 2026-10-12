@@ -37,6 +37,19 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
   const groups = Object.keys(ROUTINES[routineKey].plan)
   for (const e of all) if (!groups.includes(e.group)) groups.push(e.group)
 
+  // Liste des exercices repliée par défaut ; une fois ouverte : recherche, zone, et filtre favoris / désactivés
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [zone, setZone] = useState(null)
+  const [show, setShow] = useState('all') // 'all' | 'fav' | 'off'
+  const norm = (x) => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  const shown = all.filter(
+    (e) =>
+      (!query || norm(e.name).includes(norm(query))) &&
+      (!zone || e.group === zone) &&
+      (show === 'all' || (show === 'fav' ? s.favorites.includes(e.id) : s.disabled.includes(e.id) || !hasEquipment(e, settings))),
+  )
+
   const set = (patch) => update({ ...settings, [routineKey]: { ...s, ...patch } })
   const toggle = (id) => {
     const off = s.disabled.includes(id)
@@ -113,16 +126,63 @@ function RoutineSettings({ routineKey, settings, update, delay }) {
           : 'Plus la séance est longue, plus il y a d’exercices dans le circuit, puis chaque effort s’allonge de quelques secondes.'}
       </p>
 
-      <p className="mt-6 text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40">Exercices</p>
-      <p className="mt-1 text-xs text-white/40">★ = inclus à chaque séance ({s.favorites.length}/{MAX_FAVORITES}), le reste change à chaque fois. Au moins {MIN_ENABLED} exercices actifs.</p>
+      <button
+        onClick={() => setOpen(!open)}
+        className="mt-6 flex w-full items-center justify-between rounded-2xl border border-white/10 px-4 py-3 text-left"
+      >
+        <span>
+          <span className="block text-sm font-semibold text-white/85">Mes exercices</span>
+          <span className="block text-xs text-white/40">
+            {enabledCount} actifs sur {all.length} · {s.favorites.length} favori{s.favorites.length > 1 ? 's' : ''}
+          </span>
+        </span>
+        <span className="text-white/50">{open ? '▴' : '▾'}</span>
+      </button>
 
-      {groups.map((g) => (
+      {open && (
+        <>
+          <p className="mt-3 text-xs text-white/40">
+            ★ = inclus à chaque séance ({s.favorites.length}/{MAX_FAVORITES}), le reste change à chaque fois. Au moins {MIN_ENABLED} exercices actifs.
+          </p>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher un exercice"
+            className="mt-3 w-full select-text rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/40"
+          />
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {[['all', 'Tous'], ['fav', '★ Favoris'], ['off', 'Désactivés']].map(([k, l]) => (
+              <button
+                key={k}
+                onClick={() => setShow(k)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${show === k ? 'bg-white/15 text-white' : 'text-white/45'}`}
+              >
+                {l}
+              </button>
+            ))}
+            <span className="mx-1 w-px bg-white/10" />
+            {groups.map((g) => (
+              <button
+                key={g}
+                onClick={() => setZone(zone === g ? null : g)}
+                className={`rounded-full px-3 py-1 text-xs ${zone === g ? 'font-semibold text-ink' : 'text-white/45'}`}
+                style={zone === g ? { background: t.a } : undefined}
+              >
+                {GROUPS[g]?.label ?? g}
+              </button>
+            ))}
+          </div>
+          {shown.length === 0 && <p className="mt-4 text-sm text-white/40">Aucun exercice ne correspond.</p>}
+        </>
+      )}
+
+      {open && groups.filter((g) => shown.some((e) => e.group === g)).map((g) => (
         <div key={g} className="mt-4">
           <p className="text-xs font-semibold" style={{ color: t.a }}>
             {GROUPS[g]?.label ?? g}
           </p>
           <ul className="mt-1 divide-y divide-white/[0.06]">
-            {all
+            {shown
               .filter((e) => e.group === g)
               .map((e) => {
                 const equipped = hasEquipment(e, settings)

@@ -12,7 +12,8 @@
 //   - repère de douleur : 3/10 maximum pendant l'effort, et pas pire le lendemain matin ;
 //   - les impacts reviennent en dernier.
 // Le profil d'une personne ne stocke que ses conditions : les règles en découlent (lib/profile.js).
-// kind : 'posture' (profile.posture_issues), 'douleur' (profile.pain_points), 'objectif' (profile.goals).
+// kind : 'posture' (profile.posture_issues), 'douleur' (zones sensibles : profile.pain_points, gardées sur le
+//        téléphone, voir lib/zones.js), 'objectif' (profile.goals).
 // Un besoin sans exercice pour le couvrir s'affiche « exercice à créer » dans l'espace coach.
 
 export const CONDITIONS = {
@@ -178,7 +179,7 @@ export const CONDITIONS = {
 
   // ───────── Douleurs ─────────
   douleur_genou: {
-    label: 'Douleur au genou',
+    label: 'Genou sensible',
     kind: 'douleur',
     avoid: ['impact', 'flexion_genou_profonde'],
     adapt: {
@@ -188,21 +189,21 @@ export const CONDITIONS = {
     favor: { fessier_renfo: 1, abducteurs_renfo: 1 },
   },
   periostite_tibiale: {
-    label: 'Périostite tibiale',
+    label: 'Tibias sensibles à l’effort',
     kind: 'douleur',
     avoid: ['impact'],
     favor: { tibial_renfo: 2, eversion_renfo: 1, mollet_renfo: 1, dorsiflexion: 1 },
     needs: { tibial_renfo: 1 },
   },
   tfl: {
-    label: 'Douleur TFL / bandelette ilio-tibiale',
+    label: 'Extérieur de la cuisse ou du genou sensible',
     kind: 'douleur',
     adapt: { compression_roller: 'Pour toi : pression douce, jamais sur une zone qui brûle.' },
     favor: { abducteurs_renfo: 2, fessier_renfo: 1 },
     needs: { abducteurs_renfo: 1 },
   },
   sciatique: {
-    label: 'Sciatique',
+    label: 'Gêne qui descend dans la jambe',
     kind: 'douleur',
     refer: true,
     avoid: ['ischio_passif'],
@@ -213,7 +214,7 @@ export const CONDITIONS = {
     favor: { neurodynamique: 1, anti_extension: 1 },
   },
   lombalgie: {
-    label: 'Douleur au bas du dos',
+    label: 'Bas du dos sensible',
     kind: 'douleur',
     refer: true,
     avoid: ['charge_axiale', 'impact'],
@@ -225,7 +226,7 @@ export const CONDITIONS = {
     favor: { anti_extension: 2, anti_rotation: 2, retroversion: 1 },
   },
   douleur_epaule: {
-    label: 'Douleur à l’épaule',
+    label: 'Épaule sensible',
     kind: 'douleur',
     refer: true,
     avoid: ['poussee'],
@@ -233,18 +234,18 @@ export const CONDITIONS = {
     favor: { retraction_scapulaire: 1 },
   },
   douleur_poignet: {
-    label: 'Douleur au poignet',
+    label: 'Poignet sensible',
     kind: 'douleur',
     avoid: ['appui_poignet'],
   },
   douleur_hanche: {
-    label: 'Pincement à l’avant de la hanche',
+    label: 'Avant de la hanche qui pince',
     kind: 'douleur',
     avoid: ['flexion_hanche_profonde'],
     favor: { fessier_renfo: 1, abducteurs_renfo: 1 },
   },
   tendinite_rotulienne: {
-    label: 'Tendinopathie rotulienne (juste sous la rotule)',
+    label: 'Juste sous la rotule (sauts, squats)',
     kind: 'douleur',
     // Tendon du "sauteur" : on calme avec des maintiens (chaise, fente tenue), on évite la flexion profonde
     // chargée et les sauts, puis on recharge progressivement
@@ -258,7 +259,7 @@ export const CONDITIONS = {
     needs: { isometrique: 1 },
   },
   femoro_patellaire: {
-    label: 'Douleur autour de la rotule (escaliers, assis longtemps)',
+    label: 'Autour de la rotule (escaliers, assis longtemps)',
     kind: 'douleur',
     // Syndrome fémoro-patellaire : la rotule frotte mal ; on renforce hanche et cuisse en amplitude confortable
     avoid: ['impact', 'flexion_genou_profonde'],
@@ -270,7 +271,7 @@ export const CONDITIONS = {
     needs: { abducteurs_renfo: 1 },
   },
   tendinite_achille: {
-    label: 'Tendon d’Achille douloureux (milieu du tendon)',
+    label: 'Tendon d’Achille sensible (milieu)',
     kind: 'douleur',
     // Corps du tendon : le travail excentrique et lent (descente sur une marche) est le traitement de base
     avoid: ['impact'],
@@ -283,7 +284,7 @@ export const CONDITIONS = {
     needs: { mollet_renfo: 1 },
   },
   achille_insertion: {
-    label: 'Douleur au talon, là où s’attache le tendon d’Achille',
+    label: 'Arrière du talon sensible',
     kind: 'douleur',
     // Insertion du tendon : la flexion de cheville en fin d'amplitude l'écrase contre l'os -> ni étirement
     // du mollet, ni descente sous le niveau du pied
@@ -297,7 +298,7 @@ export const CONDITIONS = {
     needs: { mollet_renfo: 1 },
   },
   tendinopathie_fessiere: {
-    label: 'Douleur sur le côté de la hanche (couché dessus, jambes croisées)',
+    label: 'Côté de la hanche sensible (couché dessus)',
     kind: 'douleur',
     // Tendons du moyen fessier : écrasés quand la cuisse passe devant l'autre -> pas de jambe croisée,
     // pas d'étirement fessier croisé ni de rouleau sur le côté ; renfo latéral sans compression
@@ -310,7 +311,7 @@ export const CONDITIONS = {
     needs: { abducteurs_renfo: 1 },
   },
   ischio_proximal: {
-    label: 'Douleur sous la fesse, surtout assis (haut des ischios)',
+    label: 'Sous la fesse, surtout assis',
     kind: 'douleur',
     // Attache haute des ischios : écrasée hanche très fléchie + jambe tendue -> pas d'étirement des ischios,
     // pas de mise en tension ; pont et maintiens d'abord, amplitude courte
@@ -323,7 +324,7 @@ export const CONDITIONS = {
     needs: { fessier_renfo: 1 },
   },
   pubalgie: {
-    label: 'Douleur à l’aine ou au pubis',
+    label: 'Aine ou pubis sensible',
     kind: 'douleur',
     refer: true,
     // Adducteurs et pubis : on n'étire pas l'adducteur irrité, on renforce adducteurs et tronc progressivement
@@ -333,7 +334,7 @@ export const CONDITIONS = {
     needs: { adducteurs_renfo: 1 },
   },
   epicondylite: {
-    label: 'Douleur au coude (extérieur, en serrant ou en portant)',
+    label: 'Coude sensible (en serrant ou en portant)',
     kind: 'douleur',
     // Tendons de l'avant-bras : pas d'appui prolongé sur les mains en extension de poignet
     avoid: ['appui_poignet'],
@@ -341,7 +342,7 @@ export const CONDITIONS = {
     favor: { retraction_scapulaire: 1, isometrique: 1 },
   },
   coiffe_rotateurs: {
-    label: 'Douleur à l’épaule quand le bras monte',
+    label: 'Épaule sensible quand le bras monte',
     kind: 'douleur',
     // Coiffe des rotateurs : on évite le bras haut chargé et les poussées lourdes, on renforce les omoplates
     avoid: ['poussee'],
@@ -351,7 +352,7 @@ export const CONDITIONS = {
     needs: { retraction_scapulaire: 1 },
   },
   lombalgie_flexion: {
-    label: 'Mal au dos en me penchant ou assis longtemps',
+    label: 'Bas du dos sensible en se penchant ou assis',
     kind: 'douleur',
     refer: true,
     // Dos qui supporte mal la flexion (souvent discal) : on évite d'arrondir le bas du dos, surtout en charge,
@@ -361,7 +362,7 @@ export const CONDITIONS = {
     favor: { anti_extension: 2, anti_rotation: 2, extension_lombaire: 1, fessier_renfo: 1 },
   },
   lombalgie_extension: {
-    label: 'Mal au dos debout longtemps ou cambré',
+    label: 'Bas du dos sensible debout ou cambré',
     kind: 'douleur',
     refer: true,
     // Dos qui supporte mal l'extension (facettes, souvent avec hyperlordose) : pas de cambrure,
@@ -372,14 +373,14 @@ export const CONDITIONS = {
     needs: { retroversion: 1 },
   },
   fracture_fatigue: {
-    label: 'Douleur précise sur un os qui augmente en courant (fracture de fatigue ?)',
+    label: 'Point précis sur un os qui gêne en courant',
     kind: 'douleur',
     refer: true,
     avoid: ['impact', 'charge_axiale', 'unipodal'],
     favor: { anti_extension: 1, retraction_scapulaire: 1, isometrique: 1 },
   },
   piriforme: {
-    label: 'Douleur profonde dans la fesse qui peut descendre (piriforme)',
+    label: 'Profond dans la fesse',
     kind: 'douleur',
     // Le nerf sciatique passe sous le piriforme : glissement nerveux doux, pas de compression prolongée
     adapt: {
@@ -390,21 +391,21 @@ export const CONDITIONS = {
     needs: { neurodynamique: 2 },
   },
   fasciite_plantaire: {
-    label: 'Douleur sous le pied (fasciite plantaire)',
+    label: 'Dessous du pied sensible',
     kind: 'douleur',
     avoid: ['impact'],
     favor: { dorsiflexion: 2, mollet_renfo: 1, compression_roller: 1 },
     needs: { dorsiflexion: 1 },
   },
   cheville_instable: {
-    label: 'Cheville fragile (entorses à répétition)',
+    label: 'Cheville qui tourne souvent',
     kind: 'douleur',
     adapt: { impact: 'Pour toi : sauts bas et contrôlés, réception stable.' },
     favor: { unipodal: 2, eversion_renfo: 2, mollet_renfo: 1, tibial_renfo: 1 },
     needs: { unipodal: 2, eversion_renfo: 2 },
   },
   cervicalgie: {
-    label: 'Douleur à la nuque',
+    label: 'Nuque sensible',
     kind: 'douleur',
     adapt: { etirement_cervical: 'Pour toi : très doucement, jamais jusqu’à la douleur.' },
     favor: { retraction_scapulaire: 1 },

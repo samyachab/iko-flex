@@ -7,10 +7,21 @@ import { addProfiles, setProfileId } from './profile.js'
 import { getSettings, onSettingsSaved, saveSettings } from './settings.js'
 import { getHistory, mergeHistory } from './streaks.js'
 import { mergeRotation } from './rotation.js'
+import { ZONES_KEY, getZones, withZones } from './zones.js'
+import { PROFILES } from '../data/profiles.js'
 
 const GUEST_KEY = 'iko-flex:guest'
 // Données personnelles effacées de l'appareil à la déconnexion (téléphone prêté, partagé...)
-const PERSONAL_KEYS = ['iko-flex:settings', 'iko-flex:streaks', 'iko-flex:rotation', 'iko-flex:profile', GUEST_KEY]
+const PERSONAL_KEYS = [
+  'iko-flex:settings',
+  'iko-flex:streaks',
+  'iko-flex:rotation',
+  'iko-flex:profile',
+  ZONES_KEY, // zones sensibles (jamais dans le coffre)
+  'iko-flex:tendon', // carnet de douleur des programmes tendon
+  'iko-flex:onboarding',
+  GUEST_KEY,
+]
 
 const byId = Object.fromEntries(EXERCISES.map((e) => [e.id, e]))
 // Jour local (pas celui du serveur, en UTC) : une séance à 0 h 30 compte pour le bon jour
@@ -108,8 +119,13 @@ async function loadProfile(user) {
   ])
   if (error) throw error
   const personalized = data?.status === 'active' && Object.keys(data.data ?? {}).length > 0
+  // Fiche du coffre + zones sensibles gardées sur ce téléphone (elles ne sont jamais envoyées)
+  const zones = getZones().pain_points.length > 0
   if (personalized) {
-    addProfiles({ [user.id]: { ...data.data, id: user.id, name: data.name ?? 'Moi' } })
+    addProfiles({ [user.id]: withZones({ ...data.data, id: user.id, name: data.name ?? 'Moi' }) })
+    setProfileId(user.id)
+  } else if (zones) {
+    addProfiles({ [user.id]: withZones({ ...PROFILES.general, id: user.id, name: data?.name ?? 'Moi' }) })
     setProfileId(user.id)
   } else setProfileId('general')
   return {

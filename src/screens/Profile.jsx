@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import Blob from '../components/Blob.jsx'
 import AccountCard from '../components/AccountCard.jsx'
 import PhotoCropper from '../components/PhotoCropper.jsx'
+import { STEPS } from '../data/onboarding.js'
+import { getZones, saveZones } from '../lib/zones.js'
 import { getLeaderboard, getPlayer, photoUrls, removePhoto, savePlayer, uploadPhoto } from '../lib/cloud.js'
 import { getStreaks } from '../lib/streaks.js'
 import { AVATARS, SHAPES, TONES, gradient, rise } from '../lib/theme.js'
@@ -247,7 +249,46 @@ function Customize({ player, photo, fallbackName, onSave, onColor, onUsePhoto, o
   )
 }
 
-export default function Profile({ account, onBack, onPlayerChange, ...accountProps }) {
+// Zones sensibles : cochées ici, gardées sur ce téléphone uniquement (jamais envoyées).
+// Elles écartent les exercices qui les sollicitent et lancent le programme tendon correspondant.
+const ZONE_OPTIONS = STEPS.find((s) => s.id === 'pains').options
+function ZonesCard({ onChange }) {
+  const [zones, setZones] = useState(() => getZones().pain_points)
+  const toggle = (cond) => {
+    const next = zones.includes(cond) ? zones.filter((z) => z !== cond) : [...zones, cond]
+    setZones(next)
+    saveZones(next)
+    onChange?.()
+  }
+  return (
+    <motion.section {...rise(0.21)} className={card}>
+      <p className={label}>Mes zones sensibles</p>
+      <p className="mt-2 text-xs leading-relaxed text-white/45">
+        Coche ce qui te gêne : ton programme écarte ce qui la sollicite. Ça reste sur ce téléphone. Si c’est une vraie douleur,
+        vois d’abord un professionnel de santé.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {ZONE_OPTIONS.map((o) => {
+          const cond = o.sets[0]
+          const on = zones.includes(cond)
+          return (
+            <button
+              key={o.value}
+              onClick={() => toggle(cond)}
+              aria-pressed={on}
+              className={`rounded-full border px-3 py-1.5 text-sm ${on ? 'border-transparent font-semibold text-ink' : 'border-white/15 text-white/65'}`}
+              style={on ? { background: '#FFC29A' } : undefined}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
+    </motion.section>
+  )
+}
+
+export default function Profile({ account, onBack, onPlayerChange, onZonesChange, ...accountProps }) {
   const [player, setPlayer] = useState(undefined) // undefined = chargement, null = jamais réglé
   const [photo, setPhoto] = useState(null) // lien temporaire de sa propre photo
   const [message, setMessage] = useState(null)
@@ -330,6 +371,7 @@ export default function Profile({ account, onBack, onPlayerChange, ...accountPro
             <p className="mt-2 text-sm leading-relaxed text-white/55">Crée un compte pour défier tes amis sur ta série.</p>
           </motion.section>
         )}
+        {account && <ZonesCard onChange={onZonesChange} />}
         {message && <p className="text-sm text-[#FFC29A]">{message}</p>}
         <AccountCard account={account} delay={0.24} {...accountProps} />
       </div>

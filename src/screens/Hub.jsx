@@ -134,8 +134,9 @@ function TendonCard({ delay, onLaunch }) {
           </div>
         ))}
         <div className="mt-1 text-xs text-white/45">
-          {minutes} min · {programs[0].phase.frequency.toLowerCase()} · douleur 3/10 maximum
+          {minutes} min · {programs[0].phase.frequency.toLowerCase()} · gêne 3/10 maximum
         </div>
+        <div className="mt-1 text-[0.7rem] text-white/30">Entraînement, pas un soin : si ça fait vraiment mal, vois un pro de santé.</div>
       </div>
       <div data-orb className="relative shrink-0">
         <Blob tone="renfo" size={56}>

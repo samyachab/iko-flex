@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Figure from '../components/Figure.jsx'
 import { CONDITIONS, SPORTS } from '../data/conditions.js'
 import { EQUIPMENT } from '../data/exercises.js'
-import { buildProposal, textConditions, visibleSteps } from '../data/onboarding.js'
-import { analyzeText } from '../lib/analyze.js'
+import { buildProposal, visibleSteps } from '../data/onboarding.js'
 import { submitIntake } from '../lib/cloud.js'
+import { saveZones } from '../lib/zones.js'
 import { DURATIONS, getSettings, saveSettings } from '../lib/settings.js'
 import { EASE, SHAPES, TONES, gradient } from '../lib/theme.js'
 
@@ -75,42 +75,18 @@ function MinutesPicker({ value, onChange }) {
   )
 }
 
-// Récap : ce que le coach va recevoir, en mots simples
-function Recap({ answers, onRemove }) {
+// Récap : ton programme, en mots simples (les zones sensibles restent sur le téléphone)
+function Recap({ answers }) {
   const proposal = buildProposal(answers)
-  const understood = answers.text?.trim() ? analyzeText(answers.text).conditions : []
-  // Gardé = encore dans la fiche finale (ex. « ischios courts » disparaît avec l'hyperlordose : c'est le paradoxe)
-  const inProposal = new Set([...proposal.goals, ...proposal.posture_issues, ...proposal.pain_points])
-  const kept = textConditions(answers).filter((c) => inProposal.has(c))
   const labels = (ids) => ids.map((id) => CONDITIONS[id]?.label).filter(Boolean)
   const rows = [
     ['Objectifs', labels(proposal.goals)],
     ['Sport', [SPORTS[proposal.sport]?.label].filter(Boolean)],
-    ['Posture', labels(proposal.posture_issues)],
-    ['Douleurs', labels(proposal.pain_points)],
+    ['Mobilité', labels(proposal.posture_issues)],
+    ['Zones sensibles · restent sur ton téléphone', labels(proposal.pain_points)],
   ].filter(([, v]) => v.length)
   return (
     <div className="flex flex-col gap-3">
-      {understood.length > 0 && (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.05] px-5 py-4">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40">Ce que j’ai compris de ton message</p>
-          <p className="mt-1 text-xs text-white/40">Touche ce qui ne te correspond pas pour le retirer.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {understood.map((c) => {
-              const on = kept.includes(c)
-              return (
-                <button
-                  key={c}
-                  onClick={() => onRemove(c)}
-                  className={`rounded-full border px-3 py-1.5 text-sm ${on ? 'border-white/30 text-white/85' : 'border-white/10 text-white/30 line-through'}`}
-                >
-                  {CONDITIONS[c]?.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
       {rows.map(([title, items]) => (
         <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.05] px-5 py-4">
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.3em] text-white/40">{title}</p>
@@ -119,8 +95,8 @@ function Recap({ answers, onRemove }) {
       ))}
       {answers.red_flags === true && (
         <p className="rounded-3xl border border-[#FFC29A]/40 px-5 py-4 text-sm leading-relaxed text-[#FFC29A]">
-          Vu ce que tu décris, montre cette douleur à un kiné ou un médecin avant de t’entraîner dessus. En attendant, ta
-          routine générale reste douce.
+          Vu ce que tu décris, montre cette zone à un professionnel de santé avant de t’entraîner dessus. Les exercices qui
+          la sollicitent sont déjà écartés de ton programme.
         </p>
       )}
     </div>
@@ -140,7 +116,7 @@ export default function Onboarding({ name, onDone }) {
   const value = answers[step.id]
   // Progression
   // (tant que les choix ne sont pas faits, on compte le parcours le plus long, pour ne pas sauter en arrière)
-  const longest = visibleSteps({ mode: 'custom', how: 'both', consent: true, ...answers })
+  const longest = visibleSteps({ mode: 'custom', consent: true, ...answers })
   const progress = phase === 'questions' ? (longest.findIndex((x) => x.id === step.id) + 1) / (longest.length + 1) : 1
 
   useEffect(() => {
@@ -155,7 +131,7 @@ export default function Onboarding({ name, onDone }) {
     else setPhase('recap')
   }
   // Passer la question : rien n'est ajouté à la fiche
-  const skip = () => next({ ...answers, [step.id]: answers[step.id] ?? (step.type === 'multi' ? [] : step.type === 'text' ? '' : '?') })
+  const skip = () => next({ ...answers, [step.id]: answers[step.id] ?? (step.type === 'multi' ? [] : '?') })
   // Passer d'un coup tous les tests restants (« la flemme » est une réponse valable)
   const skipTests = () => {
     const nextAnswers = { ...answers }
@@ -196,11 +172,15 @@ export default function Onboarding({ name, onDone }) {
     if (final.level && final.level !== '?') s.renfo.level = final.level
     saveSettings(s)
 
+    // Zones sensibles et signaux d'alerte : gardés sur le téléphone, jamais envoyés
+    const { pains, red_flags, ...shared } = final
+    const proposal = final.mode === 'custom' ? buildProposal(final) : {}
+    saveZones(proposal.pain_points ?? [])
     const res = await submitIntake({
       mode: final.mode,
-      answers: final,
-      proposal: final.mode === 'custom' ? buildProposal(final) : {},
-      redFlags: final.red_flags === true,
+      answers: shared,
+      proposal: { ...proposal, pain_points: [] },
+      redFlags: false,
     })
     setBusy(false)
     if (res.error) return setError(res.error)
@@ -243,7 +223,7 @@ export default function Onboarding({ name, onDone }) {
               transition={{ duration: 0.5, ease: EASE }}
             />
           </div>
-          {phase === 'questions' && !['mode', 'how'].includes(step.id) && step.type !== 'consent' ? (
+          {phase === 'questions' && step.id !== 'mode' && step.type !== 'consent' ? (
             <button
               onClick={skip}
               className="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-sm font-semibold text-white/70"
@@ -299,22 +279,12 @@ export default function Onboarding({ name, onDone }) {
                 {step.type === 'multi' &&
                   step.options.map((o) => <Option key={o.value} {...o} on={(value ?? []).includes(o.value)} onClick={() => toggle(o.value)} />)}
                 {step.type === 'minutes' && value && <MinutesPicker value={value} onChange={answer} />}
-                {step.type === 'text' && (
-                  <textarea
-                    value={value ?? ''}
-                    onChange={(e) => answer(e.target.value)}
-                    placeholder={step.placeholder}
-                    rows={7}
-                    maxLength={1500}
-                    className="w-full select-text rounded-3xl border border-white/10 bg-white/[0.05] p-5 text-base leading-relaxed text-white outline-none placeholder:text-white/30 focus:border-white/40"
-                  />
-                )}
               </div>
 
-              {(step.type === 'multi' || step.type === 'minutes' || step.type === 'text') && (
+              {(step.type === 'multi' || step.type === 'minutes') && (
                 <motion.button
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => next({ ...answers, [step.id]: value ?? (step.type === 'text' ? '' : []) })}
+                  onClick={() => next({ ...answers, [step.id]: value ?? [] })}
                   className="w-full shrink-0 rounded-full py-4 text-base font-bold text-ink"
                   style={{ background: gradient(t, 90) }}
                 >
@@ -329,13 +299,7 @@ export default function Onboarding({ name, onDone }) {
               <h1 className="font-display text-[2.1rem] font-light leading-tight tracking-tight">C’est tout bon.</h1>
               <p className="mt-3 text-base leading-relaxed text-white/55">Voilà ta fiche. Ton coach pourra encore l’ajuster.</p>
               <div className="mt-6 min-h-0 flex-1 overflow-y-auto pb-4">
-                <Recap
-                  answers={answers}
-                  onRemove={(c) => {
-                    const removed = answers.text_removed ?? []
-                    setAnswers({ ...answers, text_removed: removed.includes(c) ? removed.filter((x) => x !== c) : [...removed, c] })
-                  }}
-                />
+                <Recap answers={answers} />
               </div>
               {error && <p className="mb-3 text-sm text-[#FFC29A]">{error}</p>}
               <motion.button

@@ -69,7 +69,6 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
   const [status, setStatus] = useState(athlete.status)
   const [sport, setSport] = useState(d.sport ?? 'aucun')
   const [issues, setIssues] = useState(d.posture_issues ?? [])
-  const [pains, setPains] = useState(d.pain_points ?? [])
   const [goals, setGoals] = useState(d.goals ?? [])
   const [keys, setKeys] = useState(d.keys ?? [])
   const [rulesText, setRulesText] = useState(JSON.stringify({ ...EMPTY_RULES, ...d.rules }, null, 2))
@@ -83,7 +82,8 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
   } catch {
     rules = null
   }
-  const data = { ...d, sport, goals, posture_issues: issues, pain_points: pains, keys, rules: rules ?? EMPTY_RULES, ...(plan ? { plan } : {}) }
+  // Jamais de zone sensible dans le coffre : une ancienne fiche en est nettoyée à l'enregistrement
+  const data = { ...d, sport, goals, posture_issues: issues, pain_points: [], programs: undefined, keys, rules: rules ?? EMPTY_RULES, ...(plan ? { plan } : {}) }
   const resolved = useMemo(() => resolveProfile(data), [JSON.stringify(data)])
   const report = useMemo(() => profileReport(resolved), [resolved])
   const tendons = resolved.programs ?? []
@@ -157,16 +157,10 @@ function AthleteEditor({ athlete, onBack, onSaved }) {
             ))}
           </div>
 
-          <p className={`${label} mt-6`}>Douleurs</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {conditions('douleur').map(([k, c]) => (
-              <Chip key={k} color="#FFC29A" on={pains.includes(k)} onClick={() => toggle(pains, setPains, k)}>
-                {c.label}
-                {c.refer ? ' ⚕' : ''}
-              </Chip>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-white/40">⚕ = avis d’un kiné ou d’un médecin conseillé avant de s’entraîner seul.</p>
+          <p className="mt-6 text-xs leading-relaxed text-white/40">
+            Zones sensibles : la personne les coche elle-même dans son Profil, elles restent sur son téléphone. Tu ne les
+            vois pas et elles ne sont jamais enregistrées dans le coffre.
+          </p>
         </motion.section>
 
         <motion.section {...rise(0.2)} className={card}>

@@ -1,22 +1,15 @@
 // Questionnaire d'accueil, pensé TDAH : une question par écran, de grosses cartes, peu de texte,
 // passage automatique sur un choix unique, « je ne sais pas » partout, 2 minutes en tout.
-// Chaque réponse se traduit en conditions (data/conditions.js) : la fiche proposée part chez le coach.
+// Chaque réponse se traduit en conditions (data/conditions.js).
+// Pas de texte libre : on ne recueille aucune description de problème de santé.
+// Les zones sensibles (gênes) restent sur le téléphone (lib/zones.js) ; seuls objectifs, sport, tests de
+// mobilité et réglages partent dans le coffre.
 //
 // type : 'single' (un choix, avance tout seul) · 'multi' (plusieurs, bouton Continuer) · 'minutes' · 'consent'
-//        · 'text' (texte libre, analysé sur le téléphone par lib/analyze.js)
 // when : (answers) => bool, l'étape n'apparaît que si c'est vrai
 // options[].sets : conditions ajoutées si l'option est choisie
-import { CONDITIONS } from './conditions.js'
-import { analyzeText } from '../lib/analyze.js'
-import { TENDON_PROGRAMS } from './tendons.js'
-
-// Sur-mesure : la personne écrit, se laisse guider, ou les deux
-const writes = (a) => a.consent === true && (a.how === 'text' || a.how === 'both')
-const guided = (a) => a.consent === true && (a.how === 'guide' || a.how === 'both')
-// Conditions repérées dans le texte, moins celles que la personne a retirées au récap
-export const textConditions = (a) =>
-  writes(a) ? analyzeText(a.text).conditions.filter((c) => !(a.text_removed ?? []).includes(c)) : []
-const textPain = (a) => textConditions(a).some((c) => CONDITIONS[c]?.kind === 'douleur')
+// Sur-mesure : les petits tests et questions de mobilité n'apparaissent que si la personne les accepte
+const guided = (a) => a.consent === true
 
 export const STEPS = [
   {
@@ -24,40 +17,9 @@ export const STEPS = [
     type: 'single',
     title: 'Comment tu veux commencer ?',
     options: [
-      { value: 'custom', label: 'Sur-mesure', hint: '2 minutes de questions, ton coach valide ta fiche.' },
+      { value: 'custom', label: 'Sur-mesure', hint: '2 minutes de questions et de petits tests.' },
       { value: 'general', label: 'Je commence direct', hint: 'Routine générale, tu pourras personnaliser plus tard.' },
     ],
-  },
-  {
-    id: 'how',
-    type: 'single',
-    title: 'Comment tu préfères m’expliquer ?',
-    when: (a) => a.mode === 'custom',
-    options: [
-      { value: 'text', label: 'J’écris mon problème', hint: 'Avec tes mots, je m’occupe du reste.' },
-      { value: 'guide', label: 'Guide-moi', hint: 'Des questions simples et quelques petits tests.' },
-      { value: 'both', label: 'Les deux', hint: 'Le plus précis.' },
-    ],
-  },
-  {
-    id: 'consent',
-    type: 'consent',
-    title: 'On parle de ton corps',
-    subtitle:
-      'Tu vas me parler de ta posture et de tes douleurs. Ce sont des données de santé : elles servent seulement à construire tes séances, seuls toi et ton coach y avez accès, et tu peux tout supprimer à tout moment.',
-    when: (a) => a.mode === 'custom',
-    options: [
-      { value: true, label: 'D’accord, on y va' },
-      { value: false, label: 'Je préfère pas', hint: 'Ta fiche reposera seulement sur tes objectifs et ton sport.' },
-    ],
-  },
-  {
-    id: 'text',
-    type: 'text',
-    title: 'Raconte-moi',
-    subtitle: 'Ce qui te gêne, où tu as mal, ce que tu veux améliorer, ton sport. Quelques phrases suffisent.',
-    placeholder: 'Ex : j’ai mal au bas du dos quand je cours, je suis très cambré et je ne touche pas mes pieds.',
-    when: writes,
   },
   {
     id: 'goals',
@@ -127,6 +89,19 @@ export const STEPS = [
       { value: 'support', label: 'Chaise, box ou marche' },
     ],
   },
+  {
+    id: 'consent',
+    type: 'consent',
+    title: 'On évalue tes besoins',
+    subtitle:
+      'Quelques petits tests de 10 secondes pour te construire le meilleur programme possible. Ce sont juste des tests de mobilité, pas un diagnostic.',
+    when: (a) => a.mode === 'custom',
+    options: [
+      { value: true, label: 'C’est parti' },
+      { value: false, label: 'Je passe les tests', hint: 'Ton programme reposera sur tes objectifs et ton sport.' },
+    ],
+  },
+
   // ───────── Tests guidés : debout, 10 secondes chacun ─────────
   {
     id: 'test_dos',
@@ -243,8 +218,9 @@ export const STEPS = [
   {
     id: 'pains',
     type: 'multi',
-    title: 'Tu as mal quelque part en ce moment ?',
-    subtitle: 'Rien ? Continue.',
+    title: 'Une zone te gêne en ce moment ?',
+    subtitle:
+      'Rien ? Continue. Ta réponse reste sur ton téléphone. Si c’est une vraie douleur, montre-la d’abord à un professionnel de santé.',
     when: guided,
     options: [
       { value: 'dos_flexion', label: 'Bas du dos, en me penchant ou assis longtemps', sets: ['lombalgie_flexion'] },
@@ -275,12 +251,11 @@ export const STEPS = [
     id: 'red_flags',
     type: 'single',
     title: 'Une dernière chose',
-    subtitle:
-      'Cette douleur te réveille la nuit, fourmille, te fait perdre de la force, vient d’une chute, ou dépasse 7 sur 10 ?',
-    when: (a) => (guided(a) && a.pains?.length > 0) || textPain(a),
+    subtitle: 'Cette gêne te réveille la nuit, fourmille, te fait perdre de la force, vient d’une chute, ou est très forte ?',
+    when: (a) => guided(a) && a.pains?.length > 0,
     options: [
       { value: false, label: 'Non' },
-      { value: true, label: 'Oui', hint: 'On te conseillera de voir un kiné ou un médecin avant.' },
+      { value: true, label: 'Oui', hint: 'Dans ce cas, vois un professionnel de santé avant de t’entraîner dessus.' },
     ],
   },
 ]
@@ -288,7 +263,8 @@ export const STEPS = [
 // Étapes visibles pour les réponses actuelles
 export const visibleSteps = (answers) => STEPS.filter((s) => !s.when || s.when(answers))
 
-// Réponses -> fiche proposée au coach (même format que profiles.data)
+// Réponses -> fiche (même format que profiles.data). Les zones sensibles (pain_points) et programmes
+// tendon sont rangés à part par l'écran du questionnaire : ils restent sur le téléphone.
 export function buildProposal(answers) {
   const pick = (stepId) => {
     const step = STEPS.find((s) => s.id === stepId)
@@ -296,19 +272,13 @@ export function buildProposal(answers) {
     return step.options.filter((o) => chosen.includes(o.value)).flatMap((o) => o.sets ?? [])
   }
   const tests = STEPS.filter((s) => s.test).flatMap((s) => pick(s.id))
-  const fromText = textConditions(answers)
-  const kindOf = (kind) => fromText.filter((c) => CONDITIONS[c]?.kind === kind)
-  const posture = [...new Set([...tests, ...pick('stiff'), ...kindOf('posture')])]
+  const posture = [...new Set([...tests, ...pick('stiff')])]
   // Dos creusé + ischios "raides" : c'est le paradoxe de l'hyperlordose, pas des ischios courts
   const posture_issues = posture.includes('hyperlordose') ? posture.filter((c) => c !== 'ischios_raides') : posture
-  const pains = answers.consent ? [...new Set([...pick('pains'), ...kindOf('douleur')])] : []
-  const today = new Date().toISOString().slice(0, 10)
-  // Programme tendon : il démarre le jour du questionnaire (phase « Calmer »)
-  const programs = Object.fromEntries(pains.filter((c) => TENDON_PROGRAMS[c]).map((c) => [c, today]))
+  const pains = answers.consent ? [...new Set(pick('pains'))] : []
   return {
-    ...(Object.keys(programs).length ? { programs } : {}),
-    sport: answers.sport && answers.sport !== '?' ? answers.sport : (writes(answers) && analyzeText(answers.text).sport) || 'aucun',
-    goals: [...new Set([...(Array.isArray(answers.goals) ? answers.goals : []), ...kindOf('objectif')])],
+    sport: answers.sport && answers.sport !== '?' ? answers.sport : 'aucun',
+    goals: Array.isArray(answers.goals) ? answers.goals : [],
     posture_issues: answers.consent ? posture_issues : [],
     pain_points: pains,
     keys: [],

@@ -139,6 +139,7 @@ export default function App() {
               <Profile
                 account={account}
                 onPlayerChange={setPlayer}
+                onZonesChange={refreshAccount}
                 onLogout={logout}
                 onDeleted={deleted}
                 onPrivacy={openPrivacy}
