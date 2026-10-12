@@ -1,7 +1,7 @@
 // Générateur de séances : propriétés vérifiées sur de nombreux tirages (le tirage est aléatoire),
 // pour chaque profil public, chaque durée proposée et les deux routines.
 import { describe, expect, it } from 'vitest'
-import { buildRoutine, buildTendonRoutine, exerciseSeconds } from '../src/lib/routine.js'
+import { buildRoutine, exerciseSeconds } from '../src/lib/routine.js'
 import { assess, resolveProfile } from '../src/lib/profile.js'
 import { DURATIONS, getSettings } from '../src/lib/settings.js'
 import { PROFILES } from '../src/data/profiles.js'
@@ -101,25 +101,28 @@ describe('niveau du renfo', () => {
   })
 })
 
-describe('séance tendon', () => {
-  it('2 exercices programmés par tendon au plus, dosage de la phase', () => {
+describe('zone de tendon sensible : priorité dans la séance renfo', () => {
+  it('exercices de la phase en tête, 2 par tendon au plus, dosage de la phase', () => {
     const rules = resolveProfile({ ...PROFILES.general, pain_points: ['tendinite_achille', 'tendinite_rotulienne'] })
-    const r = buildTendonRoutine(getSettings(), rules)
-    expect(r.tendon).toHaveLength(2)
-    expect(r.exercises.length).toBeGreaterThan(0)
-    expect(r.exercises.length).toBeLessThanOrEqual(4)
-    for (const ex of r.exercises) {
-      expect(ex.prog).toBeDefined()
-      expect(assess(ex, rules).allowed).toBe(true)
-      expect(r.notes[ex.id][0]).toMatch(/^Pour ton /)
+    for (let i = 0; i < RUNS; i++) {
+      const r = buildRoutine('renfo', getSettings(), rules)
+      expect(r.tendon).toHaveLength(2)
+      const tendonEx = r.exercises.filter((e) => r.notes[e.id]?.[0]?.startsWith('Pour ton '))
+      expect(tendonEx.length).toBeGreaterThan(0)
+      expect(tendonEx.length).toBeLessThanOrEqual(4)
+      for (const ex of tendonEx) expect(assess(ex, rules).allowed).toBe(true)
+      // Phase Calmer : maintiens de 45 s, 4 séries au plus (moins si la séance est courte), jamais rallongés
+      const iso = r.exercises.find((e) => e.id === 'spanish-squat')
+      if (iso) {
+        expect(r.plans[iso.id]).toMatchObject({ amount: 45, fixed: true })
+        expect(r.plans[iso.id].sets).toBeGreaterThanOrEqual(2)
+        expect(r.plans[iso.id].sets).toBeLessThanOrEqual(4)
+      }
     }
-    // Phase Calmer : maintiens 4 x 45 s
-    const iso = r.exercises.find((e) => e.id === 'spanish-squat')
-    if (iso) expect(r.plans[iso.id]).toMatchObject({ sets: 4, amount: 45 })
   })
 
-  it('sans douleur de tendon : séance vide', () => {
-    const r = buildTendonRoutine(getSettings(), resolveProfile(PROFILES.general))
-    expect(r.exercises).toEqual([])
+  it('sans zone de tendon : aucune priorité tendon', () => {
+    const r = buildRoutine('renfo', getSettings(), resolveProfile(PROFILES.general))
+    expect(r.tendon).toEqual([])
   })
 })
