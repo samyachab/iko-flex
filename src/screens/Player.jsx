@@ -251,8 +251,9 @@ export default function Player({ routine, onFinish, onQuit }) {
   const lastSec = useRef(steps[0].duration)
   const pausedLeft = useRef(0)
   const startedAt = useRef(Date.now()) // début de l'étape (séries à ton rythme)
-  const workedMs = useRef(0) // temps d'effort réellement fait (pour la règle des 70 %)
-  const counted = useRef({}) // effort compté par étape, retiré si on revient sur cette étape
+  // Effort réellement fait par étape (pour la règle des 70 %). On garde le meilleur passage :
+  // revenir en arrière puis repasser vite sur une étape déjà faite ne l'efface pas.
+  const counted = useRef({})
   const step = steps[i]
   const tone = TONES[routine.key]
   const total = steps[steps.length - 1].w + 1 // une pastille par effort (séries d'un même exercice regroupées)
@@ -286,11 +287,11 @@ export default function Player({ routine, onFinish, onQuit }) {
       const elapsed = Date.now() - startedAt.current
       done = elapsed >= 5000 ? step.duration * 1000 : elapsed
     } else if (step.phase === 'work') done = step.duration * 1000 - leftMs()
-    workedMs.current += done
-    counted.current[i] = done
+    counted.current[i] = Math.max(counted.current[i] ?? 0, done)
     if (withSound && step.phase === 'work') beep.workEnd()
     if (i === steps.length - 1) {
-      onFinish({ workedMs: workedMs.current, plannedMs })
+      const workedMs = Object.values(counted.current).reduce((sum, ms) => sum + ms, 0)
+      onFinish({ workedMs, plannedMs })
       return
     }
     const next = steps[i + 1]
@@ -302,12 +303,10 @@ export default function Player({ routine, onFinish, onQuit }) {
     setI(i + 1)
   }
 
-  // Retour à l'étape précédente (on la refait en entier ; son effort déjà compté est retiré)
+  // Retour à l'étape précédente (on la refait en entier ; son effort déjà compté est conservé)
   const goBack = () => {
     if (i === 0) return
     const target = i - 1
-    workedMs.current -= counted.current[target] ?? 0
-    delete counted.current[target]
     stopSpeech()
     const prev = steps[target]
     endAt.current = Date.now() + prev.duration * 1000
