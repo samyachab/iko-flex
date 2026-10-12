@@ -12,11 +12,11 @@
 
 const ISO = { sets: 4, amount: 45, rest: 45 } // maintien qui calme : 4 x 45 s
 const ISO_SIDE = { sets: 3, amount: 45, rest: 30 } // exercice d'un côté puis de l'autre : 3 x 45 s par côté
-const CALM_NOTE = 'Maintien qui calme : la douleur doit baisser pendant ou après, 3/10 maximum.'
-const HEAVY_NOTE = 'Lent et lourd : 3 s pour descendre, 3 s pour remonter. Douleur 3/10 maximum, pas pire demain matin.'
-const JUMP_NOTE = 'Retour des sauts : si la douleur dépasse 3/10 ou monte le lendemain, reviens à la phase Renforcer.'
+const CALM_NOTE = 'Maintien qui calme : la gêne doit baisser pendant ou après, 3/10 maximum.'
+const HEAVY_NOTE = 'Lent et lourd : 3 s pour descendre, 3 s pour remonter. Gêne 3/10 maximum, pas pire demain matin.'
+const JUMP_NOTE = 'Retour des sauts : si la gêne dépasse 3/10 ou monte le lendemain, reviens à la phase Renforcer.'
 
-const CALM = { id: 'calmer', label: 'Calmer', weeks: 2, frequency: 'Chaque jour', goal: 'Des maintiens qui calment la douleur.', note: CALM_NOTE }
+const CALM = { id: 'calmer', label: 'Calmer', weeks: 2, frequency: 'Chaque jour', goal: 'Des maintiens qui calment le tendon.', note: CALM_NOTE }
 const BUILD = { id: 'renforcer', label: 'Renforcer', weeks: 6, frequency: 'Un jour sur deux', goal: 'Lent et lourd : le tendon se reconstruit.', note: HEAVY_NOTE }
 const BOUNCE = { id: 'rebondir', label: 'Rebondir', weeks: null, frequency: '2 à 3 fois par semaine', goal: 'Le tendon réapprend à encaisser les sauts.', note: JUMP_NOTE }
 
@@ -43,7 +43,7 @@ export const TENDON_PROGRAMS = {
       { ...CALM, exercises: [{ id: 'mollet-iso', ...ISO_SIDE }, { id: 'fente-iso-soleaire', ...ISO_SIDE }, { id: 'soleaire-assis' }] },
       {
         ...BUILD,
-        note: 'Descente lente sur la marche (excentrique) : 3 s pour descendre, remonte avec les deux pieds. Douleur 3/10 maximum.',
+        note: 'Descente lente sur la marche (excentrique) : 3 s pour descendre, remonte avec les deux pieds. Gêne 3/10 maximum.',
         exercises: [{ id: 'extension-jumeaux' }, { id: 'alfredson-genou-plie' }, { id: 'soleaire-assis' }],
       },
       { ...BOUNCE, allow: ['impact'], exercises: [{ id: 'pogo', sets: 2 }, { id: 'cloche-pied', sets: 2 }, { id: 'extension-jumeaux' }] },
@@ -87,7 +87,7 @@ export const TENDON_PROGRAMS = {
     phases: [
       {
         ...CALM,
-        note: 'Charge légère, bras sous la hauteur des épaules, sans douleur.',
+        note: 'Charge légère, bras sous la hauteur des épaules, sans gêne.',
         exercises: [{ id: 'band-pull-apart' }, { id: 'prone-y' }],
         missing: 'Rotation externe tenue contre un mur ou un élastique (isométrique coiffe)',
       },

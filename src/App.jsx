@@ -12,7 +12,9 @@ import Coach from './screens/Coach.jsx'
 import Onboarding from './screens/Onboarding.jsx'
 import Profile from './screens/Profile.jsx'
 import { bootstrap, continueAsGuest, countNewSignups, getPlayer, isGuest, photoUrls, pushSession, signOut } from './lib/cloud.js'
-import { buildRoutine } from './lib/routine.js'
+import { buildRoutine, buildTendonRoutine } from './lib/routine.js'
+import TendonFocus from './components/TendonFocus.jsx'
+import { currentRules } from './lib/profile.js'
 import { completeSession, getStreaks } from './lib/streaks.js'
 import { recordSession } from './lib/rotation.js'
 import { unlockAudio } from './lib/audio.js'
@@ -70,11 +72,16 @@ export default function App() {
   const [result, setResult] = useState(null) // { valid, ratio, streak }
   const [bloom, setBloom] = useState(null) // { key, x, y } : la bulle qui envahit l'écran au lancement
 
+  // Renfo avec une zone de tendon sensible : on demande d'abord « focus tendon ou séance prévue ? »
+  const [ask, setAsk] = useState(null) // { origin } pendant la question
+  const start = (routine, origin) => {
+    setRoutine(routine)
+    setBloom({ key: routine.key, ...origin })
+  }
   const launch = (key, origin) => {
     unlockAudio()
-    const next = buildRoutine(key)
-    setRoutine(next)
-    setBloom({ key: next.key, ...origin })
+    if (key === 'renfo' && currentRules().programs?.length) return setAsk({ origin })
+    start(buildRoutine(key), origin)
   }
 
   // Séance validée seulement si au moins 70 % du temps d'effort a vraiment été fait
@@ -174,6 +181,24 @@ export default function App() {
             {screen === 'player' && <Player routine={routine} onFinish={finish} onQuit={() => setScreen('hub')} />}
             {screen === 'reward' && <Reward routine={routine} result={result} minRatio={MIN_RATIO} onDone={() => setScreen('hub')} />}
           </motion.div>
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {ask && (
+            <TendonFocus
+              programs={currentRules().programs}
+              minutes={Math.max(1, Math.round(buildTendonRoutine().totalSeconds / 60))}
+              onFocus={() => {
+                start(buildTendonRoutine(), ask.origin)
+                setAsk(null)
+              }}
+              onPlanned={() => {
+                start(buildRoutine('renfo'), ask.origin)
+                setAsk(null)
+              }}
+              onClose={() => setAsk(null)}
+            />
+          )}
         </AnimatePresence>
 
         <AnimatePresence>

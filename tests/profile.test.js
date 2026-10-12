@@ -97,11 +97,12 @@ describe('filtre du profil', () => {
     expect(assess(byId('pogo'), late).allowed).toBe(true)
   })
 
-  it('exercices de la phase en cours : passent devant', () => {
+  it('exercices de la phase en cours : listés pour le focus tendon (la séance prévue reste inchangée)', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 5, 15, 12))
     const rules = resolveProfile(person({ pain_points: ['tendinite_achille'], programs: { tendinite_achille: '2026-06-10' } }))
-    expect(assess(byId('mollet-iso'), rules).score).toBeGreaterThanOrEqual(4)
+    expect(rules.tendonIds.has('mollet-iso')).toBe(true)
+    expect(rules.programs[0].phase.id).toBe('calmer')
   })
 
   it('douleurs à montrer à un professionnel signalées au coach', () => {

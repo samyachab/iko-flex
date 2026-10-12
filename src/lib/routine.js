@@ -107,8 +107,6 @@ function coverageOrder(key) {
   return [...order].sort((a, b) => score(b) - score(a))
 }
 
-const TENDON_MAX_PER_PROGRAM = 2 // 2 exercices par tendon et par séance
-
 // Construit la séance pour la durée choisie :
 // 1. les exercices clés du profil (keys) sont déjà allongés selon la longueur de la séance (45 s à 12 min -> max à 30 min) ;
 // 2. favoris (toujours là), puis un exercice par besoin du profil (needs), puis un exercice par zone dans l'ordre de couverture (le plus court qui rentre si besoin),
@@ -148,33 +146,7 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
 
   const { exercises: done } = getRotation(key)
 
-  // Zone de tendon sensible : les exercices de la phase en cours du programme passent en premier, avec le
-  // dosage de la phase (ex. 4 x 45 s de maintien pour calmer), 2 par tendon au plus. En phase Renforcer ou
-  // Rebondir, pas deux jours de suite : le tendon se reconstruit entre deux séances.
-  const tendonNotes = {}
-  const tendons = []
-  for (const p of rules.programs ?? []) {
-    const items = p.phase.exercises.map((it) => ({ it, ex: ordered.find((e) => e.id === it.id) })).filter((x) => x.ex)
-    if (!items.length) continue
-    if (p.phase.id !== 'calmer' && items.some(({ ex }) => daysSince(done[ex.id]) < 1)) continue
-    let n = 0
-    for (const { it, ex } of items) {
-      if (n >= TENDON_MAX_PER_PROGRAM || picked.includes(ex)) continue
-      let override = ex.prog ? { ...(it.sets && { sets: it.sets, baseSets: it.sets }), ...(it.amount && { amount: it.amount }), ...(it.rest && { rest: it.rest }), fixed: true } : null
-      // Séance courte : moins de séries (2 au minimum) plutôt que de déborder ; le 2e exercice seulement s'il rentre
-      const sets = () => override?.sets ?? start(ex).sets
-      while (ex.prog && sets() > 2 && total + exerciseSeconds(ex, config, { ...start(ex), ...override }) > target) {
-        override = { ...override, sets: sets() - 1, baseSets: sets() - 1 }
-      }
-      if (!tryAdd(ex, n === 0, override)) continue
-      if (byGroup[ex.group]?.includes(ex)) take(ex.group, ex)
-      tendonNotes[ex.id] = `Pour ton ${p.program.tendon} : ${p.phase.note}`
-      n++
-    }
-    if (n) tendons.push({ cond: p.cond, tendon: p.program.tendon, phase: p.phase.label })
-  }
-
-  for (const ex of favorites) if (!picked.includes(ex)) tryAdd(ex, true)
+  for (const ex of favorites) tryAdd(ex, true)
   // Besoins du profil : la mécanique doit apparaître dans la séance (le meilleur candidat qui rentre).
   // Besoin "toutes les N séances" : pas imposé s'il a été travaillé il y a moins de N jours.
   const lastDone = (m) => Math.min(...EXERCISES.filter((e) => e.biomechanics?.includes(m)).map((e) => daysSince(done[e.id])))
@@ -243,11 +215,45 @@ export function buildRoutine(key, settings = getSettings(), rules = currentRules
   for (let r = 0; r < config.rounds; r++) exercises.push(...circuit)
   const totalSeconds = exercises.reduce((sum, ex) => sum + exerciseSeconds(ex, config, plans.get(ex.id)), 0)
   // Consignes propres à la personne (conditions adaptées, mot du coach), affichées dans le Player
-  const notes = Object.fromEntries(
-    picked.map((e) => [e.id, [tendonNotes[e.id], ...assess(e, rules).notes].filter(Boolean)]).filter(([, n]) => n.length),
-  )
-  // tendon : présent si la séance contient des exercices de programme tendon (question de ressenti à la fin)
-  return { ...config, level, exercises, plans: Object.fromEntries(plans), notes, totalSeconds, tendon: tendons }
+  const notes = Object.fromEntries(picked.map((e) => [e.id, assess(e, rules).notes]).filter(([, n]) => n.length))
+  return { ...config, level, exercises, plans: Object.fromEntries(plans), notes, totalSeconds }
+}
+
+// Séance « focus tendon » : proposée quand on lance le Renfo avec une zone de tendon sensible.
+// Les exercices de la phase en cours de chaque programme, dosés pour la phase (ex. 4 x 45 s de maintien
+// en phase « Calmer »). Même rendu que le renfo (couleurs, série, historique).
+const TENDON_MAX_PER_PROGRAM = 2 // 2 exercices par tendon : une séance d'une dizaine de minutes
+export function buildTendonRoutine(settings = getSettings(), rules = currentRules()) {
+  const config = ROUTINES.renfo
+  const chosen = settings.renfo.level
+  const level = chosen && chosen !== 'auto' ? chosen : getLevel('renfo')
+  const exercises = []
+  const plans = {}
+  const notes = {}
+  for (const p of rules.programs ?? []) {
+    let n = 0
+    for (const item of p.phase.exercises) {
+      const ex = EXERCISES.find((e) => e.id === item.id)
+      if (!ex?.prog || exercises.includes(ex) || n >= TENDON_MAX_PER_PROGRAM) continue
+      if (!assess(ex, rules).allowed || !hasEquipment(ex, settings)) continue
+      const [sets, amount] = ex.prog.levels[level - 1]
+      plans[ex.id] = { sets: item.sets ?? sets, amount: item.amount ?? amount, baseSets: item.sets ?? sets, rest: item.rest }
+      notes[ex.id] = [`Pour ton ${p.program.tendon} : ${p.phase.note}`, ...assess(ex, rules).notes]
+      exercises.push(ex)
+      n++
+    }
+  }
+  const totalSeconds = exercises.reduce((sum, ex) => sum + exerciseSeconds(ex, config, plans[ex.id]), 0)
+  return {
+    ...config,
+    label: 'Focus tendon',
+    tendon: rules.programs?.map((p) => ({ cond: p.cond, tendon: p.program.tendon, phase: p.phase.label })),
+    level,
+    exercises,
+    plans,
+    notes,
+    totalSeconds,
+  }
 }
 
 // Aperçu (accueil, réglages) : moyenne de quelques tirages, la séance réelle varie légèrement

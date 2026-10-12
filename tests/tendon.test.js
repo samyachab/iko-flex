@@ -67,10 +67,10 @@ describe('programmes tendon', () => {
     expect(JSON.parse(localStorage.getItem('iko-flex:tendon')).tendinite_achille.pains).toHaveLength(60)
   })
 
-  it('conseil selon la douleur', () => {
+  it('conseil selon la gêne ressentie', () => {
     expect(painAdvice(2)).toMatch(/bonne zone/)
     expect(painAdvice(3)).toMatch(/bonne zone/)
     expect(painAdvice(4)).toMatch(/même charge/)
-    expect(painAdvice(5)).toMatch(/kiné/)
+    expect(painAdvice(5)).toMatch(/professionnel de santé/)
   })
 })

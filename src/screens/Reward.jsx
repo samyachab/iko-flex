@@ -20,7 +20,7 @@ function PainCheck({ tendons }) {
   return (
     <motion.section {...rise(0.9)} className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
       <p className="text-[0.7rem] font-bold uppercase tracking-[0.3em] text-white/40">Ton tendon</p>
-      <p className="mt-2 text-base text-white/85">Pendant la séance, la douleur était à combien ?</p>
+      <p className="mt-2 text-base text-white/85">Pendant la séance, la gêne était à combien ?</p>
       <div className="mt-3 grid grid-cols-6 gap-2">
         {Array.from({ length: 11 }, (_, v) => (
           <button

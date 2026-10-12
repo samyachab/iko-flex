@@ -75,7 +75,7 @@ export function recordPain(cond, value) {
 
 export const painAdvice = (value) =>
   value >= HIGH_PAIN
-    ? 'Douleur haute : on revient aux maintiens qui calment. Si ça ne baisse pas d’ici quelques jours, montre-le à un kiné.'
+    ? 'Gêne forte : on revient aux maintiens qui calment. Si ça ne baisse pas d’ici quelques jours, montre-le à un professionnel de santé.'
     : value > 3
       ? 'Un peu trop : garde la même charge la prochaine fois, sans forcer.'
       : 'Parfait, c’est la bonne zone. Vérifie demain matin que ce n’est pas pire.'

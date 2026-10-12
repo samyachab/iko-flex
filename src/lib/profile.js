@@ -130,8 +130,7 @@ export function assess(ex, rules = currentRules()) {
   // Un remplaçant prend la place (et la fréquence) de l'exercice remplacé
   const score =
     mech.reduce((s, m) => s + (rules.favor.get(m) ?? 0), 0) +
-    (rules.substitutes.has(ex.id) ? 4 : 0) +
-    (rules.tendonIds?.has(ex.id) ? 4 : 0)
+    (rules.substitutes.has(ex.id) ? 4 : 0)
   const notes = [...new Set(mech.flatMap((m) => rules.adapt.get(m) ?? []))]
   if (o.warning) notes.unshift(o.warning)
   return {
